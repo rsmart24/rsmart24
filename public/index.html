@@ -107,17 +107,32 @@
             <input name="customerPhone" required inputmode="tel" maxlength="20" placeholder="01XXXXXXXXX">
           </label>
 
-          <label>বিভাগ
-            <input name="customerDivision" required placeholder="যেমন: চট্টগ্রাম">
-          </label>
+          
+<label>বিভাগ
+  <select name="customerDivision" id="customerDivision" required>
+    <option value="">বিভাগ নির্বাচন করুন</option>
+    <option value="ঢাকা">ঢাকা</option>
+    <option value="চট্টগ্রাম">চট্টগ্রাম</option>
+    <option value="রাজশাহী">রাজশাহী</option>
+    <option value="খুলনা">খুলনা</option>
+    <option value="বরিশাল">বরিশাল</option>
+    <option value="সিলেট">সিলেট</option>
+    <option value="রংপুর">রংপুর</option>
+    <option value="ময়মনসিংহ">ময়মনসিংহ</option>
+  </select>
+</label>
 
-          <label>জেলা
-            <input name="customerDistrict" required placeholder="জেলার নাম">
-          </label>
+<label>জেলা
+  <select name="customerDistrict" id="customerDistrict" required disabled>
+    <option value="">আগে বিভাগ নির্বাচন করুন</option>
+  </select>
+</label>
 
-          <label>থানা / উপজেলা / এলাকা
-            <input name="customerArea" required placeholder="এলাকার নাম">
-          </label>
+<label>থানা / উপজেলা
+  <select name="customerArea" id="customerArea" required disabled>
+    <option value="">আগে জেলা নির্বাচন করুন</option>
+  </select>
+</label>
 
           <label>সম্পূর্ণ ঠিকানা
             <input name="customerAddress" required placeholder="বাসা, রোড, গ্রাম ইত্যাদি">
