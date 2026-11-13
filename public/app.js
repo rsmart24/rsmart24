@@ -265,3 +265,77 @@ form.addEventListener("submit", async event => {
 searchInput?.addEventListener("input", renderProducts);
 
 loadProducts();
+
+async function setupAddressDropdowns() {
+  const divisionSelect = document.querySelector("#customerDivision");
+  const districtSelect = document.querySelector("#customerDistrict");
+  const areaSelect = document.querySelector("#customerArea");
+
+  if (!divisionSelect || !districtSelect || !areaSelect) return;
+
+  try {
+    const response = await fetch(
+      "https://iqbalhasandev.github.io/bangladesh-geo-json/bangladesh-geo.json"
+    );
+
+    if (!response.ok) throw new Error("Location data unavailable");
+
+    const divisions = await response.json();
+
+    function fillSelect(select, placeholder, items) {
+      select.innerHTML = "";
+      const first = document.createElement("option");
+      first.value = "";
+      first.textContent = placeholder;
+      select.appendChild(first);
+
+      items.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.bn_name;
+        option.textContent = item.bn_name;
+        select.appendChild(option);
+      });
+
+      select.disabled = items.length === 0;
+    }
+
+    fillSelect(divisionSelect, "বিভাগ নির্বাচন করুন", divisions);
+
+    fillSelect(districtSelect, "আগে বিভাগ নির্বাচন করুন", []);
+    fillSelect(areaSelect, "আগে জেলা নির্বাচন করুন", []);
+
+    divisionSelect.addEventListener("change", () => {
+      const division = divisions.find(
+        item => item.bn_name === divisionSelect.value
+      );
+
+      const districts = division?.districts || [];
+
+      fillSelect(districtSelect, "জেলা নির্বাচন করুন", districts);
+      fillSelect(areaSelect, "আগে জেলা নির্বাচন করুন", []);
+    });
+
+    districtSelect.addEventListener("change", () => {
+      const division = divisions.find(
+        item => item.bn_name === divisionSelect.value
+      );
+
+      const district = division?.districts.find(
+        item => item.bn_name === districtSelect.value
+      );
+
+      const upazilas = district?.upazilas || [];
+
+      fillSelect(areaSelect, "থানা / উপজেলা নির্বাচন করুন", upazilas);
+    });
+
+  } catch (error) {
+    console.error("Address dropdown error:", error);
+    divisionSelect.innerHTML =
+      '<option value="">ঠিকানার তালিকা লোড হয়নি</option>';
+    districtSelect.disabled = true;
+    areaSelect.disabled = true;
+  }
+}
+
+setupAddressDropdowns();
