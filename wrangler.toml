@@ -1,6 +1,12 @@
-name = "rs-mart"
+
+name = "rsmart24"
 main = "src/index.js"
 compatibility_date = "2026-11-13"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rsmart24-db"
+database_id = "3bdfbd13-577a-4a9b-9afc-ffda131f0afb"
 
 [assets]
 directory = "./public"
