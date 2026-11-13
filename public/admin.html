@@ -233,7 +233,13 @@
           const originalPrice = document.querySelector(`#original-price-${CSS.escape(id)}`).value;
           const category = document.querySelector(`#category-${CSS.escape(id)}`).value;
           const visible = document.querySelector(`#visible-${CSS.escape(id)}`).value;
-
+if (
+  originalPrice.trim() !== "" &&
+  (!Number.isSafeInteger(Number(originalPrice)) || Number(originalPrice) < 0)
+) {
+  alert("সঠিক পুরোনো দাম লিখুন।");
+  return;
+}
           if (price.trim() === "" || !Number.isSafeInteger(Number(price)) || Number(price) < 0) {
             alert("সঠিক বিক্রয়মূল্য লিখুন।");
             return;
