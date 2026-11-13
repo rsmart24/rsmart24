@@ -58,16 +58,67 @@ function renderProducts() {
     button.addEventListener("click", () => chooseProduct(button.dataset.buy))
   );
 }
+
 function chooseProduct(id) {
   chosenProduct = products.find(p => String(p.id) === String(id));
   if (!chosenProduct) return;
+
   document.querySelector("#productId").value = chosenProduct.id;
-  document.querySelector("#selected-product").textContent = `${chosenProduct.name} — ${money(chosenProduct.suggestedPrice)}`;
+
+  // পণ্যের ছবি
+  document.querySelector("#detail-image").innerHTML = productImage(chosenProduct);
+
+  // পণ্যের নাম, দাম, স্টক ও বিবরণ
+  document.querySelector("#selected-product").textContent = chosenProduct.name || "পণ্যের নাম";
   document.querySelector("#item-price").textContent = money(chosenProduct.suggestedPrice);
-  document.querySelector("#delivery-price").textContent = `ঢাকার ভিতরে ${money(deliveryCharges.insideDhaka)} / ঢাকার বাইরে ${money(deliveryCharges.outsideDhaka)}`;
+
+  document.querySelector("#detail-stock").textContent =
+    chosenProduct.inStock === false ? "স্টক নেই" : "স্টকে আছে";
+
+  document.querySelector("#detail-description").textContent =
+    chosenProduct.description || "এই পণ্যের বিস্তারিত তথ্য পাওয়া যায়নি।";
+
+  // রং ও সাইজের অপশন
+  const variants = Array.isArray(chosenProduct.variants)
+    ? chosenProduct.variants
+    : [];
+
+  const variantBox = document.querySelector("#detail-variants");
+
+  const colors = [...new Set(variants.map(v => v.color).filter(Boolean))];
+  const sizes = [...new Set(variants.map(v => v.size).filter(Boolean))];
+
+  let variantHTML = "";
+
+  if (colors.length) {
+    variantHTML += `
+      <label>রং নির্বাচন করুন
+        <select id="selected-color" required>
+          <option value="">রং বেছে নিন</option>
+          ${colors.map(color => `<option value="${escapeHtml(color)}">${escapeHtml(color)}</option>`).join("")}
+        </select>
+      </label>`;
+  }
+
+  if (sizes.length) {
+    variantHTML += `
+      <label>সাইজ নির্বাচন করুন
+        <select id="selected-size" required>
+          <option value="">সাইজ বেছে নিন</option>
+          ${sizes.map(size => `<option value="${escapeHtml(size)}">${escapeHtml(size)}</option>`).join("")}
+        </select>
+      </label>`;
+  }
+
+  variantBox.innerHTML = variantHTML;
+
+  document.querySelector("#delivery-price").textContent =
+    `ঢাকার ভিতরে ${money(deliveryCharges.insideDhaka)} / ঢাকার বাইরে ${money(deliveryCharges.outsideDhaka)}`;
+
   orderSection.hidden = false;
   orderSection.scrollIntoView({ behavior: "smooth" });
 }
+
 async function loadProducts() {
   try {
     const response = await fetch("/api/products");
