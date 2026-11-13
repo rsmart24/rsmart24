@@ -118,4 +118,5 @@ form.addEventListener("submit", async event => {
     submitButton.textContent = "অর্ডার কনফার্ম করুন";
   }
 });
+searchInput?.addEventListener("input", renderProducts);
 loadProducts();
