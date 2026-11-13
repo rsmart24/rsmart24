@@ -72,6 +72,9 @@ function publicProduct(p, setting) {
         }))
       : [],
     sellingPrice: setting ? Number(setting.selling_price) : null,
+    originalPrice: setting?.original_price != null
+  ? Number(setting.original_price)
+  : null,
     category: setting?.category || "",
     isVisible: setting ? Number(setting.is_visible) === 1 : true
   };
