@@ -239,10 +239,11 @@
             await api(`/api/admin/products/${encodeURIComponent(id)}`, {
               method: "PUT",
               body: JSON.stringify({
-                sellingPrice: Number(price),
-                category,
-                isVisible: visible === "yes"
-              })
+  sellingPrice: Number(price),
+  originalPrice: originalPrice.trim() === "" ? null : Number(originalPrice),
+  category,
+  isVisible: visible === "yes"
+})
             });
             alert("পণ্যের সেটিংস সংরক্ষণ হয়েছে।");
           } catch (error) {
