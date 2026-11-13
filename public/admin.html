@@ -195,6 +195,11 @@
             <h3>${escapeHTML(p.name)}</h3>
             <p class="muted">Business Koro প্রস্তাবিত মূল্য: ৳${escapeHTML(p.suggestedPrice ?? "—")}</p>
             <div class="fields">
+            <label>বিক্রয় মূল্য (৳)
+  <input type="number" min="0" step="1"
+    id="price-${escapeHTML(p.id)}"
+    value="${p.sellingPrice ?? ""}" placeholder="বিক্রয় মূল্য" required>
+</label>
               <label>পুরোনো দাম / কাটা দাম (৳)
   <input type="number" min="0" step="1"
     id="original-price-${escapeHTML(p.id)}"
