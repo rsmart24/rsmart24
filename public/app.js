@@ -6,12 +6,11 @@ const orderSection = document.querySelector("#order");
 const form = document.querySelector("#order-form");
 const searchInput = document.querySelector("#product-search");
 const submitButton = document.querySelector("#submit-button");
-const categoryNav = document.querySelector(".category-nav");
 
 let products = [];
 let deliveryCharges = {};
 let chosenProduct = null;
-let selectedCategory = "all";
+let activeCategory = "all";
 
 document.querySelector("#year").textContent = new Date().getFullYear();
 
@@ -20,12 +19,11 @@ function money(value) {
     return "দাম নির্ধারণ করা হয়নি";
   }
   const n = Number(value);
-  return Number.isFinite(n)
-    ? `৳${n.toLocaleString("en-BD")}`
-    : "দাম নির্ধারণ করা হয়নি";
+  return Number.isFinite(n) ? `৳${n.toLocaleString("en-BD")}` : "দাম পাওয়া যায়নি";
 }
 
 function showNotice(message) {
+  if (!notice) return;
   notice.textContent = message;
   notice.hidden = false;
 }
@@ -37,7 +35,7 @@ function escapeHtml(value) {
     ">": "&gt;",
     '"': "&quot;",
     "'": "&#39;"
-  }[c]));
+  })[c]);
 }
 
 function productImage(product) {
@@ -55,7 +53,7 @@ function renderProducts() {
       `${p.name || ""} ${p.description || ""}`.toLowerCase().includes(query);
 
     const matchesCategory =
-      selectedCategory === "all" || p.category === selectedCategory;
+      activeCategory === "all" || p.category === activeCategory;
 
     return matchesSearch && matchesCategory;
   });
@@ -68,21 +66,21 @@ function renderProducts() {
   }
 
   grid.innerHTML = filteredProducts.map(p => {
-    const noPrice = p.sellingPrice === null || p.sellingPrice === undefined;
+    const hasPrice = p.sellingPrice !== null && p.sellingPrice !== undefined;
     const outOfStock = p.inStock === false;
-    const disabled = noPrice || outOfStock;
 
     return `
       <article class="product-card">
         <div class="product-image">${productImage(p)}</div>
         <div class="product-info">
           <h3>${escapeHtml(p.name)}</h3>
+          <p>${escapeHtml(p.description || "বিস্তারিত জানতে পণ্যটি দেখুন।")}</p>
           <div class="product-bottom">
             <span class="price">${money(p.sellingPrice)}</span>
             <button class="buy-button"
               data-buy="${escapeHtml(p.id)}"
-              ${disabled ? "disabled" : ""}>
-              ${outOfStock ? "স্টক নেই" : noPrice ? "দাম আসছে" : "অর্ডার করুন"}
+              ${outOfStock || !hasPrice ? "disabled" : ""}>
+              ${outOfStock ? "স্টক নেই" : !hasPrice ? "দাম আসছে" : "অর্ডার করুন"}
             </button>
           </div>
         </div>
@@ -110,14 +108,11 @@ function chooseProduct(id) {
 
   document.querySelector("#productId").value = chosenProduct.id;
   document.querySelector("#detail-image").innerHTML = productImage(chosenProduct);
+  document.querySelector("#selected-product").textContent = chosenProduct.name || "পণ্যের নাম";
+  document.querySelector("#item-price").textContent = money(chosenProduct.sellingPrice);
 
-  document.querySelector("#selected-product").textContent =
-    chosenProduct.name || "পণ্যের নাম";
-
-  document.querySelector("#item-price").textContent =
-    money(chosenProduct.sellingPrice);
-
-  document.querySelector("#detail-stock").textContent = "স্টকে আছে";
+  document.querySelector("#detail-stock").textContent =
+    chosenProduct.inStock === false ? "স্টক নেই" : "স্টকে আছে";
 
   document.querySelector("#detail-description").textContent =
     chosenProduct.description || "এই পণ্যের বিস্তারিত তথ্য পাওয়া যায়নি।";
@@ -137,9 +132,9 @@ function chooseProduct(id) {
       <label>রং নির্বাচন করুন
         <select id="selected-color" required>
           <option value="">রং বেছে নিন</option>
-          ${colors.map(color =>
-            `<option value="${escapeHtml(color)}">${escapeHtml(color)}</option>`
-          ).join("")}
+          ${colors.map(color => `
+            <option value="${escapeHtml(color)}">${escapeHtml(color)}</option>
+          `).join("")}
         </select>
       </label>`;
   }
@@ -149,18 +144,12 @@ function chooseProduct(id) {
       <label>সাইজ নির্বাচন করুন
         <select id="selected-size" required>
           <option value="">সাইজ বেছে নিন</option>
-          ${sizes.map(size =>
-            `<option value="${escapeHtml(size)}">${escapeHtml(size)}</option>`
-          ).join("")}
+          ${sizes.map(size => `
+            <option value="${escapeHtml(size)}">${escapeHtml(size)}</option>
+          `).join("")}
         </select>
       </label>`;
   }
-
-  variantHTML += `
-    <label>পরিমাণ
-      <input type="number" id="selected-quantity"
-        min="1" max="20" value="1" required>
-    </label>`;
 
   variantBox.innerHTML = variantHTML;
 
@@ -170,6 +159,18 @@ function chooseProduct(id) {
   orderSection.hidden = false;
   orderSection.scrollIntoView({ behavior: "smooth" });
 }
+
+document.querySelectorAll(".category-nav [data-category]").forEach(button => {
+  button.addEventListener("click", () => {
+    activeCategory = button.dataset.category;
+
+    document.querySelectorAll(".category-nav [data-category]").forEach(item => {
+      item.classList.toggle("active", item === button);
+    });
+
+    renderProducts();
+  });
+});
 
 async function loadProducts() {
   try {
@@ -186,42 +187,36 @@ async function loadProducts() {
 
   } catch (error) {
     count.textContent = "লোড করা যায়নি";
-    grid.innerHTML =
-      '<div class="loading">পণ্য দেখানো যাচ্ছে না। একটু পরে আবার চেষ্টা করুন।</div>';
+    grid.innerHTML = '<div class="loading">পণ্য দেখানো যাচ্ছে না। পরে আবার চেষ্টা করুন।</div>';
     showNotice(error.message);
   }
 }
-
-categoryNav?.querySelectorAll("[data-category]").forEach(button => {
-  button.addEventListener("click", () => {
-    selectedCategory = button.dataset.category;
-
-    categoryNav.querySelectorAll("[data-category]").forEach(item => {
-      item.classList.toggle("active", item === button);
-    });
-
-    renderProducts();
-  });
-});
 
 form.addEventListener("submit", async event => {
   event.preventDefault();
 
   if (!chosenProduct) return;
 
+  if (chosenProduct.sellingPrice === null || chosenProduct.sellingPrice === undefined) {
+    alert("এই পণ্যের বিক্রয়মূল্য নির্ধারণ করা হয়নি।");
+    return;
+  }
+
   const color = document.querySelector("#selected-color")?.value || "";
   const size = document.querySelector("#selected-size")?.value || "";
-  const quantity = Number(
-    document.querySelector("#selected-quantity")?.value || 1
-  );
 
-  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
-    alert("পরিমাণ ১ থেকে ২০-এর মধ্যে দিন।");
+  if (document.querySelector("#selected-color") && !color) {
+    alert("পণ্যের রং নির্বাচন করুন।");
+    return;
+  }
+
+  if (document.querySelector("#selected-size") && !size) {
+    alert("পণ্যের সাইজ নির্বাচন করুন।");
     return;
   }
 
   submitButton.disabled = true;
-  submitButton.textContent = "অর্ডার জমা হচ্ছে…";
+  submitButton.textContent = "অর্ডার পাঠানো হচ্ছে…";
 
   const data = new FormData(form);
 
@@ -236,7 +231,7 @@ form.addEventListener("submit", async event => {
     customerNote: data.get("customerNote"),
     color,
     size,
-    quantity
+    quantity: Number(data.get("quantity") || 1)
   };
 
   try {
@@ -249,12 +244,10 @@ form.addEventListener("submit", async event => {
     const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(result.error || "অর্ডার জমা হয়নি।");
+      throw new Error(result.error || result.message || "অর্ডার জমা হয়নি।");
     }
 
-    alert(
-      `আপনার অর্ডার RS Mart-এ জমা হয়েছে।\nঅর্ডার নম্বর: ${result.orderId}\nধন্যবাদ!`
-    );
+    alert(`আপনার অর্ডার RS Mart-এ জমা হয়েছে। অর্ডার নম্বর: ${result.orderId}`);
 
     form.reset();
     orderSection.hidden = true;
@@ -262,6 +255,7 @@ form.addEventListener("submit", async event => {
 
   } catch (error) {
     alert(`অর্ডার জমা হয়নি: ${error.message}`);
+
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "অর্ডার কনফার্ম করুন";
