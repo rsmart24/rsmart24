@@ -1336,3 +1336,32 @@ footer > a:last-child {
     height: auto;
   }
 }
+/* ORIGINAL AND SELLING PRICE */
+
+.price {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.old-price {
+  color: #98a2b3;
+  font: 400 12px Inter, sans-serif;
+  text-decoration: line-through;
+}
+
+.price strong {
+  color: #d97706;
+  font: 700 17px Inter, sans-serif;
+}
+
+@media (max-width: 600px) {
+  .old-price {
+    font-size: 10px;
+  }
+
+  .price strong {
+    font-size: 14px;
+  }
+}
