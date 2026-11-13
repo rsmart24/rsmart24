@@ -53,11 +53,10 @@ function requireDB(env) {
 async function getSettings(env) {
   requireDB(env);
   const result = await env.DB.prepare(
-    "SELECT product_id, selling_price, category, is_visible FROM product_settings"
+    "SELECT product_id, selling_price, original_price, category, is_visible FROM product_settings"
   ).all();
   return new Map((result.results || []).map(row => [String(row.product_id), row]));
 }
-
 function publicProduct(p, setting) {
   return {
     id: p.id,
