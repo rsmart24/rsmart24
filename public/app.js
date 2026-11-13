@@ -26,23 +26,37 @@ function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 function renderProducts() {
-  count.textContent = `${products.length}টি পণ্য`;
-  if (!products.length) {
-    grid.innerHTML = '<div class="loading">এখনো কোনো পণ্য পাওয়া যায়নি। পরে আবার চেষ্টা করুন।</div>';
+  const query = (searchInput?.value || "").trim().toLowerCase();
+
+  const filteredProducts = products.filter(p =>
+    `${p.name || ""} ${p.description || ""}`.toLowerCase().includes(query)
+  );
+
+  count.textContent = `${filteredProducts.length}টি পণ্য`;
+
+  if (!filteredProducts.length) {
+    grid.innerHTML = '<div class="loading">কোনো পণ্য পাওয়া যায়নি। অন্য নামে খুঁজে দেখুন।</div>';
     return;
   }
-  grid.innerHTML = products.map(p => `
+
+  grid.innerHTML = filteredProducts.map(p => `
     <article class="product-card">
       <div class="product-image">${productImage(p)}</div>
       <div class="product-info">
         <h3>${escapeHtml(p.name)}</h3>
         <p>${escapeHtml(p.description || "বিস্তারিত জানতে অর্ডার করুন।")}</p>
-        <div class="product-bottom"><span class="price">${money(p.suggestedPrice)}</span>
-          <button class="buy-button" data-buy="${escapeHtml(p.id)}" ${p.inStock === false ? "disabled" : ""}>${p.inStock === false ? "স্টক নেই" : "অর্ডার করুন"}</button>
+        <div class="product-bottom">
+          <span class="price">${money(p.suggestedPrice)}</span>
+          <button class="buy-button" data-buy="${escapeHtml(p.id)}" ${p.inStock === false ? "disabled" : ""}>
+            ${p.inStock === false ? "স্টক নেই" : "অর্ডার করুন"}
+          </button>
         </div>
       </div>
     </article>`).join("");
-  grid.querySelectorAll("[data-buy]").forEach(button => button.addEventListener("click", () => chooseProduct(button.dataset.buy)));
+
+  grid.querySelectorAll("[data-buy]").forEach(button =>
+    button.addEventListener("click", () => chooseProduct(button.dataset.buy))
+  );
 }
 function chooseProduct(id) {
   chosenProduct = products.find(p => String(p.id) === String(id));
