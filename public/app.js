@@ -1,90 +1,132 @@
+
 const grid = document.querySelector("#products-grid");
 const notice = document.querySelector("#notice");
 const count = document.querySelector("#product-count");
 const orderSection = document.querySelector("#order");
 const form = document.querySelector("#order-form");
 const searchInput = document.querySelector("#product-search");
+const submitButton = document.querySelector("#submit-button");
+const categoryNav = document.querySelector(".category-nav");
+
 let products = [];
 let deliveryCharges = {};
 let chosenProduct = null;
+let selectedCategory = "all";
 
 document.querySelector("#year").textContent = new Date().getFullYear();
 
 function money(value) {
+  if (value === null || value === undefined || value === "") {
+    return "দাম নির্ধারণ করা হয়নি";
+  }
   const n = Number(value);
-  return Number.isFinite(n) ? `৳${n.toLocaleString("en-BD")}` : "দাম জানতে যোগাযোগ করুন";
+  return Number.isFinite(n)
+    ? `৳${n.toLocaleString("en-BD")}`
+    : "দাম নির্ধারণ করা হয়নি";
 }
+
 function showNotice(message) {
   notice.textContent = message;
   notice.hidden = false;
 }
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[c]));
+}
+
 function productImage(product) {
   const src = Array.isArray(product.images) ? product.images[0] : "";
-  return src ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(product.name)}" loading="lazy">` : `<span class="image-placeholder">RS</span>`;
+  return src
+    ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(product.name)}" loading="lazy">`
+    : `<span class="image-placeholder">RS</span>`;
 }
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-}
+
 function renderProducts() {
   const query = (searchInput?.value || "").trim().toLowerCase();
 
-  const filteredProducts = products.filter(p =>
-    `${p.name || ""} ${p.description || ""}`.toLowerCase().includes(query)
-  );
+  const filteredProducts = products.filter(p => {
+    const matchesSearch =
+      `${p.name || ""} ${p.description || ""}`.toLowerCase().includes(query);
+
+    const matchesCategory =
+      selectedCategory === "all" || p.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
 
   count.textContent = `${filteredProducts.length}টি পণ্য`;
 
   if (!filteredProducts.length) {
-    grid.innerHTML = '<div class="loading">কোনো পণ্য পাওয়া যায়নি। অন্য নামে খুঁজে দেখুন।</div>';
+    grid.innerHTML = '<div class="loading">এই ক্যাটাগরিতে কোনো পণ্য পাওয়া যায়নি।</div>';
     return;
   }
 
-  grid.innerHTML = filteredProducts.map(p => `
-    <article class="product-card">
-      <div class="product-image">${productImage(p)}</div>
-      <div class="product-info">
-        <h3>${escapeHtml(p.name)}</h3>
-        <p>${escapeHtml(p.description || "বিস্তারিত জানতে অর্ডার করুন।")}</p>
-        <div class="product-bottom">
-          <span class="price">${money(p.suggestedPrice)}</span>
-          <button class="buy-button" data-buy="${escapeHtml(p.id)}" ${p.inStock === false ? "disabled" : ""}>
-            ${p.inStock === false ? "স্টক নেই" : "অর্ডার করুন"}
-          </button>
-        </div>
-      </div>
-    </article>`).join("");
+  grid.innerHTML = filteredProducts.map(p => {
+    const noPrice = p.sellingPrice === null || p.sellingPrice === undefined;
+    const outOfStock = p.inStock === false;
+    const disabled = noPrice || outOfStock;
 
-  grid.querySelectorAll("[data-buy]").forEach(button =>
-    button.addEventListener("click", () => chooseProduct(button.dataset.buy))
-  );
+    return `
+      <article class="product-card">
+        <div class="product-image">${productImage(p)}</div>
+        <div class="product-info">
+          <h3>${escapeHtml(p.name)}</h3>
+          <div class="product-bottom">
+            <span class="price">${money(p.sellingPrice)}</span>
+            <button class="buy-button"
+              data-buy="${escapeHtml(p.id)}"
+              ${disabled ? "disabled" : ""}>
+              ${outOfStock ? "স্টক নেই" : noPrice ? "দাম আসছে" : "অর্ডার করুন"}
+            </button>
+          </div>
+        </div>
+      </article>`;
+  }).join("");
+
+  grid.querySelectorAll("[data-buy]").forEach(button => {
+    button.addEventListener("click", () => chooseProduct(button.dataset.buy));
+  });
 }
 
 function chooseProduct(id) {
   chosenProduct = products.find(p => String(p.id) === String(id));
   if (!chosenProduct) return;
 
-  document.querySelector("#productId").value = chosenProduct.id;
+  if (chosenProduct.sellingPrice === null || chosenProduct.sellingPrice === undefined) {
+    alert("এই পণ্যের বিক্রয়মূল্য এখনো নির্ধারণ করা হয়নি।");
+    return;
+  }
 
-  // পণ্যের ছবি
+  if (chosenProduct.inStock === false) {
+    alert("দুঃখিত, পণ্যটি স্টকে নেই।");
+    return;
+  }
+
+  document.querySelector("#productId").value = chosenProduct.id;
   document.querySelector("#detail-image").innerHTML = productImage(chosenProduct);
 
-  // পণ্যের নাম, দাম, স্টক ও বিবরণ
-  document.querySelector("#selected-product").textContent = chosenProduct.name || "পণ্যের নাম";
-  document.querySelector("#item-price").textContent = money(chosenProduct.suggestedPrice);
+  document.querySelector("#selected-product").textContent =
+    chosenProduct.name || "পণ্যের নাম";
 
-  document.querySelector("#detail-stock").textContent =
-    chosenProduct.inStock === false ? "স্টক নেই" : "স্টকে আছে";
+  document.querySelector("#item-price").textContent =
+    money(chosenProduct.sellingPrice);
+
+  document.querySelector("#detail-stock").textContent = "স্টকে আছে";
 
   document.querySelector("#detail-description").textContent =
     chosenProduct.description || "এই পণ্যের বিস্তারিত তথ্য পাওয়া যায়নি।";
 
-  // রং ও সাইজের অপশন
   const variants = Array.isArray(chosenProduct.variants)
     ? chosenProduct.variants
     : [];
 
   const variantBox = document.querySelector("#detail-variants");
-
   const colors = [...new Set(variants.map(v => v.color).filter(Boolean))];
   const sizes = [...new Set(variants.map(v => v.size).filter(Boolean))];
 
@@ -95,7 +137,9 @@ function chooseProduct(id) {
       <label>রং নির্বাচন করুন
         <select id="selected-color" required>
           <option value="">রং বেছে নিন</option>
-          ${colors.map(color => `<option value="${escapeHtml(color)}">${escapeHtml(color)}</option>`).join("")}
+          ${colors.map(color =>
+            `<option value="${escapeHtml(color)}">${escapeHtml(color)}</option>`
+          ).join("")}
         </select>
       </label>`;
   }
@@ -105,10 +149,18 @@ function chooseProduct(id) {
       <label>সাইজ নির্বাচন করুন
         <select id="selected-size" required>
           <option value="">সাইজ বেছে নিন</option>
-          ${sizes.map(size => `<option value="${escapeHtml(size)}">${escapeHtml(size)}</option>`).join("")}
+          ${sizes.map(size =>
+            `<option value="${escapeHtml(size)}">${escapeHtml(size)}</option>`
+          ).join("")}
         </select>
       </label>`;
   }
+
+  variantHTML += `
+    <label>পরিমাণ
+      <input type="number" id="selected-quantity"
+        min="1" max="20" value="1" required>
+    </label>`;
 
   variantBox.innerHTML = variantHTML;
 
@@ -123,22 +175,56 @@ async function loadProducts() {
   try {
     const response = await fetch("/api/products");
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "পণ্য লোড করা যায়নি।");
+
+    if (!response.ok) {
+      throw new Error(data.error || "পণ্য লোড করা যায়নি।");
+    }
+
     products = data.data || [];
     deliveryCharges = data.deliveryCharges || {};
     renderProducts();
+
   } catch (error) {
     count.textContent = "লোড করা যায়নি";
-    grid.innerHTML = '<div class="loading">পণ্য দেখানো যাচ্ছে না। Cloudflare-এ Business Koro API key সেট করা আছে কি না যাচাই করুন।</div>';
+    grid.innerHTML =
+      '<div class="loading">পণ্য দেখানো যাচ্ছে না। একটু পরে আবার চেষ্টা করুন।</div>';
     showNotice(error.message);
   }
 }
+
+categoryNav?.querySelectorAll("[data-category]").forEach(button => {
+  button.addEventListener("click", () => {
+    selectedCategory = button.dataset.category;
+
+    categoryNav.querySelectorAll("[data-category]").forEach(item => {
+      item.classList.toggle("active", item === button);
+    });
+
+    renderProducts();
+  });
+});
+
 form.addEventListener("submit", async event => {
   event.preventDefault();
+
   if (!chosenProduct) return;
+
+  const color = document.querySelector("#selected-color")?.value || "";
+  const size = document.querySelector("#selected-size")?.value || "";
+  const quantity = Number(
+    document.querySelector("#selected-quantity")?.value || 1
+  );
+
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
+    alert("পরিমাণ ১ থেকে ২০-এর মধ্যে দিন।");
+    return;
+  }
+
   submitButton.disabled = true;
-  submitButton.textContent = "অর্ডার পাঠানো হচ্ছে…";
+  submitButton.textContent = "অর্ডার জমা হচ্ছে…";
+
   const data = new FormData(form);
+
   const payload = {
     productId: chosenProduct.id,
     customerName: data.get("customerName"),
@@ -147,21 +233,33 @@ form.addEventListener("submit", async event => {
     customerDivision: data.get("customerDivision"),
     customerDistrict: data.get("customerDistrict"),
     customerArea: data.get("customerArea"),
-    sellingPrice: Number(chosenProduct.suggestedPrice),
-    customerNote: data.get("customerNote")
+    customerNote: data.get("customerNote"),
+    color,
+    size,
+    quantity
   };
+
   try {
     const response = await fetch("/api/orders", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload)
     });
+
     const result = await response.json();
-    if (!response.ok) throw new Error(result.message || result.error || "অর্ডার জমা হয়নি।");
-    alert(result.duplicate ? "এই ধরনের অর্ডার আগে জমা হয়েছে। Business Koro-তে অর্ডারটি যাচাই করুন।" : "আপনার অর্ডার পাঠানো হয়েছে। ধন্যবাদ!");
+
+    if (!response.ok) {
+      throw new Error(result.error || "অর্ডার জমা হয়নি।");
+    }
+
+    alert(
+      `আপনার অর্ডার RS Mart-এ জমা হয়েছে।\nঅর্ডার নম্বর: ${result.orderId}\nধন্যবাদ!`
+    );
+
     form.reset();
     orderSection.hidden = true;
     chosenProduct = null;
+
   } catch (error) {
     alert(`অর্ডার জমা হয়নি: ${error.message}`);
   } finally {
@@ -169,5 +267,7 @@ form.addEventListener("submit", async event => {
     submitButton.textContent = "অর্ডার কনফার্ম করুন";
   }
 });
+
 searchInput?.addEventListener("input", renderProducts);
+
 loadProducts();
