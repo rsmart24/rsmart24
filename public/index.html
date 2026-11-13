@@ -66,24 +66,79 @@
       <div id="products-grid" class="products-grid"><div class="loading">পণ্য লোড হচ্ছে…</div></div>
     </section>
 
-    <section class="order-section" id="order" hidden>
-      <div class="order-intro"><span class="eyebrow">CHECKOUT</span><h2>অর্ডার সম্পন্ন করুন</h2><p>আপনার সঠিক তথ্য দিয়ে ফর্মটি পূরণ করুন।</p><div id="selected-product" class="selected-product"></div></div>
+    
+<section class="order-section product-detail-section" id="order" hidden>
+  <div class="product-detail-layout">
+
+    <div class="product-detail-image" id="detail-image">
+      <span class="image-placeholder">RS</span>
+    </div>
+
+    <div class="product-detail-info">
+      <span class="eyebrow">PRODUCT DETAILS</span>
+      <h2 id="selected-product">পণ্যের নাম</h2>
+
+      <div class="detail-price" id="item-price">—</div>
+
+      <div class="detail-stock" id="detail-stock"></div>
+
+      <div class="detail-description" id="detail-description"></div>
+
+      <div class="detail-variants" id="detail-variants"></div>
+
+      <div class="price-summary">
+        <div>
+          <span>ডেলিভারি চার্জ</span>
+          <b id="delivery-price">API থেকে নির্ধারিত</b>
+        </div>
+      </div>
+
+      <h3>আপনার অর্ডারের তথ্য</h3>
+
       <form id="order-form" class="order-form">
         <input type="hidden" id="productId">
+
         <div class="field-grid">
-          <label>আপনার নাম<input name="customerName" required maxlength="100" placeholder="পূর্ণ নাম"></label>
-          <label>মোবাইল নম্বর<input name="customerPhone" required inputmode="tel" maxlength="20" placeholder="01XXXXXXXXX"></label>
-          <label>বিভাগ<input name="customerDivision" required placeholder="যেমন: চট্টগ্রাম"></label>
-          <label>জেলা<input name="customerDistrict" required placeholder="জেলার নাম"></label>
-          <label>থানা / উপজেলা / এলাকা<input name="customerArea" required placeholder="এলাকার নাম"></label>
-          <label>সম্পূর্ণ ঠিকানা<input name="customerAddress" required placeholder="বাসা, রোড, গ্রাম ইত্যাদি"></label>
+          <label>আপনার নাম
+            <input name="customerName" required maxlength="100" placeholder="পূর্ণ নাম">
+          </label>
+
+          <label>মোবাইল নম্বর
+            <input name="customerPhone" required inputmode="tel" maxlength="20" placeholder="01XXXXXXXXX">
+          </label>
+
+          <label>বিভাগ
+            <input name="customerDivision" required placeholder="যেমন: চট্টগ্রাম">
+          </label>
+
+          <label>জেলা
+            <input name="customerDistrict" required placeholder="জেলার নাম">
+          </label>
+
+          <label>থানা / উপজেলা / এলাকা
+            <input name="customerArea" required placeholder="এলাকার নাম">
+          </label>
+
+          <label>সম্পূর্ণ ঠিকানা
+            <input name="customerAddress" required placeholder="বাসা, রোড, গ্রাম ইত্যাদি">
+          </label>
         </div>
-        <label>অতিরিক্ত নির্দেশনা (ঐচ্ছিক)<textarea name="customerNote" rows="3" maxlength="500" placeholder="অর্ডার সম্পর্কে কিছু জানাতে চাইলে লিখুন"></textarea></label>
-        <div class="price-summary"><div><span>পণ্যের মূল্য</span><b id="item-price">—</b></div><div><span>ডেলিভারি চার্জ (গ্রাহক বহন করবেন)</span><b id="delivery-price">API থেকে নির্ধারিত</b></div></div>
-        <button class="submit-button" type="submit" id="submit-button">অর্ডার কনফার্ম করুন</button>
-        <p class="form-footnote">অর্ডার পাঠানোর আগে আপনার দেওয়া তথ্য যাচাই করে নিন।</p>
+
+        <label>অতিরিক্ত নির্দেশনা (ঐচ্ছিক)
+          <textarea name="customerNote" rows="3" maxlength="500" placeholder="কিছু জানাতে চাইলে লিখুন"></textarea>
+        </label>
+
+        <button class="submit-button" type="submit" id="submit-button">
+          অর্ডার কনফার্ম করুন
+        </button>
+
+        <p class="form-footnote">অর্ডার পাঠানোর আগে আপনার তথ্য যাচাই করুন।</p>
       </form>
-    </section>
+    </div>
+
+  </div>
+</section>
+
   </main>
 
   <footer><a class="brand footer-brand" href="#"><span class="brand-mark">RS</span><span>RS <b>Mart</b><small>YOUR EVERYDAY STORE</small></span></a><p>© <span id="year"></span> RS Mart. All rights reserved.</p><a href="https://wa.me/8801716862470" target="_blank" rel="noopener">WhatsApp: 01716862470</a></footer>
