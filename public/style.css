@@ -1303,3 +1303,36 @@ footer > a:last-child {
     font-size: 17px;
   }
 }
+
+/* ===== RS MART PROMOTIONAL BANNER ===== */
+
+.hero-banner {
+  width: 94%;
+  max-width: 1500px;
+  margin: 24px auto 28px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #061522;
+  box-shadow: 0 8px 28px rgba(0, 20, 45, .16);
+}
+
+.hero-banner img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Mobile banner */
+@media (max-width: 600px) {
+  .hero-banner {
+    width: 96%;
+    margin: 14px auto 18px;
+    border-radius: 12px;
+  }
+
+  .hero-banner img {
+    width: 100%;
+    height: auto;
+  }
+}
