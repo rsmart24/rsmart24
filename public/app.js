@@ -76,7 +76,12 @@ function renderProducts() {
           <h3>${escapeHtml(p.name)}</h3>
           <p>${escapeHtml(p.description || "বিস্তারিত জানতে পণ্যটি দেখুন।")}</p>
           <div class="product-bottom">
-            <span class="price">${money(p.sellingPrice)}</span>
+            <span class="price">
+  ${p.originalPrice !== null && p.originalPrice !== undefined && p.originalPrice > p.sellingPrice
+    ? `<del class="old-price">${money(p.originalPrice)}</del>`
+    : ""}
+  <strong>${money(p.sellingPrice)}</strong>
+</span>
             <button class="buy-button"
               data-buy="${escapeHtml(p.id)}"
               ${outOfStock || !hasPrice ? "disabled" : ""}>
