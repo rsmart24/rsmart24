@@ -225,6 +225,7 @@
         button.addEventListener("click", async () => {
           const id = button.dataset.save;
           const price = document.querySelector(`#price-${CSS.escape(id)}`).value;
+          const originalPrice = document.querySelector(`#original-price-${CSS.escape(id)}`).value;
           const category = document.querySelector(`#category-${CSS.escape(id)}`).value;
           const visible = document.querySelector(`#visible-${CSS.escape(id)}`).value;
 
