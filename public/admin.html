@@ -1,0 +1,367 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RS Mart | Admin Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f3f5f9;
+      color: #172033;
+      font-family: Arial, sans-serif;
+    }
+    header {
+      background: #101828;
+      color: white;
+      padding: 18px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    header h2 { margin: 0; }
+    main { max-width: 1100px; margin: 28px auto; padding: 0 16px; }
+    .panel {
+      background: white;
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 22px;
+      box-shadow: 0 3px 15px #1720330d;
+    }
+    h2, h3 { margin-top: 0; }
+    input, select, button {
+      font: inherit;
+      padding: 11px;
+      border-radius: 7px;
+    }
+    input, select {
+      border: 1px solid #d5dbe5;
+      width: 100%;
+      background: white;
+    }
+    button {
+      border: 0;
+      background: #087f5b;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:disabled { opacity: .6; cursor: wait; }
+    .secondary { background: #475467; }
+    .danger { background: #c0392b; }
+    .login-box { max-width: 420px; margin: 70px auto; }
+    .login-box input { margin: 8px 0 14px; }
+    .product, .order {
+      border: 1px solid #e5e9f0;
+      border-radius: 10px;
+      padding: 16px;
+      margin: 14px 0;
+    }
+    .product {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: 16px;
+    }
+    .product img {
+      width: 100px;
+      height: 110px;
+      object-fit: contain;
+      background: #f5f6f8;
+      border-radius: 8px;
+    }
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 12px 0;
+    }
+    label { display: block; font-size: 14px; }
+    label input, label select { margin-top: 6px; }
+    .muted { color: #667085; font-size: 13px; }
+    .message { margin: 12px 0; color: #b42318; }
+    .hidden { display: none !important; }
+    .order-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+    @media (max-width: 650px) {
+      .fields, .order-grid { grid-template-columns: 1fr; }
+      .product { grid-template-columns: 75px 1fr; gap: 10px; }
+      .product img { width: 75px; height: 90px; }
+      header { padding: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>RS Mart Admin</h2>
+    <button id="logout" class="secondary hidden">Logout</button>
+  </header>
+
+  <main>
+    <section id="login-panel" class="panel login-box">
+      <h2>Admin Login</h2>
+      <p class="muted">শুধু অনুমোদিত Admin প্রবেশ করতে পারবেন।</p>
+      <form id="login-form">
+        <label>Admin Password
+          <input id="password" type="password" required autocomplete="current-password">
+        </label>
+        <button type="submit" id="login-button">Login করুন</button>
+      </form>
+      <p id="login-message" class="message"></p>
+    </section>
+
+    <section id="dashboard" class="hidden">
+      <div class="panel">
+        <h2>পণ্য ব্যবস্থাপনা</h2>
+        <p class="muted">বিক্রয়মূল্য, ক্যাটাগরি এবং পণ্যের দৃশ্যমানতা নিয়ন্ত্রণ করুন।</p>
+        <div id="products">পণ্য লোড হচ্ছে...</div>
+      </div>
+
+      <div class="panel">
+        <h2>গ্রাহকের অর্ডার</h2>
+        <div id="orders">অর্ডার লোড হচ্ছে...</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const loginPanel = document.querySelector("#login-panel");
+    const dashboard = document.querySelector("#dashboard");
+    const loginForm = document.querySelector("#login-form");
+    const loginMessage = document.querySelector("#login-message");
+    const productsBox = document.querySelector("#products");
+    const ordersBox = document.querySelector("#orders");
+    const logoutButton = document.querySelector("#logout");
+
+    function escapeHTML(value) {
+      return String(value ?? "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;",
+        '"': "&quot;", "'": "&#39;"
+      })[c]);
+    }
+
+    async function api(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: "same-origin",
+        ...options,
+        headers: {
+          ...(options.headers || {}),
+          ...(options.body ? { "Content-Type": "application/json" } : {})
+        }
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "অনুরোধ সম্পন্ন হয়নি।");
+      }
+      return data;
+    }
+
+    function showDashboard() {
+      loginPanel.classList.add("hidden");
+      dashboard.classList.remove("hidden");
+      logoutButton.classList.remove("hidden");
+    }
+
+    function showLogin() {
+      dashboard.classList.add("hidden");
+      loginPanel.classList.remove("hidden");
+      logoutButton.classList.add("hidden");
+    }
+
+    async function loadProducts() {
+      const result = await api("/api/admin/products");
+
+      if (!result.data.length) {
+        productsBox.textContent = "কোনো পণ্য পাওয়া যায়নি।";
+        return;
+      }
+
+      productsBox.innerHTML = result.data.map(p => `
+        <article class="product">
+          <div>
+            ${p.images && p.images[0]
+              ? `<img src="${escapeHTML(p.images[0])}" alt="">`
+              : `<div>RS Mart</div>`}
+          </div>
+          <div>
+            <h3>${escapeHTML(p.name)}</h3>
+            <p class="muted">Business Koro প্রস্তাবিত মূল্য: ৳${escapeHTML(p.suggestedPrice ?? "—")}</p>
+            <div class="fields">
+              <label>আপনার বিক্রয়মূল্য (৳)
+                <input type="number" min="0" step="1"
+                  id="price-${escapeHTML(p.id)}"
+                  value="${p.sellingPrice ?? ""}" placeholder="বিক্রয়মূল্য">
+              </label>
+              <label>ক্যাটাগরি
+                <select id="category-${escapeHTML(p.id)}">
+                  <option value="">ক্যাটাগরি নির্বাচন</option>
+                  <option value="smart-gadget" ${p.category === "smart-gadget" ? "selected" : ""}>স্মার্ট গ্যাজেট</option>
+                  <option value="decorating" ${p.category === "decorating" ? "selected" : ""}>ডেকোরেটিং আইটেম</option>
+                  <option value="fashion" ${p.category === "fashion" ? "selected" : ""}>ফ্যাশন আইটেম</option>
+                  <option value="gaming" ${p.category === "gaming" ? "selected" : ""}>গেমিং আইটেম</option>
+                </select>
+              </label>
+              <label>ওয়েবসাইটে দেখাবেন?
+                <select id="visible-${escapeHTML(p.id)}">
+                  <option value="yes" ${p.isVisible ? "selected" : ""}>হ্যাঁ</option>
+                  <option value="no" ${!p.isVisible ? "selected" : ""}>না</option>
+                </select>
+              </label>
+            </div>
+            <button data-save="${escapeHTML(p.id)}">পরিবর্তন সংরক্ষণ</button>
+          </div>
+        </article>
+      `).join("");
+
+      productsBox.querySelectorAll("[data-save]").forEach(button => {
+        button.addEventListener("click", async () => {
+          const id = button.dataset.save;
+          const price = document.querySelector(`#price-${CSS.escape(id)}`).value;
+          const category = document.querySelector(`#category-${CSS.escape(id)}`).value;
+          const visible = document.querySelector(`#visible-${CSS.escape(id)}`).value;
+
+          if (price.trim() === "" || !Number.isSafeInteger(Number(price)) || Number(price) < 0) {
+            alert("সঠিক বিক্রয়মূল্য লিখুন।");
+            return;
+          }
+
+          button.disabled = true;
+          try {
+            await api(`/api/admin/products/${encodeURIComponent(id)}`, {
+              method: "PUT",
+              body: JSON.stringify({
+                sellingPrice: Number(price),
+                category,
+                isVisible: visible === "yes"
+              })
+            });
+            alert("পণ্যের সেটিংস সংরক্ষণ হয়েছে।");
+          } catch (error) {
+            alert(error.message);
+          } finally {
+            button.disabled = false;
+          }
+        });
+      });
+    }
+
+    async function loadOrders() {
+      const result = await api("/api/admin/orders");
+      const labels = {
+        new: "নতুন",
+        confirmed: "নিশ্চিত",
+        shipped: "পাঠানো হয়েছে",
+        delivered: "ডেলিভারি সম্পন্ন",
+        cancelled: "বাতিল"
+      };
+
+      if (!result.data.length) {
+        ordersBox.textContent = "এখনো কোনো অর্ডার আসেনি।";
+        return;
+      }
+
+      ordersBox.innerHTML = result.data.map(o => `
+        <article class="order">
+          <h3>অর্ডার: ${escapeHTML(o.id)}</h3>
+          <div class="order-grid">
+            <div><b>পণ্য:</b> ${escapeHTML(o.product_name)}</div>
+            <div><b>ক্রেতা:</b> ${escapeHTML(o.customer_name)}</div>
+            <div><b>মোবাইল:</b> ${escapeHTML(o.customer_phone)}</div>
+            <div><b>পরিমাণ:</b> ${escapeHTML(o.quantity)}</div>
+            <div><b>রং:</b> ${escapeHTML(o.color || "প্রযোজ্য নয়")}</div>
+            <div><b>সাইজ:</b> ${escapeHTML(o.size || "প্রযোজ্য নয়")}</div>
+            <div><b>পণ্যের মূল্য:</b> ৳${escapeHTML(o.unit_price)}</div>
+            <div><b>ডেলিভারি:</b> ৳${escapeHTML(o.delivery_charge)}</div>
+            <div><b>মোট:</b> ৳${escapeHTML(o.total_amount)}</div>
+            <div><b>ঠিকানা:</b> ${escapeHTML(o.customer_division)}, ${escapeHTML(o.customer_district)}, ${escapeHTML(o.customer_area)}, ${escapeHTML(o.customer_address)}</div>
+          </div>
+          <p><b>নির্দেশনা:</b> ${escapeHTML(o.note || "নেই")}</p>
+          <label>অর্ডারের অবস্থা
+            <select data-status="${escapeHTML(o.id)}">
+              ${Object.entries(labels).map(([value, label]) =>
+                `<option value="${value}" ${o.status === value ? "selected" : ""}>${label}</option>`
+              ).join("")}
+            </select>
+          </label>
+          <button class="save-status" data-order="${escapeHTML(o.id)}">অবস্থা সংরক্ষণ</button>
+        </article>
+      `).join("");
+
+      ordersBox.querySelectorAll("[data-order]").forEach(button => {
+        button.addEventListener("click", async () => {
+          const id = button.dataset.order;
+          const status = ordersBox.querySelector(`[data-status="${CSS.escape(id)}"]`).value;
+          button.disabled = true;
+          try {
+            await api(`/api/admin/orders/${encodeURIComponent(id)}`, {
+              method: "PATCH",
+              body: JSON.stringify({ status })
+            });
+            alert("অর্ডারের অবস্থা আপডেট হয়েছে।");
+          } catch (error) {
+            alert(error.message);
+          } finally {
+            button.disabled = false;
+          }
+        });
+      });
+    }
+
+    async function openDashboard() {
+      try {
+        await api("/api/admin/products");
+        showDashboard();
+        await Promise.all([loadProducts(), loadOrders()]);
+      } catch (error) {
+        if (error.message.includes("Admin login")) {
+          showLogin();
+        } else {
+          showLogin();
+          loginMessage.textContent = error.message;
+        }
+      }
+    }
+
+    loginForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      const button = document.querySelector("#login-button");
+      button.disabled = true;
+      loginMessage.textContent = "";
+
+      try {
+        await api("/api/admin/login", {
+          method: "POST",
+          body: JSON.stringify({
+            password: document.querySelector("#password").value
+          })
+        });
+        document.querySelector("#password").value = "";
+        showDashboard();
+        await Promise.all([loadProducts(), loadOrders()]);
+      } catch (error) {
+        loginMessage.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    logoutButton.addEventListener("click", async () => {
+      try {
+        await api("/api/admin/logout", { method: "POST" });
+      } finally {
+        showLogin();
+      }
+    });
+
+    openDashboard();
+  </script>
+</body>
+</html>
