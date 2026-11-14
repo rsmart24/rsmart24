@@ -123,6 +123,13 @@
     @media(max-width:380px){.product .fields,.order-grid{grid-template-columns:1fr}}
     .order-items-list{grid-column:1/-1;padding:10px;border-radius:8px;background:#f4f7fb;line-height:1.8}
 
+    .copy-field{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 9px;border:1px solid #e7ebf2;border-radius:8px;background:#fff;min-width:0}
+    .copy-field>div{min-width:0;overflow-wrap:anywhere;line-height:1.55}
+    .copy-field button{padding:6px 10px;font-size:12px;flex:0 0 auto}
+    .copy-all{margin:12px 0 2px;background:#175cd3;padding:9px 13px}
+    .copy-all.copied,.copy-one.copied{background:#067647}
+    .order-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media(max-width:650px){.order-grid{grid-template-columns:1fr}.copy-field{padding:9px}}
     .admin-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 18px}
     .stat-card{padding:16px;border:1px solid #e3e9f2;border-radius:12px;background:linear-gradient(145deg,#fff,#f8faff);box-shadow:0 3px 12px #17203308}
     .stat-card span{display:block;color:#667085;font-size:12px;font-weight:600}
@@ -234,6 +241,38 @@
       const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
       const url = URL.createObjectURL(blob); const a = document.createElement("a");
       a.href = url; a.download = "rs-mart-orders.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
+    }
+
+    function copyField(label, value) {
+      const text = String(value ?? "").trim() || "—";
+      return `<div class="copy-field"><div><b>${escapeHTML(label)}:</b> <span>${escapeHTML(text)}</span></div><button type="button" class="copy-one secondary" data-copy-value="${escapeHTML(text)}" aria-label="${escapeHTML(label)} কপি">কপি</button></div>`;
+    }
+    function orderItemsText(o) {
+      try {
+        const items = JSON.parse(o.order_items_json || "[]");
+        if (items.length) return items.map(item => [item.name, "পরিমাণ: " + item.quantity, "মূল্য: ৳" + (item.subtotal ?? ""), item.color ? "রং: " + item.color : "", item.size ? "সাইজ: " + item.size : ""].filter(Boolean).join(" | ")).join("\\n");
+      } catch (_) {}
+      return o.product_name || "—";
+    }
+    function renderOrderDetails(o) {
+      const address = [o.customer_division,o.customer_district,o.customer_area,o.customer_address].filter(Boolean).join(", ") || "—";
+      const payment = o.payment_method === "advance" ? "অগ্রিম ডেলিভারি চার্জ" : "ক্যাশ অন ডেলিভারি";
+      const trxFormat = Number(o.transaction_id_format_valid) === 1 ? "ফরম্যাট সঠিক (পেমেন্ট যাচাই বাকি)" : o.payment_method === "advance" ? "ফরম্যাট ভুল" : "প্রযোজ্য নয়";
+      const verification = o.payment_verification_status === "pending_manual" ? "অ্যাডমিন যাচাই বাকি" : (o.payment_verification_status || "—");
+      const fields = [
+        ["অর্ডার নম্বর",o.id],["তারিখ",o.created_at || o.createdAt],["পণ্য",orderItemsText(o)],
+        ["ক্রেতার নাম",o.customer_name],["মোবাইল নম্বর",o.customer_phone],["পরিমাণ",o.quantity],
+        ["রং",o.color || "প্রযোজ্য নয়"],["সাইজ",o.size || "প্রযোজ্য নয়"],
+        ["পণ্যের মোট মূল্য","৳"+(o.unit_price ?? 0)],["ডেলিভারি চার্জ","৳"+(o.delivery_charge ?? 0)],
+        ["মোট টাকা","৳"+(o.total_amount ?? 0)],["পেমেন্ট পদ্ধতি",payment],
+        ["ছাড়",(o.discount_percent || 0)+"% (৳"+(o.discount_amount || 0)+")"],
+        ["অগ্রিম ডেলিভারি চার্জ","৳"+(o.advance_payment_amount || 0)],
+        ["বিকাশ Transaction ID",o.transaction_id || "প্রযোজ্য নয়"],
+        ["Transaction ID ফরম্যাট",trxFormat],["পেমেন্ট যাচাই",verification],
+        ["সম্পূর্ণ ঠিকানা",address],["নির্দেশনা",o.note || "নেই"]
+      ];
+      const allText = fields.map(([label,value]) => label + ": " + (String(value ?? "").trim() || "—")).join("\\n");
+      return `<button type="button" class="copy-all" data-copy-all="${escapeHTML(allText)}">সব তথ্য একসঙ্গে কপি করুন</button><div class="order-grid">${fields.map(([label,value]) => copyField(label,value)).join("")}</div>`;
     }
 
     function escapeHTML(value) {
@@ -399,26 +438,8 @@ if (
         <article class="order">
           <h3>অর্ডার: ${escapeHTML(o.id)}</h3>
           <details><summary>অর্ডারের সম্পূর্ণ তথ্য দেখুন</summary>
-          <div class="order-grid">
-            <div><b>পণ্য:</b> ${escapeHTML(o.product_name)}</div>
-            ${(() => { try { const items=JSON.parse(o.order_items_json||"[]"); return items.length>1 ? '<div class="order-items-list"><b>পণ্যের তালিকা:</b><br>'+items.map(item=>escapeHTML(item.name)+' × '+escapeHTML(item.quantity)+' — ৳'+escapeHTML(item.subtotal)+(item.color||item.size?' ('+escapeHTML([item.color,item.size].filter(Boolean).join(' / '))+')':'')).join('<br>')+'</div>' : ''; } catch (_) { return ''; } })()}
-            <div><b>ক্রেতা:</b> ${escapeHTML(o.customer_name)}</div>
-            <div><b>মোবাইল:</b> ${escapeHTML(o.customer_phone)}</div>
-            <div><b>পরিমাণ:</b> ${escapeHTML(o.quantity)}</div>
-            <div><b>রং:</b> ${escapeHTML(o.color || "প্রযোজ্য নয়")}</div>
-            <div><b>সাইজ:</b> ${escapeHTML(o.size || "প্রযোজ্য নয়")}</div>
-            <div><b>পণ্যের মোট মূল্য:</b> ৳${escapeHTML(o.unit_price)}</div>
-            <div><b>ডেলিভারি:</b> ৳${escapeHTML(o.delivery_charge)}</div>
-            <div><b>মোট:</b> ৳${escapeHTML(o.total_amount)}</div>
-            <div><b>পেমেন্ট পদ্ধতি:</b> ${o.payment_method === "advance" ? "অগ্রিম ডেলিভারি চার্জ" : "ক্যাশ অন ডেলিভারি"}</div>
-            <div><b>ছাড়:</b> ${escapeHTML(o.discount_percent || 0)}% (৳${escapeHTML(o.discount_amount || 0)})</div>
-            <div><b>অগ্রিম ডেলিভারি চার্জ:</b> ৳${escapeHTML(o.advance_payment_amount || 0)}</div>
-            <div><b>বিকাশ Transaction ID:</b> ${escapeHTML(o.transaction_id || "প্রযোজ্য নয়")}</div>
-            <div><b>Transaction ID ফরম্যাট:</b> ${Number(o.transaction_id_format_valid) === 1 ? "✓ ফরম্যাট সঠিক (পেমেন্ট যাচাই বাকি)" : o.payment_method === "advance" ? "✕ ফরম্যাট ভুল" : "প্রযোজ্য নয়"}</div>
-            <div><b>পেমেন্ট যাচাই:</b> ${o.payment_verification_status === "pending_manual" ? "অ্যাডমিন যাচাই বাকি" : escapeHTML(o.payment_verification_status || "—")}</div>
-            <div><b>ঠিকানা:</b> ${escapeHTML(o.customer_division)}, ${escapeHTML(o.customer_district)}, ${escapeHTML(o.customer_area)}, ${escapeHTML(o.customer_address)}</div>
-          </div>
-          <p><b>নির্দেশনা:</b> ${escapeHTML(o.note || "নেই")}</p></details>
+          ${renderOrderDetails(o)}
+          </details>
           <div class="order-actions"><label>অর্ডারের অবস্থা
             <select data-status="${escapeHTML(o.id)}">
               ${Object.entries(labels).map(([value, label]) =>
@@ -536,6 +557,28 @@ if (
           tab.setAttribute("aria-selected", String(tab === button));
         });
       });
+    });
+
+    async function copyText(text, button) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const area = document.createElement("textarea");
+          area.value = text; area.style.position = "fixed"; area.style.opacity = "0";
+          document.body.appendChild(area); area.select();
+          const ok = document.execCommand("copy"); area.remove();
+          if (!ok) throw new Error("কপি করা যায়নি");
+        }
+        const old = button.textContent; button.textContent = "কপি হয়েছে ✓"; button.classList.add("copied");
+        setTimeout(() => { button.textContent = old; button.classList.remove("copied"); }, 1600);
+      } catch (error) { alert("কপি করা যায়নি। আবার চেষ্টা করুন।"); }
+    }
+    ordersBox.addEventListener("click", event => {
+      const one = event.target.closest(".copy-one");
+      const all = event.target.closest(".copy-all");
+      if (one) copyText(one.dataset.copyValue || "", one);
+      if (all) copyText(all.dataset.copyAll || "", all);
     });
 
     document.querySelector("#product-search").addEventListener("input", applyProductFilters);
