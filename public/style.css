@@ -2636,3 +2636,8 @@ body.order-modal-open {
  .payment-option{padding:9px 8px;margin:7px 0}
  .payment-mini-breakdown{margin-top:8px;padding:7px 8px;gap:4px}
 }
+
+/* Compact spacing only; payment method wording and design remain unchanged. */
+.payment-choice{padding:12px;margin:16px 0}
+.payment-option{padding:10px 12px;margin:7px 0}
+.payment-mini-breakdown{margin-top:8px;padding:8px 10px}
