@@ -98,6 +98,22 @@ function renderProducts() {
   });
 }
 
+function closeOrderModal() {
+  orderSection.hidden = true;
+  document.body.classList.remove("order-modal-open");
+  document.querySelector(".floating-shop")?.classList.remove("is-hidden");
+}
+
+document.querySelector("#close-order")?.addEventListener("click", closeOrderModal);
+
+orderSection.addEventListener("click", event => {
+  if (event.target === orderSection) closeOrderModal();
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !orderSection.hidden) closeOrderModal();
+});
+
 function chooseProduct(id) {
   chosenProduct = products.find(p => String(p.id) === String(id));
   if (!chosenProduct) return;
@@ -163,8 +179,9 @@ function chooseProduct(id) {
     `ঢাকার ভিতরে ${money(deliveryCharges.insideDhaka)} / ঢাকার বাইরে ${money(deliveryCharges.outsideDhaka)}`;
 
   orderSection.hidden = false;
+  document.body.classList.add("order-modal-open");
   document.querySelector(".floating-shop")?.classList.add("is-hidden");
-  orderSection.scrollIntoView({ behavior: "smooth" });
+  document.querySelector("#close-order")?.focus();
 }
 
 document.querySelectorAll(".category-nav [data-category]").forEach(button => {
@@ -257,8 +274,7 @@ form.addEventListener("submit", async event => {
     alert(`আপনার অর্ডার RS Mart-এ জমা হয়েছে। অর্ডার নম্বর: ${result.orderId}`);
 
     form.reset();
-    orderSection.hidden = true;
-    document.querySelector(".floating-shop")?.classList.remove("is-hidden");
+    closeOrderModal();
     chosenProduct = null;
 
   } catch (error) {
