@@ -89,6 +89,11 @@
       gap: 10px;
       margin: 12px 0;
     }
+    @media (max-width: 900px) {
+      .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .product { min-width: 0; }
+      .product > div:last-child { min-width: 0; }
+    }
     @media (max-width: 650px) {
       .fields, .order-grid { grid-template-columns: 1fr; }
       .product { grid-template-columns: 75px 1fr; gap: 10px; }
