@@ -344,9 +344,9 @@ async function createOrder(request, env) {
   const totalAmount = subtotal + deliveryCharge - discountAmount;
   const advancePaymentAmount = paymentMethod === "advance" ? deliveryCharge : 0;
   const transactionId = String(body.transactionId || "").trim().toUpperCase();
-  const transactionIdFormatValid = paymentMethod === "advance" && /^[A-Z0-9]{10}$/.test(transactionId);
+  const transactionIdFormatValid = paymentMethod === "advance" && /^[A-Z0-9]{8,12}$/.test(transactionId);
   if (paymentMethod === "advance" && !transactionIdFormatValid) {
-    return json({ error: "বিকাশ Transaction ID সঠিক ফরম্যাটে দিন (১০ অক্ষরের আলফানিউমেরিক আইডি)।" }, 400);
+    return json({ error: "বিকাশ Transaction ID সঠিক ফরম্যাটে দিন (৮–১২ অক্ষরের আলফানিউমেরিক আইডি)।" }, 400);
   }
   if (!Number.isSafeInteger(totalAmount) || totalAmount < 0) {
     return json({ error: "অর্ডারের মোট মূল্য সঠিক নয়।" }, 400);
