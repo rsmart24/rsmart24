@@ -1696,3 +1696,93 @@ footer > a:last-child {
     line-height: 1.5;
   }
 }
+
+
+/* ===== RS MART / GADGET GARDEN-INSPIRED RESPONSIVE STOREFRONT ===== */
+:root { --gg-navy:#07141d; --gg-orange:#ff821b; --gg-bg:#f1f3f8; }
+body { background:var(--gg-bg); color:#101828; }
+.site-header { position:relative; top:auto; background:var(--gg-navy); border:0; box-shadow:none; }
+.top-strip { min-height:25px; background:#050d13; color:#d9e1e8; border-bottom:1px solid rgba(255,255,255,.08); }
+.top-strip-inner { width:min(1216px,90%); min-height:25px; margin:auto; display:flex; align-items:center; justify-content:space-between; gap:16px; font:11px Inter,sans-serif; }
+.top-brandline,.top-utilities { display:flex; align-items:center; gap:7px; }
+.top-brandline strong { color:var(--gg-orange); font-weight:700; }
+.top-flash { color:var(--gg-orange); font-size:15px; }
+.top-tagline { color:#aab6c2; letter-spacing:.15px; }
+.top-utilities { gap:16px; }
+.top-phone,.language-toggle { display:inline-flex; align-items:center; gap:7px; color:#dbe4ec; text-decoration:none; font:11px Inter,sans-serif; }
+.top-phone span,.globe { color:var(--gg-orange); }
+.language-toggle { border:0; background:transparent; padding:2px 0; cursor:pointer; }
+.language-toggle:hover { color:var(--gg-orange); }
+.main-header { background:#081721; border-bottom:1px solid #263640; }
+.main-header-inner { width:min(1216px,90%); min-height:63px; margin:auto; padding:7px 0; display:grid; grid-template-columns:44px minmax(260px,1fr) 80px; align-items:center; gap:16px; }
+.main-header .brand { display:flex; align-items:center; justify-content:flex-start; }
+.main-header .brand-logo { display:block; width:42px; height:44px; max-width:42px; max-height:44px; object-fit:contain; }
+.main-header .header-search { width:100%; max-width:672px; height:39px; justify-self:start; display:flex; align-items:center; border:1px solid #3b4650; border-radius:24px; background:#202d37; overflow:hidden; }
+.main-header .header-search input { min-width:0; height:100%; flex:1; border:0; border-radius:0; background:transparent; color:#f8fafc; padding:0 17px; font:13px Inter,"Hind Siliguri",sans-serif; }
+.main-header .header-search input::placeholder { color:#aeb8c2; }
+.main-header .header-search input:focus { box-shadow:none; background:transparent; }
+.main-header .header-search button { width:43px; height:31px; margin-right:4px; border:0; border-radius:20px; background:var(--gg-orange); color:white; font-size:23px; line-height:1; cursor:pointer; }
+.header-cart { min-height:39px; padding:0 12px; display:flex; align-items:center; justify-content:center; gap:8px; border:1px solid #34434d; border-radius:12px; background:#14232d; color:#fff; text-decoration:none; font:700 12px Inter,sans-serif; }
+.cart-symbol { font-size:19px; }
+.category-nav { min-height:37px; display:block; background:#07141d; border:0; overflow:hidden; }
+.category-nav-inner { width:min(1216px,90%); min-height:37px; margin:auto; padding:0; display:flex; align-items:center; gap:5px; overflow-x:auto; scrollbar-width:none; }
+.category-nav-inner::-webkit-scrollbar { display:none; }
+.category-nav-inner a { flex-shrink:0; min-height:25px; height:25px; padding:0 13px; display:inline-flex; align-items:center; gap:7px; border-radius:7px; color:#dbe3e9; font:12px Inter,"Hind Siliguri",sans-serif; text-decoration:none; }
+.category-nav-inner a span:first-child { color:#d2dbe2; font-size:13px; }
+.category-nav-inner a:hover,.category-nav-inner a.active { background:#30251d; color:var(--gg-orange); }
+.category-nav-inner a.active span:first-child { color:var(--gg-orange); }
+.store-main { min-height:65vh; padding-top:1px; background:var(--gg-bg); }
+.hero-banner { width:min(1216px,90%); margin:24px auto 54px; border-radius:15px; background:#111c26; box-shadow:0 2px 5px rgba(15,23,42,.10); }
+.banner-slider { aspect-ratio: 1216 / 380; }
+.banner-slide img { object-fit:cover; }
+.banner-arrow { width:39px; height:39px; border:1px solid #fff; background:rgba(0,0,0,.25); font-size:18px; }
+.banner-arrow:hover { background:var(--gg-orange); }
+.banner-prev { left:13px; } .banner-next { right:13px; }
+.banner-dots { bottom:10px; gap:7px; }
+.banner-dots button { width:8px; height:8px; background:rgba(255,255,255,.65); }
+.banner-dots button.active { width:23px; background:#fff; }
+.trust-row { width:min(1216px,90%); margin:0 auto 30px; padding:0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:15px; border:0; background:transparent; }
+.trust-row div { min-height:82px; padding:15px 17px; display:flex; flex-direction:column; justify-content:center; gap:4px; border:1px solid #e0e5ec; border-radius:15px; background:#fff; box-shadow:0 1px 3px rgba(16,24,40,.04); }
+.trust-row b { color:#101828; font:700 14px Inter,"Hind Siliguri",sans-serif; }
+.trust-row span { color:#667085; font:12px "Hind Siliguri",sans-serif; }
+.products-section { width:min(1216px,90%); padding:28px 0 60px; }
+.section-heading h2 { font-size:27px; }
+.floating-shop { position:fixed; z-index:60; right:18px; bottom:20px; width:55px; height:55px; display:grid; place-items:center; border:2px solid #fff; border-radius:50%; background:var(--gg-orange); color:#fff; text-decoration:none; box-shadow:0 4px 15px rgba(255,130,27,.28); font-size:26px; }
+.floating-shop:hover { background:#f06f08; transform:translateY(-2px); }
+.order-section:not([hidden]) ~ .floating-shop { display:none; }
+@media(max-width:760px) {
+ .top-strip-inner { width:96%; min-height:27px; font-size:9px; }
+ .top-tagline { display:none; }
+ .top-utilities { gap:10px; }
+ .main-header-inner { width:96%; min-height:59px; padding:7px 0; grid-template-columns:38px minmax(0,1fr) 68px; gap:8px; }
+ .main-header .brand-logo { width:37px; height:40px; max-width:37px; max-height:40px; }
+ .main-header .header-search { height:36px; }
+ .main-header .header-search input { padding:0 10px; font-size:11px; }
+ .main-header .header-search button { width:33px; height:29px; font-size:19px; }
+ .header-cart { min-height:35px; padding:0 7px; gap:4px; font-size:10px; }
+ .cart-symbol { font-size:16px; }
+ .category-nav-inner { width:96%; min-height:36px; gap:3px; }
+ .category-nav-inner a { min-height:25px; height:25px; padding:0 9px; font-size:10px; }
+ .hero-banner { width:96%; margin:14px auto 36px; border-radius:10px; }
+ .banner-slider { aspect-ratio: 16 / 9; }
+ .banner-arrow { width:30px; height:30px; font-size:13px; }
+ .banner-prev { left:7px; } .banner-next { right:7px; }
+ .trust-row { width:96%; gap:7px; margin-bottom:20px; }
+ .trust-row div { min-height:73px; padding:10px 8px; border-radius:12px; }
+ .trust-row b { font-size:10px; line-height:1.35; }
+ .trust-row span { font-size:9px; line-height:1.4; }
+ .products-section { width:96%; padding:20px 0 42px; }
+ .floating-shop { right:12px; bottom:14px; width:51px; height:51px; }
+}
+@media(max-width:390px) {
+ .top-phone { font-size:9px; }
+ .main-header-inner { grid-template-columns:34px minmax(0,1fr) 61px; gap:6px; }
+ .main-header .brand-logo { width:34px; max-width:34px; }
+ .header-cart { padding:0 5px; font-size:9px; }
+ .category-nav-inner a { padding:0 7px; font-size:9px; }
+}
+
+.floating-shop.is-hidden { display:none; }
+
+.top-strip .language-toggle { min-height:0; padding:2px 0; border:0; border-radius:0; background:transparent; color:#dbe4ec; font:11px Inter,sans-serif; }
+.top-strip .language-toggle:hover { background:transparent; color:var(--gg-orange); }

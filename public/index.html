@@ -17,61 +17,43 @@
 
 
 <header class="site-header">
-
-  <div class="main-header">
-    <div class="main-header-inner">
-
-      <a class="brand" href="/">
-        <span class="brand-name">RS Mart</span>
-        <img src="/rs-mart-logo.png" alt="RS Mart Logo" class="brand-logo">
-      </a>
-
-      <div class="header-search">
-        <input type="search" id="product-search" placeholder="পণ্য খুঁজুন...">
-        <button type="button" aria-label="Search">⌕</button>
+  <div class="top-strip">
+    <div class="top-strip-inner">
+      <div class="top-brandline"><span class="top-flash">ϟ</span> <strong>RS Mart</strong><span class="top-tagline" data-i18n="tagline">Smart Deals For Smart People</span></div>
+      <div class="top-utilities">
+        <a href="https://wa.me/8801716862470" target="_blank" rel="noopener" class="top-phone"><span>☎</span> +8801716862470</a>
+        <button type="button" class="language-toggle" id="language-toggle" aria-label="Change language"><span class="globe">◎</span> <span id="language-label">বাংলা</span></button>
       </div>
-
-      <div class="header-actions">
-        <a class="top-contact" href="https://wa.me/8801716862470" target="_blank" rel="noopener">
-          <span class="whatsapp-icon">◉</span>
-          <span>
-            <small>WhatsApp-এ যোগাযোগ</small>
-            <strong>01716862470</strong>
-          </span>
-        </a>
-
-        <button type="button" class="language-toggle" id="language-toggle">
-          বাংলা | English
-        </button>
-      </div>
-
     </div>
   </div>
 
-  <nav class="category-nav" aria-label="পণ্যের ক্যাটাগরি">
+  <div class="main-header">
+    <div class="main-header-inner">
+      <a class="brand" href="/" aria-label="RS Mart home">
+        <img src="/rs-mart-logo.png" alt="RS Mart Logo" class="brand-logo">
+      </a>
+      <div class="header-search">
+        <input type="search" id="product-search" placeholder="Search smart gadgets, fashion or more..." data-i18n-placeholder="search">
+        <button type="button" aria-label="Search" id="search-button">⌕</button>
+      </div>
+      <a class="header-cart" href="#products"><span class="cart-symbol">🛒</span><span data-i18n="cart">Cart</span></a>
+    </div>
+  </div>
+
+  <nav class="category-nav" aria-label="Product categories">
     <div class="category-nav-inner">
-      <a href="#products" class="active" data-category="all">
-        <span>▦</span> সব পণ্য
-      </a>
-      <a href="#products" data-category="smart-gadget">
-        <span>▣</span> স্মার্ট গ্যাজেট
-      </a>
-      <a href="#products" data-category="decorating">
-        <span>⌂</span> ডেকোরেটিং আইটেম
-      </a>
-      <a href="#products" data-category="fashion">
-        <span>♧</span> ফ্যাশন আইটেম
-      </a>
-      <a href="#products" data-category="gaming">
-        <span>🎮</span> গেমিং আইটেম
-      </a>
+      <a href="#products" class="active" data-category="all"><span>♨</span> <span data-i18n="all">All Products</span></a>
+      <a href="#products" data-category="smart-gadget"><span>▣</span> <span data-i18n="gadgets">Smart Gadgets</span></a>
+      <a href="#products" data-category="decorating"><span>⌂</span> <span data-i18n="decor">Home Decoration</span></a>
+      <a href="#products" data-category="fashion"><span>♧</span> <span data-i18n="fashion">Clothes</span></a>
+      <a href="#products" data-category="gaming"><span>🎮</span> <span data-i18n="gaming">Gamer Special</span></a>
+      <a href="#products" data-category="all"><span>▤</span> <span data-i18n="mobile">Mobile Accessories</span></a>
     </div>
   </nav>
-
 </header>
 
 
-  <main>
+  <main class="store-main">
    
 
 <section class="hero-banner">
@@ -112,28 +94,24 @@
 
 <section class="trust-row">
   <div>
-    <b>Cash on Delivery</b>
-    <span>পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন</span>
+    <b data-i18n="cod">Cash on Delivery</b>
+    <span data-i18n="codDesc">পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন</span>
   </div>
   <div>
-    <b>Fast Delivery</b>
-    <span>দ্রুত ও নির্ভরযোগ্য ডেলিভারি</span>
+    <b data-i18n="fast">Fast Delivery</b>
+    <span data-i18n="fastDesc">দ্রুত ও নির্ভরযোগ্য ডেলিভারি</span>
   </div>
   <div>
-    <b>Nationwide Shipping</b>
-    <span>সারা বাংলাদেশে পণ্য পৌঁছে দিচ্ছি</span>
+    <b data-i18n="ship">Nationwide Shipping</b>
+    <span data-i18n="shipDesc">সারা বাংলাদেশে পণ্য পৌঁছে দিচ্ছি</span>
   </div>
 </section>
 
 
-    <section class="trust-row">
-      <div><b>সহজ অর্ডার</b><span>কয়েকটি ধাপেই অর্ডার</span></div>
-      <div><b>সরাসরি যোগাযোগ</b><span>প্রয়োজনে WhatsApp সাপোর্ট</span></div>
-      <div><b>নিরাপদ তথ্য</b><span>সুরক্ষিত অর্ডার প্রক্রিয়া</span></div>
-    </section>
+
 
     <section class="products-section" id="products">
-      <div class="section-heading"><div><span class="eyebrow">OUR COLLECTION</span><h2>আমাদের পণ্য</h2></div><span id="product-count" class="muted">পণ্য লোড হচ্ছে…</span></div>
+      <div class="section-heading"><div><span class="eyebrow">OUR COLLECTION</span><h2 data-i18n="ourProducts">আমাদের পণ্য</h2></div><span id="product-count" class="muted">পণ্য লোড হচ্ছে…</span></div>
       <div id="notice" class="notice" role="status" hidden></div>
       <div id="products-grid" class="products-grid"><div class="loading">পণ্য লোড হচ্ছে…</div></div>
     </section>
@@ -230,7 +208,7 @@
 
   </main>
 
-  <footer><a class="brand footer-brand" href="#"><span class="brand-mark">RS</span><span>RS <b>Mart</b><small>YOUR EVERYDAY STORE</small></span></a><p>© <span id="year"></span> RS Mart. All rights reserved.</p><a href="https://wa.me/8801716862470" target="_blank" rel="noopener">WhatsApp: 01716862470</a></footer>
+  <a class="floating-shop" href="#products" aria-label="Shop products"><span>♧</span></a>\n  <footer><a class="brand footer-brand" href="#"><span class="brand-mark">RS</span><span>RS <b>Mart</b><small>YOUR EVERYDAY STORE</small></span></a><p>© <span id="year"></span> RS Mart. All rights reserved.</p><a href="https://wa.me/8801716862470" target="_blank" rel="noopener">WhatsApp: 01716862470</a></footer>
   <script src="/app.js"></script>
 </body>
 </html>

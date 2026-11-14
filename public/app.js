@@ -11,6 +11,7 @@ let products = [];
 let deliveryCharges = {};
 let chosenProduct = null;
 let activeCategory = "all";
+let currentLanguage = "bn";
 
 document.querySelector("#year").textContent = new Date().getFullYear();
 
@@ -58,7 +59,7 @@ function renderProducts() {
     return matchesSearch && matchesCategory;
   });
 
-  count.textContent = `${filteredProducts.length}টি পণ্য`;
+  count.textContent = currentLanguage === "bn" ? `${filteredProducts.length}টি পণ্য` : `${filteredProducts.length} products`;
 
   if (!filteredProducts.length) {
     grid.innerHTML = '<div class="loading">এই ক্যাটাগরিতে কোনো পণ্য পাওয়া যায়নি।</div>';
@@ -85,7 +86,7 @@ function renderProducts() {
             <button class="buy-button"
               data-buy="${escapeHtml(p.id)}"
               ${outOfStock || !hasPrice ? "disabled" : ""}>
-              ${outOfStock ? "স্টক নেই" : !hasPrice ? "দাম আসছে" : "অর্ডার করুন"}
+              ${outOfStock ? (currentLanguage === "bn" ? "স্টক নেই" : "Out of stock") : !hasPrice ? (currentLanguage === "bn" ? "দাম আসছে" : "Price pending") : (currentLanguage === "bn" ? "অর্ডার করুন" : "Order now")}
             </button>
           </div>
         </div>
@@ -162,6 +163,7 @@ function chooseProduct(id) {
     `ঢাকার ভিতরে ${money(deliveryCharges.insideDhaka)} / ঢাকার বাইরে ${money(deliveryCharges.outsideDhaka)}`;
 
   orderSection.hidden = false;
+  document.querySelector(".floating-shop")?.classList.add("is-hidden");
   orderSection.scrollIntoView({ behavior: "smooth" });
 }
 
@@ -221,7 +223,7 @@ form.addEventListener("submit", async event => {
   }
 
   submitButton.disabled = true;
-  submitButton.textContent = "অর্ডার পাঠানো হচ্ছে…";
+  submitButton.textContent = currentLanguage === "bn" ? "অর্ডার পাঠানো হচ্ছে…" : "Submitting order…";
 
   const data = new FormData(form);
 
@@ -256,6 +258,7 @@ form.addEventListener("submit", async event => {
 
     form.reset();
     orderSection.hidden = true;
+    document.querySelector(".floating-shop")?.classList.remove("is-hidden");
     chosenProduct = null;
 
   } catch (error) {
@@ -263,7 +266,7 @@ form.addEventListener("submit", async event => {
 
   } finally {
     submitButton.disabled = false;
-    submitButton.textContent = "অর্ডার কনফার্ম করুন";
+    submitButton.textContent = currentLanguage === "bn" ? "অর্ডার কনফার্ম করুন" : "Confirm order";
   }
 });
 
@@ -344,3 +347,78 @@ async function setupAddressDropdowns() {
 }
 
 setupAddressDropdowns();
+
+/* ===== BANNER SLIDER ===== */
+(() => {
+  const slider = document.querySelector("#banner-slider");
+  if (!slider) return;
+  const slides = [...slider.querySelectorAll(".banner-slide")];
+  const dots = [...slider.querySelectorAll(".banner-dots button")];
+  const previous = document.querySelector("#banner-prev");
+  const next = document.querySelector("#banner-next");
+  if (!slides.length) return;
+  let active = 0, timer = null, touchStartX = 0;
+  function showSlide(index) {
+    active = (index + slides.length) % slides.length;
+    slides.forEach((slide, i) => slide.classList.toggle("active", i === active));
+    dots.forEach((dot, i) => dot.classList.toggle("active", i === active));
+  }
+  function startAuto() {
+    clearInterval(timer);
+    timer = setInterval(() => showSlide(active + 1), 5000);
+  }
+  previous?.addEventListener("click", () => { showSlide(active - 1); startAuto(); });
+  next?.addEventListener("click", () => { showSlide(active + 1); startAuto(); });
+  dots.forEach((dot, i) => dot.addEventListener("click", () => { showSlide(i); startAuto(); }));
+  slider.addEventListener("touchstart", e => { touchStartX = e.changedTouches[0].clientX; }, {passive:true});
+  slider.addEventListener("touchend", e => {
+    const delta = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(delta) > 45) showSlide(active + (delta < 0 ? 1 : -1));
+    startAuto();
+  }, {passive:true});
+  slider.addEventListener("mouseenter", () => clearInterval(timer));
+  slider.addEventListener("mouseleave", startAuto);
+  showSlide(0);
+  startAuto();
+})();
+
+/* ===== BENGALI / ENGLISH LANGUAGE SWITCH ===== */
+const languageButton = document.querySelector("#language-toggle");
+const languageLabel = document.querySelector("#language-label");
+const translations = {
+  bn: {
+    tagline:"স্মার্ট মানুষের জন্য স্মার্ট ডিল", cart:"কার্ট", all:"সব পণ্য",
+    gadgets:"স্মার্ট গ্যাজেট", decor:"হোম ডেকোরেশন", fashion:"ফ্যাশন",
+    gaming:"গেমিং আইটেম", mobile:"মোবাইল অ্যাক্সেসরিজ", ourProducts:"আমাদের পণ্য",
+    cod:"ক্যাশ অন ডেলিভারি", codDesc:"পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন",
+    fast:"দ্রুত ডেলিভারি", fastDesc:"দ্রুত ও নির্ভরযোগ্য ডেলিভারি",
+    ship:"সারা দেশে ডেলিভারি", shipDesc:"সারা বাংলাদেশে পণ্য পৌঁছে দিচ্ছি",
+    search:"পণ্য খুঁজুন..."
+  },
+  en: {
+    tagline:"Smart Deals For Smart People", cart:"Cart", all:"All Products",
+    gadgets:"Smart Gadgets", decor:"Home Decoration", fashion:"Fashion",
+    gaming:"Gaming Items", mobile:"Mobile Accessories", ourProducts:"Our Products",
+    cod:"Cash on Delivery", codDesc:"Pay when your product arrives",
+    fast:"Fast Delivery", fastDesc:"Quick and reliable delivery",
+    ship:"Nationwide Shipping", shipDesc:"Delivering across Bangladesh",
+    search:"Search smart gadgets, fashion or more..."
+  }
+};
+function setLanguage(language) {
+  currentLanguage = language;
+  document.documentElement.lang = language;
+  document.querySelectorAll("[data-i18n]").forEach(element => {
+    const key = element.dataset.i18n;
+    if (translations[language][key]) element.textContent = translations[language][key];
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(element => {
+    const key = element.dataset.i18nPlaceholder;
+    if (translations[language][key]) element.placeholder = translations[language][key];
+  });
+  if (languageLabel) languageLabel.textContent = language === "bn" ? "বাংলা" : "English";
+  if (products.length) renderProducts();
+}
+languageButton?.addEventListener("click", () => setLanguage(currentLanguage === "bn" ? "en" : "bn"));
+setLanguage("bn");
+document.querySelector("#search-button")?.addEventListener("click", () => searchInput?.focus());
