@@ -137,8 +137,8 @@ function renderProducts() {
       event.stopPropagation();
       const product = products.find(p => String(p.id) === String(button.dataset.cart));
       if (!product) return;
-      chosenProduct = product;
-      addChosenProductToCart();
+      if ((product.variants || []).some(v => v.color || v.size)) { chooseProduct(product.id); return; }
+      addProductToCart(product);
       button.textContent = "✓ যোগ হয়েছে";
     });
   });
@@ -343,13 +343,19 @@ document.querySelector("#close-order-success")?.addEventListener("click", () => 
   document.querySelector("#order-success").hidden = true;
 });
 document.querySelector("#detail-form-open")?.addEventListener("click", openDetailOrderForm);
-document.querySelector("#detail-add-cart")?.addEventListener("click", addChosenProductToCart);
-document.querySelector(".header-cart")?.addEventListener("click", event => {
-  event.preventDefault();
-  const cart = JSON.parse(localStorage.getItem("rsMartCart") || "[]");
-  showNotice(cart.length ? `আপনার কার্টে ${cart.reduce((n, item) => n + Number(item.quantity || 1), 0)}টি পণ্য আছে।` : "আপনার কার্ট এখনো খালি।");
-  document.querySelector("#products")?.scrollIntoView({ behavior: "smooth" });
+document.querySelector("#detail-add-cart")?.addEventListener("click", () => {
+  const color=document.querySelector("#selected-color")?.value||"", size=document.querySelector("#selected-size")?.value||"";
+  if(document.querySelector("#selected-color")&&!color){alert("পণ্যের রং নির্বাচন করুন।");return;}
+  if(document.querySelector("#selected-size")&&!size){alert("পণ্যের সাইজ নির্বাচন করুন।");return;}
+  addProductToCart(chosenProduct,color,size);
 });
+document.querySelector("#detail-multi-order")?.addEventListener("click", () => {
+  const color=document.querySelector("#selected-color")?.value||"", size=document.querySelector("#selected-size")?.value||"";
+  if(document.querySelector("#selected-color")&&!color){alert("পণ্যের রং নির্বাচন করুন।");return;}
+  if(document.querySelector("#selected-size")&&!size){alert("পণ্যের সাইজ নির্বাচন করুন।");return;}
+  addProductToCart(chosenProduct,color,size); openCartPage();
+});
+document.querySelector(".header-cart")?.addEventListener("click", event => { event.preventDefault(); openCartPage(); });
 
 function chooseProduct(id) {
   lastOrderTrigger = document.activeElement;
@@ -366,6 +372,9 @@ function chooseProduct(id) {
     return;
   }
 
+  cartCheckoutMode=false; chosenCartItems=null; orderSection.classList.remove("cart-checkout-mode");
+  document.querySelector("#cart-checkout-summary").hidden=true;
+  document.querySelector("#order-quantity").closest("label").hidden=false;
   document.querySelector("#productId").value = chosenProduct.id;
   document.querySelector("#detail-image").innerHTML = productImage(chosenProduct);
   document.querySelector("#selected-product").textContent = chosenProduct.name || "পণ্যের নাম";
@@ -415,6 +424,7 @@ function chooseProduct(id) {
   document.querySelector("#close-order")?.focus();
 }
 updateCartCount();
+renderCartPage();
 
 document.querySelectorAll(".category-nav [data-category], .footer-links [data-category]").forEach(button => {
   button.addEventListener("click", () => {
@@ -478,6 +488,7 @@ form.addEventListener("submit", async event => {
 
   const payload = {
     productId: chosenProduct.id,
+    items: cartCheckoutMode && chosenCartItems?.length ? chosenCartItems : [{id:chosenProduct.id,quantity:Number(data.get("quantity")||1),color,size}],
     customerName: data.get("customerName"),
     customerPhone: data.get("customerPhone"),
     customerAddress: data.get("customerAddress"),
@@ -506,6 +517,10 @@ form.addEventListener("submit", async event => {
     }
 
     form.reset();
+    if(cartCheckoutMode){localStorage.removeItem("rsMartCart");updateCartCount();renderCartPage();}
+    cartCheckoutMode=false;chosenCartItems=null;orderSection.classList.remove("cart-checkout-mode");
+    document.querySelector("#cart-checkout-summary").hidden=true;
+    document.querySelector("#order-quantity").closest("label").hidden=false;
     closeOrderModal();
     chosenProduct = null;
     document.querySelector("#success-order-id").textContent = result.orderId;
