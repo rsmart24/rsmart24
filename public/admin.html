@@ -231,6 +231,11 @@
     id="original-price-${escapeHTML(p.id)}"
     value="${p.originalPrice ?? ""}" placeholder="পুরোনো দাম">
 </label>
+              <label>অগ্রিম পেমেন্ট ছাড় (%)
+                <input type="number" min="0" max="90" step="1"
+                  id="discount-${escapeHTML(p.id)}"
+                  value="${p.discountPercent ?? 0}" placeholder="যেমন 10 বা 20">
+              </label>
               <label>ক্যাটাগরি
                 <select id="category-${escapeHTML(p.id)}">
                   <option value="">ক্যাটাগরি নির্বাচন</option>
@@ -257,6 +262,7 @@
           const id = button.dataset.save;
           const price = document.querySelector(`#price-${CSS.escape(id)}`).value;
           const originalPrice = document.querySelector(`#original-price-${CSS.escape(id)}`).value;
+          const discountPercent = document.querySelector(`#discount-${CSS.escape(id)}`).value;
           const category = document.querySelector(`#category-${CSS.escape(id)}`).value;
           const visible = document.querySelector(`#visible-${CSS.escape(id)}`).value;
 if (
@@ -266,6 +272,10 @@ if (
   alert("সঠিক পুরোনো দাম লিখুন।");
   return;
 }
+          if (discountPercent.trim() === "" || !Number.isInteger(Number(discountPercent)) || Number(discountPercent) < 0 || Number(discountPercent) > 90) {
+            alert("অগ্রিম পেমেন্ট ছাড় ০ থেকে ৯০ শতাংশের মধ্যে দিন।");
+            return;
+          }
           if (price.trim() === "" || !Number.isSafeInteger(Number(price)) || Number(price) < 0) {
             alert("সঠিক বিক্রয়মূল্য লিখুন।");
             return;
@@ -278,6 +288,7 @@ if (
               body: JSON.stringify({
   sellingPrice: Number(price),
   originalPrice: originalPrice.trim() === "" ? null : Number(originalPrice),
+  discountPercent: Number(discountPercent),
   category,
   isVisible: visible === "yes"
 })
@@ -321,6 +332,12 @@ if (
             <div><b>পণ্যের মূল্য:</b> ৳${escapeHTML(o.unit_price)}</div>
             <div><b>ডেলিভারি:</b> ৳${escapeHTML(o.delivery_charge)}</div>
             <div><b>মোট:</b> ৳${escapeHTML(o.total_amount)}</div>
+            <div><b>পেমেন্ট পদ্ধতি:</b> ${o.payment_method === "advance" ? "অগ্রিম ডেলিভারি চার্জ" : "ক্যাশ অন ডেলিভারি"}</div>
+            <div><b>ছাড়:</b> ${escapeHTML(o.discount_percent || 0)}% (৳${escapeHTML(o.discount_amount || 0)})</div>
+            <div><b>অগ্রিম ডেলিভারি চার্জ:</b> ৳${escapeHTML(o.advance_payment_amount || 0)}</div>
+            <div><b>বিকাশ Transaction ID:</b> ${escapeHTML(o.transaction_id || "প্রযোজ্য নয়")}</div>
+            <div><b>Transaction ID ফরম্যাট:</b> ${Number(o.transaction_id_format_valid) === 1 ? "✓ ফরম্যাট সঠিক (পেমেন্ট যাচাই বাকি)" : o.payment_method === "advance" ? "✕ ফরম্যাট ভুল" : "প্রযোজ্য নয়"}</div>
+            <div><b>পেমেন্ট যাচাই:</b> ${o.payment_verification_status === "pending_manual" ? "অ্যাডমিন যাচাই বাকি" : escapeHTML(o.payment_verification_status || "—")}</div>
             <div><b>ঠিকানা:</b> ${escapeHTML(o.customer_division)}, ${escapeHTML(o.customer_district)}, ${escapeHTML(o.customer_area)}, ${escapeHTML(o.customer_address)}</div>
           </div>
           <p><b>নির্দেশনা:</b> ${escapeHTML(o.note || "নেই")}</p></details>
