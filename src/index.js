@@ -124,8 +124,8 @@ function publicProduct(p, setting) {
     name: p.name,
     description: p.description || "",
     images: Array.isArray(p.images) && p.images.length ? p.images : (Array.isArray(p.imageUrls) && p.imageUrls.length ? p.imageUrls : (p.image || p.imageUrl || p.thumbnailUrl ? [p.image || p.imageUrl || p.thumbnailUrl] : [])),
-    inStock: p.inStock === false || ["out_of_stock","out of stock","sold_out","sold out"].includes(String(p.stockStatus || p.stock_status || "").toLowerCase()) ? false : p.inStock,
-    stockStatus: p.stockStatus || p.stock_status || (p.inStock === false ? "out_of_stock" : "in_stock"),
+    inStock: p.inStock === false || ["out_of_stock","out of stock","sold_out","sold out"].includes(String(p.stockStatus || p.stock_status || p.inStock || "").toLowerCase()) ? false : p.inStock,
+    stockStatus: p.stockStatus || p.stock_status || (p.inStock === false || ["out_of_stock","out of stock","sold_out","sold out"].includes(String(p.inStock || "").toLowerCase()) ? "out_of_stock" : "in_stock"),
     variants: Array.isArray(p.variants)
       ? p.variants.map(v => ({
           color: v.color || "",
