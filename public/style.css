@@ -2671,3 +2671,15 @@ body.order-modal-open {
  .payment-option{padding:6px 8px!important;margin:4px 0!important}
  .payment-mini-breakdown{margin-top:5px!important;padding:5px 7px!important}
 }
+
+
+/* Product availability: keep sold-out items visible, but clearly unavailable. */
+.product-card.is-out-of-stock .product-image img{filter:blur(3px);opacity:.72}
+.product-card.is-out-of-stock .product-image{position:relative}
+.stock-out-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(16,24,40,.22);color:#fff;font-size:17px;font-weight:800;letter-spacing:.3px;text-shadow:0 1px 4px #000;border-radius:inherit}
+.product-card.is-out-of-stock .product-info{opacity:.78}
+.checkout-cart-line{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.checkout-cart-variants{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.checkout-cart-variants .cart-variant-field{font-size:12px}
+.checkout-cart-variants select{max-width:150px}
+@media(max-width:600px){.checkout-cart-line{gap:8px}.checkout-cart-variants{display:grid;grid-template-columns:1fr}.checkout-cart-variants select{max-width:100%}}
