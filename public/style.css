@@ -2015,3 +2015,171 @@ body.order-modal-open {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ===== PREMIUM RS MART FOOTER ===== */
+.site-footer {
+  margin-top: 30px;
+  padding: 0;
+  display: block;
+  border: 0;
+  background: #07141d;
+  color: #dbe4ec;
+}
+.footer-main {
+  width: min(1216px, 90%);
+  margin: auto;
+  padding: 48px 0 38px;
+  display: grid;
+  grid-template-columns: 1.35fr .8fr 1fr;
+  gap: 58px;
+}
+.footer-about { min-width: 0; }
+.footer-logo {
+  width: 76px;
+  height: 68px;
+  margin-bottom: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 13px;
+  background: #fff;
+}
+.footer-logo img {
+  width: 100%;
+  height: 100%;
+  padding: 5px;
+  object-fit: contain;
+}
+.footer-about > p {
+  max-width: 340px;
+  margin: 0 0 20px;
+  color: #aab8c4;
+  font: 13px/1.9 "Hind Siliguri",sans-serif;
+}
+.footer-whatsapp {
+  width: min(100%, 310px);
+  min-height: 62px;
+  padding: 10px 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(37,211,102,.35);
+  border-radius: 11px;
+  background: rgba(37,211,102,.08);
+  color: #fff;
+  text-decoration: none;
+  transition: .2s ease;
+}
+.footer-whatsapp:hover {
+  border-color: #25d366;
+  background: rgba(37,211,102,.15);
+  transform: translateY(-2px);
+}
+.footer-whatsapp-icon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #25d366;
+  color: #062114;
+  font-size: 21px;
+}
+.footer-whatsapp small,
+.footer-whatsapp strong { display:block; }
+.footer-whatsapp small {
+  margin-bottom: 2px;
+  color: #aab8c4;
+  font: 11px "Hind Siliguri",sans-serif;
+}
+.footer-whatsapp strong {
+  color: #fff;
+  font: 700 15px Inter,sans-serif;
+  letter-spacing: .3px;
+}
+.footer-chat-arrow {
+  margin-left: auto;
+  color: #25d366;
+  font-size: 18px;
+}
+.footer-links,
+.footer-service { padding-top: 9px; }
+.footer-links h3,
+.footer-service h3 {
+  margin: 0 0 17px;
+  color: #fff;
+  font: 700 15px "Hind Siliguri",sans-serif;
+}
+.footer-links a {
+  width: fit-content;
+  margin: 0 0 11px;
+  display: block;
+  color: #aab8c4;
+  font: 13px "Hind Siliguri",sans-serif;
+  text-decoration: none;
+  transition: color .2s;
+}
+.footer-links a:hover { color: #ff821b; }
+.footer-service p {
+  margin: 0 0 11px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #aab8c4;
+  font: 12px "Hind Siliguri",sans-serif;
+}
+.footer-service p span {
+  color: #ff9a43;
+  font: 700 14px Inter,sans-serif;
+}
+.footer-bottom {
+  width: min(1216px, 90%);
+  min-height: 58px;
+  margin: auto;
+  padding: 14px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-top: 1px solid rgba(255,255,255,.12);
+}
+.footer-bottom p,
+.footer-bottom span,
+.footer-bottom a {
+  margin: 0;
+  color: #8999a7;
+  font: 11px Inter,"Hind Siliguri",sans-serif;
+  text-decoration: none;
+}
+.footer-bottom a { color: #ff9a43; }
+.footer-bottom a:hover { color: #ffc18c; }
+@media(max-width:760px) {
+  .site-footer { margin-top: 18px; }
+  .footer-main {
+    width: 92%;
+    padding: 34px 0 25px;
+    grid-template-columns: 1fr 1fr;
+    gap: 27px 18px;
+  }
+  .footer-about { grid-column: 1 / -1; }
+  .footer-logo { width: 66px; height: 60px; }
+  .footer-about > p { margin-bottom: 15px; font-size: 12px; }
+  .footer-whatsapp { min-height: 58px; }
+  .footer-links,.footer-service { padding-top: 0; }
+  .footer-links h3,.footer-service h3 { margin-bottom: 12px; font-size: 14px; }
+  .footer-links a,.footer-service p { margin-bottom: 9px; font-size: 11px; }
+  .footer-bottom {
+    width: 92%;
+    min-height: 0;
+    padding: 14px 0 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 15px;
+    text-align: center;
+  }
+  .footer-bottom p,.footer-bottom span,.footer-bottom a { font-size: 10px; }
+}
