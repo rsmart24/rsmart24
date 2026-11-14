@@ -165,7 +165,7 @@
               <div class="bkash-number">01716862470 <button type="button" id="copy-bkash-number">নম্বর কপি</button></div>
               <ol><li>উপরের নম্বরে Send Money নির্বাচন করুন।</li><li>নিচে দেখানো অগ্রিম ডেলিভারি চার্জ পাঠান।</li><li>সফল হলে Transaction ID লিখুন।</li></ol>
               <label>বিকাশ Transaction ID<input name="transactionId" id="transaction-id" maxlength="20" placeholder="যেমন: 8A1B2C3D4E" autocomplete="off"></label>
-              <small id="transaction-id-hint">Transaction ID-এর ফরম্যাট পরীক্ষা করা হবে; আসল পেমেন্ট অ্যাডমিন যাচাই করবেন।</small>
+              <small id="transaction-id-hint">১০ অক্ষরের Transaction ID লিখুন। ফরম্যাট ঠিক থাকলে ✓ দেখাবে। আসল পেমেন্ট অ্যাডমিন যাচাই করবেন।</small>
             </div>
           </section>
           <div class="order-total-box" id="order-total-box">
@@ -182,6 +182,16 @@
     </div>
   </div>
 </section>
+<div id="order-success" class="order-success" hidden role="status" aria-live="polite">
+  <div class="order-success-card">
+    <div class="success-check">✓</div>
+    <h2>ধন্যবাদ! আপনার অর্ডার গ্রহণ করা হয়েছে।</h2>
+    <p>আপনার অর্ডার নম্বর:</p>
+    <strong id="success-order-id"></strong>
+    <p>আমাদের প্রতিনিধি ফোন করে আপনার অর্ডার নিশ্চিত করবেন। অনুগ্রহ করে ফোনটি সচল রাখুন।</p>
+    <button type="button" id="close-order-success">ঠিক আছে</button>
+  </div>
+</div>
 
   </main>
 
