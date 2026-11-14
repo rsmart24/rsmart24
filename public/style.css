@@ -2201,3 +2201,178 @@ body.order-modal-open {
     animation-iteration-count: 1 !important;
   }
 }
+
+
+/* ===== PRODUCT DETAIL PAGE - VERTICAL GADGET STYLE ===== */
+.order-section:not([hidden]) {
+  align-items: flex-start;
+  padding: 24px 14px;
+}
+.order-section .product-detail-layout {
+  display: flex;
+  flex-direction: column;
+  width: min(900px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  gap: 0;
+  padding: 24px;
+  border-radius: 16px;
+}
+.order-section .product-detail-image {
+  width: 100%;
+  min-height: 0;
+  height: clamp(230px, 48vw, 470px);
+  max-height: 470px;
+  margin: 0 auto 18px;
+  border: 0;
+  border-radius: 12px;
+  background: #f7f8fa;
+}
+.order-section .product-detail-image img {
+  width: 100%;
+  height: 100%;
+  max-height: 470px;
+  padding: 10px;
+  object-fit: contain;
+}
+.order-section .product-detail-info { width: 100%; }
+.detail-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+.detail-category {
+  display: inline-flex;
+  padding: 5px 11px;
+  border-radius: 20px;
+  background: #fff1e6;
+  color: #b94f08;
+  font-size: 12px;
+  font-weight: 700;
+}
+.order-section .detail-stock { margin: 0; }
+.order-section .product-detail-info h2 {
+  margin: 5px 0 12px;
+  font-size: clamp(22px, 3vw, 30px);
+  line-height: 1.35;
+}
+.detail-price-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.order-section .detail-price { margin: 0; }
+.detail-old-price {
+  color: #8a929d;
+  font: 500 17px Inter, sans-serif;
+}
+.detail-offer {
+  display: inline-block;
+  margin: 9px 0 14px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  background: #fff0e7;
+  color: #d85b0b;
+  font-size: 12px;
+  font-weight: 700;
+}
+.detail-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 18px 0 24px;
+}
+.detail-actions button,
+.detail-form-open {
+  min-height: 48px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background .2s, transform .2s;
+}
+.detail-order-now,
+.detail-form-open {
+  background: #ff7a18;
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(255,122,24,.2);
+}
+.detail-order-now:hover,
+.detail-form-open:hover { background: #e9650b; }
+.detail-add-cart {
+  background: #172033;
+  color: #fff;
+}
+.detail-add-cart:hover { background: #303d52; }
+.detail-add-cart.is-added { background: #168344; }
+.detail-description-section {
+  padding: 20px 0;
+  border-top: 1px solid #edf0f3;
+  border-bottom: 1px solid #edf0f3;
+}
+.detail-description-section h3 {
+  margin: 0 0 10px;
+  color: #17212b;
+  font-size: 19px;
+}
+.order-section .detail-description {
+  margin: 0;
+  white-space: pre-line;
+  color: #5c6875;
+  font-size: 14px;
+  line-height: 1.85;
+}
+.order-section .detail-variants { margin: 18px 0; }
+.detail-form-toggle {
+  margin: 18px 0 14px;
+  text-align: center;
+}
+.detail-form-toggle h3 {
+  margin: 0 0 12px;
+  font-size: 17px;
+}
+.detail-form-open { width: 100%; }
+#detail-order-form-wrap[hidden] { display: none !important; }
+#detail-order-form-wrap {
+  padding-top: 8px;
+  scroll-margin-top: 18px;
+}
+.order-section .price-summary { margin: 16px 0; }
+.header-cart { position: relative; }
+.header-cart .cart-count {
+  display: inline-grid;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 4px;
+  padding: 0 4px;
+  place-items: center;
+  border-radius: 20px;
+  background: #ff7a18;
+  color: #fff;
+  font: 700 10px Inter, sans-serif;
+  vertical-align: middle;
+}
+.header-cart .cart-count[hidden] { display: none; }
+@media (max-width: 600px) {
+  .order-section:not([hidden]) {
+    padding: 56px 8px 10px;
+  }
+  .order-section .product-detail-layout {
+    max-height: calc(100vh - 66px);
+    padding: 14px;
+    border-radius: 13px;
+  }
+  .order-section .product-detail-image {
+    height: min(78vw, 330px);
+    margin-bottom: 14px;
+  }
+  .detail-actions { gap: 8px; margin: 14px 0 18px; }
+  .detail-actions button { min-height: 45px; padding: 10px 8px; font-size: 13px; }
+  .order-section .detail-description { font-size: 13px; }
+  .detail-form-toggle h3 { font-size: 15px; }
+}
