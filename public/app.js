@@ -40,11 +40,27 @@ function escapeHtml(value) {
   })[c]);
 }
 
+function extractImageUrl(value, depth = 0) {
+  if (!value || depth > 4) return "";
+  if (typeof value === "string") return value.trim();
+  if (Array.isArray(value)) {
+    for (const item of value) { const found = extractImageUrl(item, depth + 1); if (found) return found; }
+    return "";
+  }
+  if (typeof value === "object") {
+    for (const key of ["url","src","imageUrl","image_url","secure_url","original","originalUrl","thumbnail","thumbnailUrl","thumbnail_url","path","image","file","data"]) {
+      if (value[key]) { const found = extractImageUrl(value[key], depth + 1); if (found) return found; }
+    }
+  }
+  return "";
+}
 function productImage(product) {
-  const raw = Array.isArray(product.images) ? product.images[0] : (product.images || product.image || product.imageUrl || product.thumbnailUrl || "");
-  const src = typeof raw === "string" ? raw : (raw?.url || raw?.src || raw?.imageUrl || raw?.original || raw?.thumbnail || raw?.path || "");
+  const candidates = [product.images, product.imageUrls, product.image, product.imageUrl, product.image_url, product.thumbnailUrl, product.thumbnail_url, product.media];
+  let src = "";
+  for (const candidate of candidates) { src = extractImageUrl(candidate); if (src) break; }
+  if (src && src.startsWith("//")) src = "https:" + src;
   return src
-    ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(product.name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'image-placeholder',textContent:'ছবি পাওয়া যায়নি'}))">`
+    ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(product.name)}" loading="lazy" onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('span'),{className:'image-placeholder',textContent:'ছবি পাওয়া যায়নি'}))">`
     : `<span class="image-placeholder">ছবি পাওয়া যায়নি</span>`;
 }
 
@@ -195,7 +211,7 @@ function addChosenProductToCart() {
     const cart = JSON.parse(localStorage.getItem("rsMartCart") || "[]");
     const existing = cart.find(item => String(item.id) === String(chosenProduct.id));
     if (existing) existing.quantity = Number(existing.quantity || 1) + 1;
-    else cart.push({ id: chosenProduct.id, name: chosenProduct.name, price: chosenProduct.sellingPrice, image: Array.isArray(chosenProduct.images) ? chosenProduct.images[0] : "", quantity: 1 });
+    else cart.push({ id: chosenProduct.id, name: chosenProduct.name, price: chosenProduct.sellingPrice, image: extractImageUrl(chosenProduct.images) || extractImageUrl(chosenProduct.image) || extractImageUrl(chosenProduct.imageUrl), quantity: 1 });
     localStorage.setItem("rsMartCart", JSON.stringify(cart));
     updateCartCount();
     const button = document.querySelector("#detail-add-cart");
@@ -226,15 +242,30 @@ function updateOrderSummary() {
   const discountPercent = paymentMethod === "advance" ? Number(chosenProduct.discountPercent || 0) : 0;
   const discount = Math.round(subtotal * discountPercent / 100);
   const total = delivery === null ? null : subtotal + delivery - discount;
+  const deliveryText = delivery === null ? "ঠিকানা নির্বাচন করুন" : money(delivery);
+  const totalText = total === null ? "ঠিকানা নির্বাচন করুন" : money(total);
   document.querySelector("#subtotal-value").textContent = money(subtotal);
-  document.querySelector("#delivery-value").textContent = delivery === null ? "ঠিকানা নির্বাচন করুন" : money(delivery);
+  document.querySelector("#delivery-value").textContent = deliveryText;
   document.querySelector("#discount-row").hidden = paymentMethod !== "advance" || discount <= 0;
   document.querySelector("#discount-value").textContent = money(discount);
-  document.querySelector("#grand-total-value").textContent = total === null ? "ঠিকানা নির্বাচন করুন" : money(total);
+  document.querySelector("#grand-total-value").textContent = totalText;
+  document.querySelector("#cod-subtotal").textContent = money(subtotal);
+  document.querySelector("#cod-delivery").textContent = deliveryText;
+  document.querySelector("#cod-total").textContent = deliveryText === "ঠিকানা নির্বাচন করুন" ? deliveryText : money(subtotal + delivery);
+  document.querySelector("#advance-subtotal").textContent = money(subtotal);
+  document.querySelector("#advance-discount-amount").textContent = money(discount);
+  document.querySelector("#advance-delivery").textContent = deliveryText;
+  document.querySelector("#advance-total").textContent = totalText;
+  const percent = Number(chosenProduct.discountPercent || 0);
+  const badge = document.querySelector("#advance-discount-badge");
+  if (badge) badge.textContent = percent > 0 ? percent + "% ছাড়" : "ছাড় নেই";
+  document.querySelector(".payment-option-cod")?.classList.toggle("is-selected", paymentMethod === "cod");
+  document.querySelector(".payment-option-advance")?.classList.toggle("is-selected", paymentMethod === "advance");
+  document.querySelector(".payment-option-advance")?.classList.toggle("has-discount", percent > 0);
   document.querySelector("#bkash-payment-box").hidden = paymentMethod !== "advance";
   document.querySelector("#transaction-id").required = paymentMethod === "advance";
   const advanceAmount = document.querySelector("#advance-payment-amount");
-  if (advanceAmount) advanceAmount.textContent = delivery === null ? "ঠিকানা নির্বাচন করুন" : money(delivery);
+  if (advanceAmount) advanceAmount.textContent = deliveryText;
 }
 
 document.querySelector("#detail-order-now")?.addEventListener("click", openDetailOrderForm);
@@ -467,7 +498,7 @@ async function setupAddressDropdowns() {
       items.forEach(item => {
         const option = document.createElement("option");
         option.value = item.bn_name;
-        option.textContent = item.bn_name;
+        option.textContent = item.en_name ? `${item.bn_name} (${item.en_name})` : item.bn_name;
         select.appendChild(option);
       });
 
