@@ -450,6 +450,8 @@ async function loadProducts() {
     products = data.data || [];
     deliveryCharges = data.deliveryCharges || {};
     renderProducts();
+    renderCartPage();
+    updateCartCount();
 
   } catch (error) {
     count.textContent = "লোড করা যায়নি";
