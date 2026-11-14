@@ -2560,7 +2560,7 @@ body.order-modal-open {
 .payment-option-cod input { accent-color:#16a36a; }
 .payment-option-advance input { accent-color:#d6336c; }
 .payment-option-content { display:block; min-width:0; width:100%; }
-.payment-option-title { display:flex; flex-wrap:wrap; align-items:center; gap:8px; color:#172033; font-size:15px; }
+.payment-option .payment-option-title { display:flex; flex-wrap:wrap; align-items:center; gap:8px; color:#172033; font-size:15px; }
 .payment-option-title em { padding:3px 9px; border-radius:20px; background:#ffe3ed; color:#b42355; font-size:11px; font-style:normal; font-weight:800; }
 .payment-option-cod .payment-option-title em { background:#d9f8e9; color:#087443; }
 .payment-option-content > small { display:block; margin-top:4px; color:#667085; font-size:12px; }
