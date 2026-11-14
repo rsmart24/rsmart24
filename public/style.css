@@ -2590,3 +2590,49 @@ body.order-modal-open {
   .payment-mini-breakdown { padding:9px; font-size:11px; }
   .field-grid select, .order-form select, #customerDivision, #customerDistrict, #customerArea { min-height:46px; font-size:13px; }
 }
+
+
+/* RS Mart cart, compact product detail image and responsive multi-item checkout */
+.product-detail-layout { align-items:start; }
+.order-section .product-detail-image { width:min(100%,190px);height:190px;min-height:0;margin:0 auto 14px;border-radius:14px;background:#f8fafc;overflow:hidden; }
+.order-section .product-detail-image img { width:100%;height:100%;object-fit:contain; }
+@media(max-width:700px){.order-section .product-detail-layout{display:block}.order-section .product-detail-image{width:132px;height:132px;margin:0 auto 12px}}
+.detail-actions{flex-wrap:wrap}
+.detail-actions .detail-multi-order{background:#3157b7;color:#fff}
+.cart-page{max-width:1180px;margin:28px auto 44px;padding:24px;background:#fff;border:1px solid #e8edf4;border-radius:18px;box-shadow:0 12px 34px rgba(16,24,40,.06)}
+.cart-page[hidden]{display:none!important}
+.cart-page-header{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px}
+.cart-page-header h2{margin:4px 0;color:#172033}.cart-page-header p{margin:0;color:#667085;font-size:13px}
+.cart-continue,.cart-empty button{border:0;border-radius:9px;padding:11px 15px;background:#eef3ff;color:#3157b7;font-weight:700}
+.cart-item{display:grid;grid-template-columns:86px minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid #edf0f5}
+.cart-item-image{width:86px;height:86px;border-radius:12px;background:#f7f8fa;overflow:hidden;display:grid;place-items:center}
+.cart-item-image img{width:100%;height:100%;object-fit:contain}
+.cart-item-info h3{margin:0 0 4px;font-size:15px}.cart-item-variant{margin:0 0 5px;color:#667085;font-size:12px}
+.cart-quantity{display:flex;align-items:center;gap:8px;margin-top:8px}
+.cart-quantity button{min-width:29px;height:29px;border:1px solid #dce3ed;border-radius:7px;background:#f8fafc;color:#263449;font-weight:800}
+.cart-quantity .cart-remove{width:auto;padding:0 9px;color:#b42318;background:#fff5f4;border-color:#f3d0cd;font-size:11px}
+.cart-line-total{color:#172033;white-space:nowrap}
+.cart-empty{padding:36px 12px;text-align:center}.cart-empty-icon{font-size:38px}.cart-empty h3{margin:10px 0 5px}.cart-empty p{color:#667085;font-size:13px}
+.cart-summary{max-width:440px;margin:22px 0 0 auto;padding:17px;border:1px solid #e4eaf2;border-radius:13px;background:#f9fbff}
+.cart-summary>div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;color:#475467;font-size:14px}
+.cart-summary .cart-summary-total{margin-top:6px;padding-top:12px;border-top:1px solid #e1e7ef;color:#172033;font-size:16px;font-weight:800}
+.cart-checkout-button{width:100%;margin-top:12px;padding:13px;border:0;border-radius:9px;background:#ff7a18;color:#fff;font-weight:800}
+.floating-cart{position:fixed;right:20px;bottom:22px;z-index:90;width:54px;height:54px;border:0;border-radius:50%;background:#172033;color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(16,24,40,.25)}
+.floating-cart span{position:absolute;top:-5px;right:-4px;min-width:20px;height:20px;padding:2px 5px;border-radius:20px;background:#ff7a18;color:#fff;font:700 11px Inter,sans-serif}
+.cart-checkout-summary{margin:12px 0 18px;padding:12px;border:1px solid #dce6f7;border-radius:11px;background:#f6f9ff}
+.cart-checkout-summary h3{margin:0 0 8px;font-size:15px}.cart-checkout-summary>div{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:13px}
+.cart-checkout-mode .product-detail-image,.cart-checkout-mode .detail-meta,.cart-checkout-mode #selected-product,.cart-checkout-mode .detail-price-row,.cart-checkout-mode #detail-offer,.cart-checkout-mode .detail-actions,.cart-checkout-mode .detail-description-section,.cart-checkout-mode #detail-variants,.cart-checkout-mode .price-summary{display:none!important}
+.cart-checkout-mode .product-detail-layout{display:block}.cart-checkout-mode .product-detail-info{width:100%}
+/* Keep the existing payment options exactly as designed, only reduce their footprint. */
+@media(max-width:600px){
+ .cart-page{margin:14px 10px 30px;padding:14px;border-radius:13px}
+ .cart-page-header{align-items:flex-start;flex-direction:column}
+ .cart-item{grid-template-columns:64px minmax(0,1fr);gap:10px}
+ .cart-item-image{width:64px;height:68px}
+ .cart-line-total{grid-column:2;justify-self:start;margin-top:-4px}
+ .cart-summary{max-width:none}
+ .floating-cart{right:14px;bottom:14px;width:50px;height:50px}
+ .payment-choice{padding:9px;margin:14px 0}
+ .payment-option{padding:9px 8px;margin:7px 0}
+ .payment-mini-breakdown{margin-top:8px;padding:7px 8px;gap:4px}
+}
