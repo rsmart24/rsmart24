@@ -250,7 +250,7 @@
     function orderItemsText(o) {
       try {
         const items = JSON.parse(o.order_items_json || "[]");
-        if (items.length) return items.map(item => [item.name, "পরিমাণ: " + item.quantity, "মূল্য: ৳" + (item.subtotal ?? ""), item.color ? "রং: " + item.color : "", item.size ? "সাইজ: " + item.size : ""].filter(Boolean).join(" | ")).join("\\n");
+        if (items.length) return items.map(item => [item.name, "পরিমাণ: " + item.quantity, "মূল্য: ৳" + (item.subtotal ?? ""), item.color ? "রং: " + item.color : "", item.size ? "সাইজ: " + item.size : ""].filter(Boolean).join(" | ")).join("\n");
       } catch (_) {}
       return o.product_name || "—";
     }
@@ -271,7 +271,7 @@
         ["Transaction ID ফরম্যাট",trxFormat],["পেমেন্ট যাচাই",verification],
         ["সম্পূর্ণ ঠিকানা",address],["নির্দেশনা",o.note || "নেই"]
       ];
-      const allText = fields.map(([label,value]) => label + ": " + (String(value ?? "").trim() || "—")).join("\\n");
+      const allText = fields.map(([label,value]) => label + ": " + (String(value ?? "").trim() || "—")).join("\n");
       return `<button type="button" class="copy-all" data-copy-all="${escapeHTML(allText)}">সব তথ্য একসঙ্গে কপি করুন</button><div class="order-grid">${fields.map(([label,value]) => copyField(label,value)).join("")}</div>`;
     }
 
