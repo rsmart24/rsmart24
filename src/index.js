@@ -96,7 +96,7 @@ function publicProduct(p, setting) {
     id: p.id,
     name: p.name,
     description: p.description || "",
-    images: Array.isArray(p.images) ? p.images : [],
+    images: Array.isArray(p.images) ? p.images : (Array.isArray(p.imageUrls) ? p.imageUrls : (p.image || p.imageUrl || p.thumbnailUrl ? [p.image || p.imageUrl || p.thumbnailUrl] : [])),
     inStock: p.inStock,
     variants: Array.isArray(p.variants)
       ? p.variants.map(v => ({
