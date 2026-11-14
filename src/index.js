@@ -388,6 +388,7 @@ async function createOrder(request, env) {
 }
 
 async function adminOrders(env) {
+  await ensureOrderSchema(env);
   const result = await env.DB.prepare(
     "SELECT * FROM orders ORDER BY created_at DESC LIMIT 200"
   ).all();
@@ -403,13 +404,22 @@ async function updateOrderStatus(request, env, orderId) {
   }
 
   const allowed = ["new", "confirmed", "shipped", "delivered", "cancelled"];
-  if (!allowed.includes(body.status)) {
+  const paymentAllowed = ["pending_manual", "verified", "rejected"];
+  if (body.status !== undefined && !allowed.includes(body.status)) {
     return json({ error: "অর্ডারের অবস্থা সঠিক নয়।" }, 400);
   }
+  if (body.paymentVerificationStatus !== undefined && !paymentAllowed.includes(body.paymentVerificationStatus)) {
+    return json({ error: "পেমেন্ট যাচাইয়ের অবস্থা সঠিক নয়।" }, 400);
+  }
+  if (body.status === undefined && body.paymentVerificationStatus === undefined) {
+    return json({ error: "কোনো পরিবর্তন পাওয়া যায়নি।" }, 400);
+  }
 
-  const result = await env.DB.prepare(
-    "UPDATE orders SET status = ? WHERE id = ?"
-  ).bind(body.status, orderId).run();
+  const result = body.paymentVerificationStatus !== undefined
+    ? await env.DB.prepare("UPDATE orders SET payment_verification_status = ? WHERE id = ?")
+        .bind(body.paymentVerificationStatus, orderId).run()
+    : await env.DB.prepare("UPDATE orders SET status = ? WHERE id = ?")
+        .bind(body.status, orderId).run();
 
   if (!result.meta?.changes) {
     return json({ error: "অর্ডার পাওয়া যায়নি।" }, 404);
