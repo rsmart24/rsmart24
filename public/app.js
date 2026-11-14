@@ -308,14 +308,19 @@ document.querySelector("#cart-empty-shop")?.addEventListener("click",showProduct
 document.querySelector("#cart-checkout")?.addEventListener("click",startCartCheckout);
 document.querySelector("#floating-cart")?.addEventListener("click",openCartPage);
 window.addEventListener("popstate", () => {
-  if (!orderSection.hidden) {
-    closeOrderModal();
-    if (location.hash === "#cart") openCartPage(false);
-    else showProductsPage(false);
+  if (location.hash === "#cart") { closeOrderModal(); openCartPage(false); return; }
+  const productMatch=location.hash.match(/^#product-(.+)$/);
+  if (productMatch) {
+    const id=decodeURIComponent(productMatch[1]);
+    if (multiOrderItems.length && String(multiOrderItems[multiOrderItems.length-1].id)===String(id)) multiOrderItems.pop();
+    document.querySelector("#cart-page")?.setAttribute("hidden","");
+    document.querySelector("#products")?.removeAttribute("hidden");
+    chooseProduct(id,false);
     return;
   }
-  if (location.hash === "#cart") openCartPage(false);
-  else { document.querySelector("#cart-page")?.setAttribute("hidden",""); document.querySelector("#products")?.removeAttribute("hidden"); }
+  closeOrderModal();
+  document.querySelector("#cart-page")?.setAttribute("hidden","");
+  document.querySelector("#products")?.removeAttribute("hidden");
 });
 
 function openDetailOrderForm() {
@@ -383,16 +388,13 @@ document.querySelector("#close-order-success")?.addEventListener("click", () => 
 });
 document.querySelector("#detail-form-open")?.addEventListener("click", openDetailOrderForm);
 document.querySelector("#detail-add-cart")?.addEventListener("click", () => {
+  if (!chosenProduct) return;
   const color=document.querySelector("#selected-color")?.value||"", size=document.querySelector("#selected-size")?.value||"";
-  if(document.querySelector("#selected-color")&&!color){alert("পণ্যের রং নির্বাচন করুন।");return;}
-  if(document.querySelector("#selected-size")&&!size){alert("পণ্যের সাইজ নির্বাচন করুন।");return;}
   addProductToCart(chosenProduct,color,size);
 });
 document.querySelector("#detail-multi-order")?.addEventListener("click", () => {
   if (!chosenProduct) return;
   const color=document.querySelector("#selected-color")?.value||"", size=document.querySelector("#selected-size")?.value||"";
-  if(document.querySelector("#selected-color")&&!color){alert("পণ্যের রং নির্বাচন করুন।");return;}
-  if(document.querySelector("#selected-size")&&!size){alert("পণ্যের সাইজ নির্বাচন করুন।");return;}
   const quantity=Math.max(1,Math.min(20,Number(document.querySelector("#order-quantity")?.value||1)));
   if(cartCheckoutMode && chosenCartItems?.length){
     chosenCartItems[chosenCartItems.length-1]={id:chosenProduct.id,quantity,color,size};
@@ -408,7 +410,7 @@ document.querySelector("#detail-multi-order")?.addEventListener("click", () => {
 });
 document.querySelector(".header-cart")?.addEventListener("click", event => { event.preventDefault(); openCartPage(); });
 
-function chooseProduct(id) {
+function chooseProduct(id, pushHistory = true) {
   lastOrderTrigger = document.activeElement;
   chosenProduct = products.find(p => String(p.id) === String(id));
   if (!chosenProduct) return;
@@ -478,7 +480,7 @@ function chooseProduct(id) {
   cartButton.textContent = "🛒 Add to Cart";
   cartButton.classList.remove("is-added");
   orderSection.hidden = false;
-  history.pushState({view:"product",productId:chosenProduct.id},"","#product-"+encodeURIComponent(chosenProduct.id));
+  if(pushHistory) history.pushState({view:"product",productId:chosenProduct.id},"","#product-"+encodeURIComponent(chosenProduct.id));
   document.body.classList.add("order-modal-open");
   document.querySelector(".floating-shop")?.classList.add("is-hidden");
   document.querySelector("#close-order")?.focus();
