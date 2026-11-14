@@ -1365,3 +1365,334 @@ footer > a:last-child {
     font-size: 14px;
   }
 }
+
+/* ===== RS MART HEADER FINAL DESIGN ===== */
+
+.main-header-inner {
+  grid-template-columns: 260px minmax(200px, 1fr) auto;
+  gap: 22px;
+}
+
+.main-header .brand {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.brand-name {
+  color: #ffffff;
+  font: 800 23px Inter, sans-serif;
+  letter-spacing: .5px;
+}
+
+.main-header .brand-logo {
+  width: 210px;
+  max-width: 100%;
+  max-height: 62px;
+  object-position: left center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.language-toggle {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 9px;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.language-toggle:hover {
+  background: #087fe8;
+  border-color: #087fe8;
+}
+
+/* ===== FOUR BANNER SLIDER ===== */
+
+.hero-banner {
+  width: 94%;
+  max-width: 1500px;
+  margin: 24px auto;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #061522;
+  box-shadow: 0 8px 28px rgba(0,20,45,.16);
+}
+
+.banner-slider {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  aspect-ratio: 16 / 5;
+  background: #061522;
+  touch-action: pan-y;
+}
+
+.banner-slides {
+  display: grid;
+  width: 100%;
+  height: 100%;
+}
+
+.banner-slide {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .45s ease, visibility .45s ease;
+}
+
+.banner-slide.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.banner-slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Slider arrows */
+
+.banner-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 43px;
+  height: 43px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.5);
+  border-radius: 50%;
+  background: rgba(0,0,0,.48);
+  color: #fff;
+  font-size: 19px;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.banner-arrow:hover {
+  background: #087fe8;
+}
+
+.banner-prev {
+  left: 18px;
+}
+
+.banner-next {
+  right: 18px;
+}
+
+/* Slider dots */
+
+.banner-dots {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+}
+
+.banner-dots button {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  background: rgba(255,255,255,.65);
+  cursor: pointer;
+  transition: .25s;
+}
+
+.banner-dots button.active {
+  width: 27px;
+  background: #087fe8;
+}
+
+/* ===== DELIVERY BENEFITS ===== */
+
+.trust-row {
+  width: 94%;
+  max-width: 1500px;
+  margin: 0 auto 30px;
+  padding: 22px 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  border: 1px solid #e7edf3;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(16,24,40,.04);
+}
+
+.trust-row div {
+  min-height: 55px;
+  padding: 4px 15px;
+  justify-content: center;
+  border-right: 1px solid #e7edf3;
+}
+
+.trust-row div:last-child {
+  border-right: 0;
+}
+
+.trust-row b {
+  color: #10243a;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.trust-row span {
+  color: #667085;
+  font-size: 13px;
+}
+
+/* ===== TABLET RESPONSIVE ===== */
+
+@media (max-width: 950px) {
+  .main-header-inner {
+    grid-template-columns: 190px minmax(150px, 1fr);
+    gap: 12px;
+  }
+
+  .header-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .main-header .brand-logo {
+    width: 175px;
+  }
+}
+
+/* ===== MOBILE RESPONSIVE ===== */
+
+@media (max-width: 600px) {
+  .main-header-inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 9px;
+    padding: 11px 12px;
+  }
+
+  .main-header .brand {
+    gap: 2px;
+  }
+
+  .brand-name {
+    font-size: 19px;
+  }
+
+  .main-header .brand-logo {
+    width: 145px;
+    max-height: 43px;
+  }
+
+  .header-actions {
+    grid-column: 2;
+    grid-row: 1;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  .main-header .top-contact {
+    min-height: 40px;
+    padding: 5px 8px;
+  }
+
+  .main-header .top-contact strong {
+    font-size: 12px;
+  }
+
+  .language-toggle {
+    min-height: 29px;
+    padding: 0 9px;
+    font-size: 10px;
+  }
+
+  .main-header .header-search {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    height: 43px;
+  }
+
+  .hero-banner {
+    width: 96%;
+    margin: 13px auto 17px;
+    border-radius: 11px;
+  }
+
+  .banner-slider {
+    aspect-ratio: 16 / 9;
+  }
+
+  .banner-arrow {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .banner-prev {
+    left: 8px;
+  }
+
+  .banner-next {
+    right: 8px;
+  }
+
+  .banner-dots {
+    bottom: 8px;
+    gap: 6px;
+  }
+
+  .banner-dots button {
+    width: 7px;
+    height: 7px;
+  }
+
+  .banner-dots button.active {
+    width: 19px;
+  }
+
+  .trust-row {
+    width: 96%;
+    margin-bottom: 20px;
+    padding: 13px 7px;
+    gap: 4px;
+  }
+
+  .trust-row div {
+    min-height: 55px;
+    padding: 3px 5px;
+    border-right: 1px solid #e7edf3;
+  }
+
+  .trust-row b {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .trust-row span {
+    font-size: 9px;
+    line-height: 1.5;
+  }
+}
