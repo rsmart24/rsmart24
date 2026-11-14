@@ -119,6 +119,7 @@
     .order-actions select{margin-top:4px;padding:8px}
     @media(max-width:650px){.admin-nav{position:sticky;top:0;z-index:4;background:#f3f5f9;padding:6px 0}.product{grid-template-columns:58px minmax(0,1fr);padding:9px;gap:9px}.product img{width:58px;height:66px}.order-actions{align-items:stretch;flex-direction:column}.product .fields,.order-grid{grid-template-columns:1fr 1fr}}
     @media(max-width:380px){.product .fields,.order-grid{grid-template-columns:1fr}}
+    .order-items-list{grid-column:1/-1;padding:10px;border-radius:8px;background:#f4f7fb;line-height:1.8}
   </style>
 </head>
 <body>
@@ -324,12 +325,13 @@ if (
           <details><summary>অর্ডারের সম্পূর্ণ তথ্য দেখুন</summary>
           <div class="order-grid">
             <div><b>পণ্য:</b> ${escapeHTML(o.product_name)}</div>
+            ${(() => { try { const items=JSON.parse(o.order_items_json||"[]"); return items.length>1 ? '<div class="order-items-list"><b>পণ্যের তালিকা:</b><br>'+items.map(item=>escapeHTML(item.name)+' × '+escapeHTML(item.quantity)+' — ৳'+escapeHTML(item.subtotal)+(item.color||item.size?' ('+escapeHTML([item.color,item.size].filter(Boolean).join(' / '))+')':'')).join('<br>')+'</div>' : ''; } catch (_) { return ''; } })()}
             <div><b>ক্রেতা:</b> ${escapeHTML(o.customer_name)}</div>
             <div><b>মোবাইল:</b> ${escapeHTML(o.customer_phone)}</div>
             <div><b>পরিমাণ:</b> ${escapeHTML(o.quantity)}</div>
             <div><b>রং:</b> ${escapeHTML(o.color || "প্রযোজ্য নয়")}</div>
             <div><b>সাইজ:</b> ${escapeHTML(o.size || "প্রযোজ্য নয়")}</div>
-            <div><b>পণ্যের মূল্য:</b> ৳${escapeHTML(o.unit_price)}</div>
+            <div><b>পণ্যের মোট মূল্য:</b> ৳${escapeHTML(o.unit_price)}</div>
             <div><b>ডেলিভারি:</b> ৳${escapeHTML(o.delivery_charge)}</div>
             <div><b>মোট:</b> ৳${escapeHTML(o.total_amount)}</div>
             <div><b>পেমেন্ট পদ্ধতি:</b> ${o.payment_method === "advance" ? "অগ্রিম ডেলিভারি চার্জ" : "ক্যাশ অন ডেলিভারি"}</div>
