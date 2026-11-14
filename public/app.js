@@ -248,11 +248,11 @@ document.querySelector("#transaction-id")?.addEventListener("input", event => {
   const value = event.target.value.trim().toUpperCase();
   event.target.value = value;
   const hint = document.querySelector("#transaction-id-hint");
-  const valid = /^[A-Z0-9]{10}$/.test(value);
+  const valid = /^[A-Z0-9]{8,12}$/.test(value);
   if (hint) {
     hint.textContent = valid
       ? "✓ Transaction ID-এর ফরম্যাট সঠিক। আসল পেমেন্ট অ্যাডমিন যাচাই করবেন।"
-      : "১০ অক্ষরের আলফানিউমেরিক Transaction ID লিখুন।";
+      : "৮–১২ অক্ষরের আলফানিউমেরিক Transaction ID লিখুন।";
     hint.classList.toggle("is-valid", valid);
   }
 });
