@@ -144,6 +144,61 @@ document.addEventListener("keydown", event => {
   }
 });
 
+function updateCartCount() {
+  try {
+    const cart = JSON.parse(localStorage.getItem("rsMartCart") || "[]");
+    const count = cart.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
+    const link = document.querySelector(".header-cart");
+    if (link) {
+      let badge = link.querySelector(".cart-count");
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "cart-count";
+        link.appendChild(badge);
+      }
+      badge.textContent = String(count);
+      badge.hidden = count === 0;
+    }
+  } catch (_) {}
+}
+
+function addChosenProductToCart() {
+  if (!chosenProduct) return;
+  try {
+    const cart = JSON.parse(localStorage.getItem("rsMartCart") || "[]");
+    const existing = cart.find(item => String(item.id) === String(chosenProduct.id));
+    if (existing) existing.quantity = Number(existing.quantity || 1) + 1;
+    else cart.push({ id: chosenProduct.id, name: chosenProduct.name, price: chosenProduct.sellingPrice, image: Array.isArray(chosenProduct.images) ? chosenProduct.images[0] : "", quantity: 1 });
+    localStorage.setItem("rsMartCart", JSON.stringify(cart));
+    updateCartCount();
+    const button = document.querySelector("#detail-add-cart");
+    if (button) {
+      button.textContent = "✓ কার্টে যোগ হয়েছে";
+      button.classList.add("is-added");
+    }
+  } catch (_) {
+    showNotice("কার্টে যোগ করা যায়নি। আবার চেষ্টা করুন।");
+  }
+}
+
+function openDetailOrderForm() {
+  const wrap = document.querySelector("#detail-order-form-wrap");
+  if (!wrap) return;
+  wrap.hidden = false;
+  wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+  wrap.querySelector('input[name="customerName"]')?.focus({ preventScroll: true });
+}
+
+document.querySelector("#detail-order-now")?.addEventListener("click", openDetailOrderForm);
+document.querySelector("#detail-form-open")?.addEventListener("click", openDetailOrderForm);
+document.querySelector("#detail-add-cart")?.addEventListener("click", addChosenProductToCart);
+document.querySelector(".header-cart")?.addEventListener("click", event => {
+  event.preventDefault();
+  const cart = JSON.parse(localStorage.getItem("rsMartCart") || "[]");
+  showNotice(cart.length ? `আপনার কার্টে ${cart.reduce((n, item) => n + Number(item.quantity || 1), 0)}টি পণ্য আছে।` : "আপনার কার্ট এখনো খালি।");
+  document.querySelector("#products")?.scrollIntoView({ behavior: "smooth" });
+});
+
 function chooseProduct(id) {
   lastOrderTrigger = document.activeElement;
   chosenProduct = products.find(p => String(p.id) === String(id));
@@ -164,56 +219,46 @@ function chooseProduct(id) {
   document.querySelector("#selected-product").textContent = chosenProduct.name || "পণ্যের নাম";
   document.querySelector("#item-price").textContent = money(chosenProduct.sellingPrice);
 
-  document.querySelector("#detail-stock").textContent =
-    chosenProduct.inStock === false ? "স্টক নেই" : "স্টকে আছে";
+  const oldPrice = document.querySelector("#item-old-price");
+  const hasDiscount = Number(chosenProduct.originalPrice) > Number(chosenProduct.sellingPrice);
+  oldPrice.hidden = !hasDiscount;
+  oldPrice.textContent = hasDiscount ? money(chosenProduct.originalPrice) : "";
+  document.querySelector("#detail-offer").hidden = !hasDiscount;
+
+  const category = String(chosenProduct.category || "অন্যান্য").replace(/[-_]/g, " ").replace(/\\b\\w/g, letter => letter.toUpperCase());
+  document.querySelector("#detail-category").textContent = "📁 " + category;
+  document.querySelector("#detail-stock").textContent = "✓ In stock";
 
   document.querySelector("#detail-description").textContent =
     chosenProduct.description || "এই পণ্যের বিস্তারিত তথ্য পাওয়া যায়নি।";
 
-  const variants = Array.isArray(chosenProduct.variants)
-    ? chosenProduct.variants
-    : [];
-
+  const variants = Array.isArray(chosenProduct.variants) ? chosenProduct.variants : [];
   const variantBox = document.querySelector("#detail-variants");
   const colors = [...new Set(variants.map(v => v.color).filter(Boolean))];
   const sizes = [...new Set(variants.map(v => v.size).filter(Boolean))];
-
   let variantHTML = "";
 
   if (colors.length) {
-    variantHTML += `
-      <label>রং নির্বাচন করুন
-        <select id="selected-color" required>
-          <option value="">রং বেছে নিন</option>
-          ${colors.map(color => `
-            <option value="${escapeHtml(color)}">${escapeHtml(color)}</option>
-          `).join("")}
-        </select>
-      </label>`;
+    variantHTML += `<label>রং নির্বাচন করুন<select id="selected-color" required><option value="">রং বেছে নিন</option>${colors.map(color => `<option value="${escapeHtml(color)}">${escapeHtml(color)}</option>`).join("")}</select></label>`;
   }
-
   if (sizes.length) {
-    variantHTML += `
-      <label>সাইজ নির্বাচন করুন
-        <select id="selected-size" required>
-          <option value="">সাইজ বেছে নিন</option>
-          ${sizes.map(size => `
-            <option value="${escapeHtml(size)}">${escapeHtml(size)}</option>
-          `).join("")}
-        </select>
-      </label>`;
+    variantHTML += `<label>সাইজ নির্বাচন করুন<select id="selected-size" required><option value="">সাইজ বেছে নিন</option>${sizes.map(size => `<option value="${escapeHtml(size)}">${escapeHtml(size)}</option>`).join("")}</select></label>`;
   }
-
   variantBox.innerHTML = variantHTML;
 
   document.querySelector("#delivery-price").textContent =
     `ঢাকার ভিতরে ${money(deliveryCharges.insideDhaka)} / ঢাকার বাইরে ${money(deliveryCharges.outsideDhaka)}`;
 
+  document.querySelector("#detail-order-form-wrap").hidden = true;
+  const cartButton = document.querySelector("#detail-add-cart");
+  cartButton.textContent = "🛒 Add to Cart";
+  cartButton.classList.remove("is-added");
   orderSection.hidden = false;
   document.body.classList.add("order-modal-open");
   document.querySelector(".floating-shop")?.classList.add("is-hidden");
   document.querySelector("#close-order")?.focus();
 }
+updateCartCount();
 
 document.querySelectorAll(".category-nav [data-category], .footer-links [data-category]").forEach(button => {
   button.addEventListener("click", () => {
