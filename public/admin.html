@@ -100,6 +100,25 @@
       .product img { width: 75px; height: 90px; }
       header { padding: 15px; }
     }
+    .admin-nav{display:flex;gap:8px;margin:0 0 16px}
+    .admin-nav button{flex:1;background:#e7ebf2;color:#344054;border:1px solid #d8dee8}
+    .admin-nav button[aria-selected='true']{background:#101828;color:#fff}
+    .product{grid-template-columns:76px minmax(0,1fr);padding:11px;gap:11px}
+    .product img{width:76px;height:82px}
+    .product details,.order details{margin-top:8px;border-top:1px solid #edf0f4;padding-top:8px}
+    .product summary,.order summary{cursor:pointer;color:#087f5b;font-size:13px;font-weight:bold}
+    .product .fields{gap:8px;margin:9px 0}
+    .product label{font-size:12px}
+    .product input,.product select{padding:8px;font-size:14px}
+    .product-info{font-size:13px;color:#475467;line-height:1.55;margin:8px 0;overflow-wrap:anywhere}
+    .order{padding:12px;margin:10px 0}
+    .order-grid{font-size:13px}
+    .order-grid>div{overflow-wrap:anywhere}
+    .order-actions{display:flex;gap:8px;align-items:end;margin-top:10px}
+    .order-actions label{flex:1}
+    .order-actions select{margin-top:4px;padding:8px}
+    @media(max-width:650px){.admin-nav{position:sticky;top:0;z-index:4;background:#f3f5f9;padding:6px 0}.product{grid-template-columns:58px minmax(0,1fr);padding:9px;gap:9px}.product img{width:58px;height:66px}.order-actions{align-items:stretch;flex-direction:column}.product .fields,.order-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:380px){.product .fields,.order-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -122,13 +141,14 @@
     </section>
 
     <section id="dashboard" class="hidden">
-      <div class="panel">
+      <nav class="admin-nav" aria-label="Admin sections"><button type="button" data-tab="products" aria-selected="true">পণ্য ব্যবস্থাপনা</button><button type="button" data-tab="orders" aria-selected="false">অর্ডার ব্যবস্থাপনা</button></nav>
+      <div class="panel" id="products-panel">
         <h2>পণ্য ব্যবস্থাপনা</h2>
         <p class="muted">বিক্রয়মূল্য, ক্যাটাগরি এবং পণ্যের দৃশ্যমানতা নিয়ন্ত্রণ করুন।</p>
         <div id="products">পণ্য লোড হচ্ছে...</div>
       </div>
 
-      <div class="panel">
+      <div class="panel hidden" id="orders-panel">
         <h2>গ্রাহকের অর্ডার</h2>
         <div id="orders">অর্ডার লোড হচ্ছে...</div>
       </div>
@@ -198,7 +218,8 @@
           </div>
           <div>
             <h3>${escapeHTML(p.name)}</h3>
-            <p class="muted">Business Koro প্রস্তাবিত মূল্য: ৳${escapeHTML(p.suggestedPrice ?? "—")}</p>
+            <p class="muted">বিক্রয়মূল্য: ৳${escapeHTML(p.sellingPrice ?? "—")} · প্রস্তাবিত: ৳${escapeHTML(p.suggestedPrice ?? "—")}</p>
+            <details><summary>পণ্যের সম্পূর্ণ তথ্য দেখুন</summary><div class="product-info"><b>বিবরণ:</b> ${escapeHTML(p.description || "বিবরণ নেই")}<br><b>স্টক:</b> ${p.inStock === false ? "স্টক নেই" : "স্টকে আছে"}<br><b>পুরোনো দাম:</b> ৳${escapeHTML(p.originalPrice ?? "—")}<br><b>ভ্যারিয়েন্ট:</b> ${escapeHTML((p.variants || []).map(v => [v.color, v.size, v.inStock === false ? "স্টক নেই" : "স্টকে আছে"].filter(Boolean).join(" / ")).join(", ") || "নেই")}<br><b>ছবি:</b> ${escapeHTML((p.images || []).length)}টি</div>${(p.images || []).map(src => `<img src="${escapeHTML(src)}" alt="" loading="lazy" style="width:54px;height:54px;margin:3px;object-fit:cover">`).join("")}</details>
             <div class="fields">
             <label>বিক্রয় মূল্য (৳)
   <input type="number" min="0" step="1"
@@ -289,6 +310,7 @@ if (
       ordersBox.innerHTML = result.data.map(o => `
         <article class="order">
           <h3>অর্ডার: ${escapeHTML(o.id)}</h3>
+          <details><summary>অর্ডারের সম্পূর্ণ তথ্য দেখুন</summary>
           <div class="order-grid">
             <div><b>পণ্য:</b> ${escapeHTML(o.product_name)}</div>
             <div><b>ক্রেতা:</b> ${escapeHTML(o.customer_name)}</div>
@@ -301,15 +323,15 @@ if (
             <div><b>মোট:</b> ৳${escapeHTML(o.total_amount)}</div>
             <div><b>ঠিকানা:</b> ${escapeHTML(o.customer_division)}, ${escapeHTML(o.customer_district)}, ${escapeHTML(o.customer_area)}, ${escapeHTML(o.customer_address)}</div>
           </div>
-          <p><b>নির্দেশনা:</b> ${escapeHTML(o.note || "নেই")}</p>
-          <label>অর্ডারের অবস্থা
+          <p><b>নির্দেশনা:</b> ${escapeHTML(o.note || "নেই")}</p></details>
+          <div class="order-actions"><label>অর্ডারের অবস্থা
             <select data-status="${escapeHTML(o.id)}">
               ${Object.entries(labels).map(([value, label]) =>
                 `<option value="${value}" ${o.status === value ? "selected" : ""}>${label}</option>`
               ).join("")}
             </select>
           </label>
-          <button class="save-status" data-order="${escapeHTML(o.id)}">অবস্থা সংরক্ষণ</button>
+          <button class="save-status" data-order="${escapeHTML(o.id)}">অবস্থা সংরক্ষণ</button></div>
         </article>
       `).join("");
 
@@ -377,6 +399,18 @@ if (
       } finally {
         showLogin();
       }
+    });
+
+
+    document.querySelectorAll("[data-tab]").forEach(button => {
+      button.addEventListener("click", () => {
+        const productsActive = button.dataset.tab === "products";
+        document.querySelector("#products-panel").classList.toggle("hidden", !productsActive);
+        document.querySelector("#orders-panel").classList.toggle("hidden", productsActive);
+        document.querySelectorAll("[data-tab]").forEach(tab => {
+          tab.setAttribute("aria-selected", String(tab === button));
+        });
+      });
     });
 
     openDashboard();
