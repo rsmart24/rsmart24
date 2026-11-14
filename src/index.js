@@ -55,7 +55,11 @@ async function ensureOrderSchema(env) {
   const productColumns = await env.DB.prepare("PRAGMA table_info(product_settings)").all();
   const productNames = new Set((productColumns.results || []).map(row => row.name));
   if (!productNames.has("discount_percent")) {
-    await env.DB.prepare("ALTER TABLE product_settings ADD COLUMN discount_percent INTEGER NOT NULL DEFAULT 0").run();
+    try {
+      await env.DB.prepare("ALTER TABLE product_settings ADD COLUMN discount_percent INTEGER NOT NULL DEFAULT 0").run();
+    } catch (error) {
+      if (!/duplicate column/i.test(String(error?.message || error))) throw error;
+    }
   }
 
   const orderColumns = await env.DB.prepare("PRAGMA table_info(orders)").all();
@@ -71,7 +75,11 @@ async function ensureOrderSchema(env) {
   ];
   for (const [name, definition] of additions) {
     if (!orderNames.has(name)) {
-      await env.DB.prepare(`ALTER TABLE orders ADD COLUMN ${name} ${definition}`).run();
+      try {
+        await env.DB.prepare(`ALTER TABLE orders ADD COLUMN ${name} ${definition}`).run();
+      } catch (error) {
+        if (!/duplicate column/i.test(String(error?.message || error))) throw error;
+      }
     }
   }
 }
