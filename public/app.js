@@ -46,7 +46,6 @@ function productImage(product) {
     : `<span class="image-placeholder">RS</span>`;
 }
 
-
 function renderProducts() {
   const query = (searchInput?.value || "").trim().toLowerCase();
 
@@ -60,7 +59,7 @@ function renderProducts() {
     return matchesSearch && matchesCategory;
   });
 
-  count.textContent = `${filteredProducts.length}টি পণ্য`;
+  count.textContent = currentLanguage === "bn" ? `${filteredProducts.length}টি পণ্য` : `${filteredProducts.length} products`;
 
   if (!filteredProducts.length) {
     grid.innerHTML = '<div class="loading">এই ক্যাটাগরিতে কোনো পণ্য পাওয়া যায়নি।</div>';
@@ -71,61 +70,31 @@ function renderProducts() {
     const hasPrice = p.sellingPrice !== null && p.sellingPrice !== undefined;
     const outOfStock = p.inStock === false;
 
-    const discount = p.originalPrice > p.sellingPrice && p.sellingPrice > 0
-      ? Math.round((1 - p.sellingPrice / p.originalPrice) * 100)
-      : 0;
-
     return `
       <article class="product-card">
-
-        <div class="product-image" data-product-open="${escapeHtml(p.id)}">
-          ${discount ? `<span class="discount-badge">-${discount}%</span>` : ""}
-          ${productImage(p)}
-        </div>
-
+        <div class="product-image">${productImage(p)}</div>
         <div class="product-info">
-
-          <span class="product-brand">RS MART</span>
-
-          <h3 class="product-title" data-product-open="${escapeHtml(p.id)}">
-            ${escapeHtml(p.name)}
-          </h3>
-
-          <div class="product-price">
-            <strong>${money(p.sellingPrice)}</strong>
-            ${
-              p.originalPrice > p.sellingPrice
-                ? `<del class="old-price">${money(p.originalPrice)}</del>`
-                : ""
-            }
-          </div>
-
-          <div class="product-actions">
-
+          <h3>${escapeHtml(p.name)}</h3>
+          <p>${escapeHtml(p.description || "বিস্তারিত জানতে পণ্যটি দেখুন।")}</p>
+          <div class="product-bottom">
+            <span class="price">
+  ${p.originalPrice !== null && p.originalPrice !== undefined && p.originalPrice > p.sellingPrice
+    ? `<del class="old-price">${money(p.originalPrice)}</del>`
+    : ""}
+  <strong>${money(p.sellingPrice)}</strong>
+</span>
             <button class="buy-button"
               data-buy="${escapeHtml(p.id)}"
               ${outOfStock || !hasPrice ? "disabled" : ""}>
-              ⚡ ${outOfStock ? "স্টক নেই" : "Order Now"}
+              ${outOfStock ? (currentLanguage === "bn" ? "স্টক নেই" : "Out of stock") : !hasPrice ? (currentLanguage === "bn" ? "দাম আসছে" : "Price pending") : (currentLanguage === "bn" ? "অর্ডার করুন" : "Order now")}
             </button>
-
-            <button class="add-cart-button"
-              type="button"
-              data-add-cart="${escapeHtml(p.id)}"
-              aria-label="Add to cart"
-              ${outOfStock || !hasPrice ? "disabled" : ""}>
-              🛒
-            </button>
-
           </div>
         </div>
-      </article>
-    `;
+      </article>`;
   }).join("");
 
-  grid.querySelectorAll("[data-buy], [data-product-open]").forEach(button => {
-    button.addEventListener("click", () => {
-      chooseProduct(button.dataset.buy || button.dataset.productOpen);
-    });
+  grid.querySelectorAll("[data-buy]").forEach(button => {
+    button.addEventListener("click", () => chooseProduct(button.dataset.buy));
   });
 }
 
