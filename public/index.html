@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=checkout-20261115">
+  <link rel="stylesheet" href="/style.css?v=checkout-20261115-v2">
 </head>
 <body>
   
@@ -157,8 +157,8 @@
           <label>পরিমাণ<input name="quantity" id="order-quantity" type="number" min="1" max="20" value="1" required></label>
           <section class="payment-choice">
             <h3>পেমেন্ট পদ্ধতি নির্বাচন করুন</h3>
-            <label class="payment-option"><input type="radio" name="paymentMethod" value="cod" checked> <span><b>১. ক্যাশ অন ডেলিভারি</b><small>পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন।</small></span></label>
-            <label class="payment-option"><input type="radio" name="paymentMethod" value="advance"> <span><b>২. অগ্রিম ডেলিভারি চার্জ</b><small>আগে পেমেন্ট করলে পণ্যের মোট দামে বিশেষ ছাড় পাবেন।</small></span></label>
+            <label class="payment-option payment-option-cod" for="payment-cod"><input id="payment-cod" type="radio" name="paymentMethod" value="cod" checked> <span class="payment-option-content"><b class="payment-option-title">১. ক্যাশ অন ডেলিভারি <em>নিরাপদ ও সহজ</em></b><small>পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন।</small><span class="payment-mini-breakdown"><span>পণ্যের মোট <b id="cod-subtotal">৳—</b></span><span>ডেলিভারি <b id="cod-delivery">ঠিকানা নির্বাচন করুন</b></span><strong>সর্বমোট <b id="cod-total">ঠিকানা নির্বাচন করুন</b></strong></span></span></label>
+            <label class="payment-option payment-option-advance" for="payment-advance"><input id="payment-advance" type="radio" name="paymentMethod" value="advance"> <span class="payment-option-content"><b class="payment-option-title">২. অগ্রিম ডেলিভারি চার্জ <em class="advance-discount-badge" id="advance-discount-badge">বিশেষ ছাড়</em></b><small>শুধু ডেলিভারি চার্জ অগ্রিম দিন, পণ্যের দামে ছাড় পান।</small><span class="payment-mini-breakdown advance-mini-breakdown"><span>পণ্যের মোট <b id="advance-subtotal">৳—</b></span><span class="advance-discount-line">আপনার ছাড় <b id="advance-discount-amount">৳0</b></span><span>ডেলিভারি <b id="advance-delivery">ঠিকানা নির্বাচন করুন</b></span><strong>ছাড়ের পর সর্বমোট <b id="advance-total">ঠিকানা নির্বাচন করুন</b></strong></span></span></label>
             <div id="bkash-payment-box" class="bkash-payment-box" hidden>
               <h4>বিকাশ Send Money</h4>
               <p>বিকাশ অ্যাপ থেকে নিচের নম্বরে Send Money করুন। পাঠাতে হবে শুধু ডেলিভারি চার্জ: <b id="advance-payment-amount">ঠিকানা নির্বাচন করুন</b></p>
@@ -233,6 +233,6 @@
       <span>Made for smart everyday shopping</span>
     </div>
   </footer>
-  <script src="/app.js?v=checkout-20261115"></script>
+  <script src="/app.js?v=checkout-20261115-v2"></script>
 </body>
 </html>
