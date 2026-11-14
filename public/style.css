@@ -2683,3 +2683,10 @@ body.order-modal-open {
 .checkout-cart-variants .cart-variant-field{font-size:12px}
 .checkout-cart-variants select{max-width:150px}
 @media(max-width:600px){.checkout-cart-line{gap:8px}.checkout-cart-variants{display:grid;grid-template-columns:1fr}.checkout-cart-variants select{max-width:100%}}
+
+
+/* Multi-product selection: keep the add-more action available during combined checkout. */
+.cart-checkout-mode .product-detail-info>.detail-actions{display:flex!important;gap:8px;margin:8px 0 14px}
+.cart-checkout-mode .product-detail-info>.detail-actions #detail-order-now{display:inline-flex!important;flex:1}
+.cart-checkout-mode .product-detail-info>.detail-actions #detail-add-cart{display:none!important}
+.cart-checkout-mode .product-detail-info>.detail-actions #detail-multi-order{display:inline-flex!important;flex:1;min-height:42px;padding:9px 10px;font-size:13px}
