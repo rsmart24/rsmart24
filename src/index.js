@@ -195,19 +195,27 @@ async function saveProductSettings(request, env, productId) {
     return json({ error: "বিক্রয়মূল্য সঠিকভাবে লিখুন।" }, 400);
   }
 
+  const originalPrice = body.originalPrice == null || body.originalPrice === ""
+    ? null
+    : Number(body.originalPrice);
+  if (originalPrice !== null && (!Number.isSafeInteger(originalPrice) || originalPrice < 0)) {
+    return json({ error: "পুরোনো দাম সঠিকভাবে লিখুন।" }, 400);
+  }
+
   const category = String(body.category || "").trim().slice(0, 100);
   const isVisible = body.isVisible === false ? 0 : 1;
 
   await env.DB.prepare(`
     INSERT INTO product_settings
-      (product_id, selling_price, category, is_visible, updated_at)
-    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+      (product_id, selling_price, original_price, category, is_visible, updated_at)
+    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(product_id) DO UPDATE SET
       selling_price = excluded.selling_price,
+      original_price = excluded.original_price,
       category = excluded.category,
       is_visible = excluded.is_visible,
       updated_at = CURRENT_TIMESTAMP
-  `).bind(String(productId), price, category, isVisible).run();
+  `).bind(String(productId), price, originalPrice, category, isVisible).run();
 
   return json({ success: true, message: "পণ্যের সেটিংস সংরক্ষণ হয়েছে।" });
 }
