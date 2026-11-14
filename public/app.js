@@ -215,8 +215,35 @@ function openDetailOrderForm() {
   wrap.scrollIntoView({ behavior: "smooth", block: "start" });
   wrap.querySelector('input[name="customerName"]')?.focus({ preventScroll: true });
 }
+function updateOrderSummary() {
+  if (!chosenProduct) return;
+  const quantity = Math.max(1, Math.min(20, Number(document.querySelector("#order-quantity")?.value || 1)));
+  const division = document.querySelector("#customerDivision")?.value || "";
+  const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || "cod";
+  const isDhaka = division === "ঢাকা" || division.toLowerCase() === "dhaka";
+  const delivery = division ? Number(isDhaka ? deliveryCharges.insideDhaka || 0 : deliveryCharges.outsideDhaka || 0) : null;
+  const subtotal = Number(chosenProduct.sellingPrice || 0) * quantity;
+  const discountPercent = paymentMethod === "advance" ? Number(chosenProduct.discountPercent || 0) : 0;
+  const discount = Math.round(subtotal * discountPercent / 100);
+  const total = delivery === null ? null : subtotal + delivery - discount;
+  document.querySelector("#subtotal-value").textContent = money(subtotal);
+  document.querySelector("#delivery-value").textContent = delivery === null ? "ঠিকানা নির্বাচন করুন" : money(delivery);
+  document.querySelector("#discount-row").hidden = paymentMethod !== "advance" || discount <= 0;
+  document.querySelector("#discount-value").textContent = money(discount);
+  document.querySelector("#grand-total-value").textContent = total === null ? "ঠিকানা নির্বাচন করুন" : money(total);
+  document.querySelector("#bkash-payment-box").hidden = paymentMethod !== "advance";
+  document.querySelector("#transaction-id").required = paymentMethod === "advance";
+  const advanceAmount = document.querySelector("#advance-payment-amount");
+  if (advanceAmount) advanceAmount.textContent = delivery === null ? "ঠিকানা নির্বাচন করুন" : money(delivery);
+}
 
 document.querySelector("#detail-order-now")?.addEventListener("click", openDetailOrderForm);
+document.querySelector("#order-form")?.addEventListener("input", updateOrderSummary);
+document.querySelector("#order-form")?.addEventListener("change", updateOrderSummary);
+document.querySelector("#copy-bkash-number")?.addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText("01716862470"); showNotice("বিকাশ নম্বর কপি হয়েছে।"); }
+  catch (_) { showNotice("বিকাশ নম্বর: 01716862470"); }
+});
 document.querySelector("#detail-form-open")?.addEventListener("click", openDetailOrderForm);
 document.querySelector("#detail-add-cart")?.addEventListener("click", addChosenProductToCart);
 document.querySelector(".header-cart")?.addEventListener("click", event => {
@@ -277,6 +304,11 @@ function chooseProduct(id) {
     `ঢাকার ভিতরে ${money(deliveryCharges.insideDhaka)} / ঢাকার বাইরে ${money(deliveryCharges.outsideDhaka)}`;
 
   document.querySelector("#detail-order-form-wrap").hidden = true;
+  document.querySelector("#order-form")?.reset();
+  document.querySelector("#order-quantity").value = "1";
+  document.querySelector("#bkash-payment-box").hidden = true;
+  document.querySelector("#transaction-id").required = false;
+  updateOrderSummary();
   const cartButton = document.querySelector("#detail-add-cart");
   cartButton.textContent = "🛒 Add to Cart";
   cartButton.classList.remove("is-added");
@@ -358,7 +390,9 @@ form.addEventListener("submit", async event => {
     customerNote: data.get("customerNote"),
     color,
     size,
-    quantity: Number(data.get("quantity") || 1)
+    quantity: Number(data.get("quantity") || 1),
+    paymentMethod: data.get("paymentMethod") || "cod",
+    transactionId: data.get("transactionId") || ""
   };
 
   try {
@@ -374,7 +408,7 @@ form.addEventListener("submit", async event => {
       throw new Error(result.error || result.message || "অর্ডার জমা হয়নি।");
     }
 
-    alert(`আপনার অর্ডার RS Mart-এ জমা হয়েছে। অর্ডার নম্বর: ${result.orderId}`);
+    alert(`ধন্যবাদ! আপনার অর্ডার গ্রহণ করা হয়েছে।\nঅর্ডার নম্বর: ${result.orderId}\nআমাদের প্রতিনিধি ফোন করে আপনার অর্ডার নিশ্চিত করবেন।`);
 
     form.reset();
     closeOrderModal();
