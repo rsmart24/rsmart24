@@ -41,8 +41,8 @@ function escapeHtml(value) {
 }
 
 function productImage(product) {
-  const raw = Array.isArray(product.images) ? product.images[0] : (product.image || "");
-  const src = typeof raw === "string" ? raw : (raw?.url || raw?.src || raw?.imageUrl || "");
+  const raw = Array.isArray(product.images) ? product.images[0] : (product.images || product.image || product.imageUrl || product.thumbnailUrl || "");
+  const src = typeof raw === "string" ? raw : (raw?.url || raw?.src || raw?.imageUrl || raw?.original || raw?.thumbnail || raw?.path || "");
   return src
     ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(product.name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'image-placeholder',textContent:'ছবি পাওয়া যায়নি'}))">`
     : `<span class="image-placeholder">ছবি পাওয়া যায়নি</span>`;
@@ -303,7 +303,6 @@ function chooseProduct(id) {
   document.querySelector("#delivery-price").textContent =
     `ঢাকার ভিতরে ${money(deliveryCharges.insideDhaka)} / ঢাকার বাইরে ${money(deliveryCharges.outsideDhaka)}`;
 
-  document.querySelector("#detail-order-form-wrap").hidden = true;
   document.querySelector("#order-form")?.reset();
   document.querySelector("#order-quantity").value = "1";
   document.querySelector("#bkash-payment-box").hidden = true;
@@ -466,6 +465,7 @@ async function setupAddressDropdowns() {
     fillSelect(areaSelect, "আগে জেলা নির্বাচন করুন", []);
 
     divisionSelect.addEventListener("change", () => {
+      updateOrderSummary();
       const division = divisions.find(
         item => item.bn_name === divisionSelect.value
       );
@@ -477,6 +477,7 @@ async function setupAddressDropdowns() {
     });
 
     districtSelect.addEventListener("change", () => {
+      updateOrderSummary();
       const division = divisions.find(
         item => item.bn_name === divisionSelect.value
       );
