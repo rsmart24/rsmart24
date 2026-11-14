@@ -50,10 +50,36 @@ function requireDB(env) {
   if (!env.DB) throw new Error("D1 database binding DB is missing.");
 }
 
-async function getSettings(env) {
+async function ensureOrderSchema(env) {
   requireDB(env);
+  const productColumns = await env.DB.prepare("PRAGMA table_info(product_settings)").all();
+  const productNames = new Set((productColumns.results || []).map(row => row.name));
+  if (!productNames.has("discount_percent")) {
+    await env.DB.prepare("ALTER TABLE product_settings ADD COLUMN discount_percent INTEGER NOT NULL DEFAULT 0").run();
+  }
+
+  const orderColumns = await env.DB.prepare("PRAGMA table_info(orders)").all();
+  const orderNames = new Set((orderColumns.results || []).map(row => row.name));
+  const additions = [
+    ["payment_method", "TEXT NOT NULL DEFAULT 'cod'"],
+    ["discount_percent", "INTEGER NOT NULL DEFAULT 0"],
+    ["discount_amount", "INTEGER NOT NULL DEFAULT 0"],
+    ["advance_payment_amount", "INTEGER NOT NULL DEFAULT 0"],
+    ["transaction_id", "TEXT"],
+    ["transaction_id_format_valid", "INTEGER NOT NULL DEFAULT 0"],
+    ["payment_verification_status", "TEXT NOT NULL DEFAULT 'not_required'"]
+  ];
+  for (const [name, definition] of additions) {
+    if (!orderNames.has(name)) {
+      await env.DB.prepare(`ALTER TABLE orders ADD COLUMN ${name} ${definition}`).run();
+    }
+  }
+}
+
+async function getSettings(env) {
+  await ensureOrderSchema(env);
   const result = await env.DB.prepare(
-    "SELECT product_id, selling_price, original_price, category, is_visible FROM product_settings"
+    "SELECT product_id, selling_price, original_price, category, is_visible, discount_percent FROM product_settings"
   ).all();
   return new Map((result.results || []).map(row => [String(row.product_id), row]));
 }
@@ -76,7 +102,8 @@ function publicProduct(p, setting) {
   ? Number(setting.original_price)
   : null,
     category: setting?.category || "",
-    isVisible: setting ? Number(setting.is_visible) === 1 : true
+    isVisible: setting ? Number(setting.is_visible) === 1 : true,
+    discountPercent: Number(setting?.discount_percent || 0)
   };
 }
 
@@ -190,6 +217,7 @@ async function saveProductSettings(request, env, productId) {
     return json({ error: "সঠিক তথ্য পাঠান।" }, 400);
   }
 
+  await ensureOrderSchema(env);
   const price = Number(body.sellingPrice);
   if (!Number.isSafeInteger(price) || price < 0) {
     return json({ error: "বিক্রয়মূল্য সঠিকভাবে লিখুন।" }, 400);
@@ -202,25 +230,31 @@ async function saveProductSettings(request, env, productId) {
     return json({ error: "পুরোনো দাম সঠিকভাবে লিখুন।" }, 400);
   }
 
+  const discountPercent = Number(body.discountPercent ?? 0);
+  if (!Number.isInteger(discountPercent) || discountPercent < 0 || discountPercent > 90) {
+    return json({ error: "অগ্রিম পেমেন্ট ছাড় ০ থেকে ৯০ শতাংশের মধ্যে দিন।" }, 400);
+  }
   const category = String(body.category || "").trim().slice(0, 100);
   const isVisible = body.isVisible === false ? 0 : 1;
 
   await env.DB.prepare(`
     INSERT INTO product_settings
-      (product_id, selling_price, original_price, category, is_visible, updated_at)
-    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      (product_id, selling_price, original_price, category, is_visible, discount_percent, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(product_id) DO UPDATE SET
       selling_price = excluded.selling_price,
       original_price = excluded.original_price,
       category = excluded.category,
       is_visible = excluded.is_visible,
+      discount_percent = excluded.discount_percent,
       updated_at = CURRENT_TIMESTAMP
-  `).bind(String(productId), price, originalPrice, category, isVisible).run();
+  `).bind(String(productId), price, originalPrice, category, isVisible, discountPercent).run();
 
   return json({ success: true, message: "পণ্যের সেটিংস সংরক্ষণ হয়েছে।" });
 }
 
 async function createOrder(request, env) {
+  await ensureOrderSchema(env);
   let body;
   try {
     body = await request.json();
@@ -255,7 +289,7 @@ async function createOrder(request, env) {
   }
 
   const settings = await env.DB.prepare(
-    "SELECT selling_price, is_visible FROM product_settings WHERE product_id = ?"
+    "SELECT selling_price, is_visible, discount_percent FROM product_settings WHERE product_id = ?"
   ).bind(String(product.id)).first();
 
   if (!settings || Number(settings.is_visible) !== 1) {
@@ -295,7 +329,17 @@ async function createOrder(request, env) {
       : catalog.deliveryCharges.outsideDhaka || 0
   );
 
-  const totalAmount = unitPrice * quantity + deliveryCharge;
+  const subtotal = unitPrice * quantity;
+  const paymentMethod = body.paymentMethod === "advance" ? "advance" : "cod";
+  const discountPercent = paymentMethod === "advance" ? Number(settings.discount_percent || 0) : 0;
+  const discountAmount = Math.round(subtotal * discountPercent / 100);
+  const totalAmount = subtotal + deliveryCharge - discountAmount;
+  const advancePaymentAmount = paymentMethod === "advance" ? deliveryCharge : 0;
+  const transactionId = String(body.transactionId || "").trim().toUpperCase();
+  const transactionIdFormatValid = paymentMethod === "advance" && /^[A-Z0-9]{10}$/.test(transactionId);
+  if (paymentMethod === "advance" && !transactionIdFormatValid) {
+    return json({ error: "বিকাশ Transaction ID সঠিক ফরম্যাটে দিন (১০ অক্ষরের আলফানিউমেরিক আইডি)।" }, 400);
+  }
   if (!Number.isSafeInteger(totalAmount) || totalAmount < 0) {
     return json({ error: "অর্ডারের মোট মূল্য সঠিক নয়।" }, 400);
   }
@@ -306,8 +350,10 @@ async function createOrder(request, env) {
     INSERT INTO orders (
       id, product_id, product_name, customer_name, customer_phone,
       customer_division, customer_district, customer_area, customer_address,
-      color, size, quantity, unit_price, delivery_charge, total_amount, note
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      color, size, quantity, unit_price, delivery_charge, total_amount, note,
+      payment_method, discount_percent, discount_amount, advance_payment_amount,
+      transaction_id, transaction_id_format_valid, payment_verification_status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     orderId,
     String(product.id),
@@ -324,13 +370,20 @@ async function createOrder(request, env) {
     unitPrice,
     deliveryCharge,
     totalAmount,
-    String(body.customerNote || "").trim().slice(0, 500)
+    String(body.customerNote || "").trim().slice(0, 500),
+    paymentMethod,
+    discountPercent,
+    discountAmount,
+    advancePaymentAmount,
+    paymentMethod === "advance" ? transactionId : null,
+    transactionIdFormatValid ? 1 : 0,
+    paymentMethod === "advance" ? "pending_manual" : "not_required"
   ).run();
 
   return json({
     success: true,
     orderId,
-    message: "আপনার অর্ডার RS Mart-এ জমা হয়েছে।"
+    message: "আপনার অর্ডার RS Mart-এ জমা হয়েছে। আমাদের প্রতিনিধি ফোন করে অর্ডার নিশ্চিত করবেন।"
   }, 201);
 }
 
