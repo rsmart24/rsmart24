@@ -118,92 +118,53 @@
 
     
 <section class="order-section product-detail-section" id="order" role="dialog" aria-modal="true" aria-labelledby="selected-product" hidden>
-  <button type="button" class="order-modal-close" id="close-order" aria-label="অর্ডার ফর্ম বন্ধ করুন">×</button>
+  <button type="button" class="order-modal-close" id="close-order" aria-label="পণ্য বন্ধ করুন">×</button>
   <div class="product-detail-layout">
-
-    <div class="product-detail-image" id="detail-image">
-      <span class="image-placeholder">RS</span>
-    </div>
-
+    <div class="product-detail-image" id="detail-image"><span class="image-placeholder">RS</span></div>
     <div class="product-detail-info">
-      <span class="eyebrow">PRODUCT DETAILS</span>
+      <div class="detail-meta"><span class="detail-category" id="detail-category"></span><span class="detail-stock" id="detail-stock"></span></div>
       <h2 id="selected-product">পণ্যের নাম</h2>
-
-      <div class="detail-price" id="item-price">—</div>
-
-      <div class="detail-stock" id="detail-stock"></div>
-
-      <div class="detail-description" id="detail-description"></div>
-
-      <div class="detail-variants" id="detail-variants"></div>
-
-      <div class="price-summary">
-        <div>
-          <span>ডেলিভারি চার্জ</span>
-          <b id="delivery-price">API থেকে নির্ধারিত</b>
-        </div>
+      <div class="detail-price-row"><strong class="detail-price" id="item-price">—</strong><del class="detail-old-price" id="item-old-price" hidden></del></div>
+      <div class="detail-offer" id="detail-offer" hidden>Limited Time Offer</div>
+      <div class="detail-actions">
+        <button type="button" class="detail-order-now" id="detail-order-now">Order Now</button>
+        <button type="button" class="detail-add-cart" id="detail-add-cart">🛒 Add to Cart</button>
       </div>
-
-      <h3>আপনার অর্ডারের তথ্য</h3>
-
-      <form id="order-form" class="order-form">
-        <input type="hidden" id="productId">
-
-        <div class="field-grid">
-          <label>আপনার নাম
-            <input name="customerName" required maxlength="100" placeholder="পূর্ণ নাম">
-          </label>
-
-          <label>মোবাইল নম্বর
-            <input name="customerPhone" required inputmode="tel" maxlength="20" placeholder="01XXXXXXXXX">
-          </label>
-
-          
-<label>বিভাগ
-  <select name="customerDivision" id="customerDivision" required>
-    <option value="">বিভাগ নির্বাচন করুন</option>
-    <option value="ঢাকা">ঢাকা</option>
-    <option value="চট্টগ্রাম">চট্টগ্রাম</option>
-    <option value="রাজশাহী">রাজশাহী</option>
-    <option value="খুলনা">খুলনা</option>
-    <option value="বরিশাল">বরিশাল</option>
-    <option value="সিলেট">সিলেট</option>
-    <option value="রংপুর">রংপুর</option>
-    <option value="ময়মনসিংহ">ময়মনসিংহ</option>
-  </select>
-</label>
-
-<label>জেলা
-  <select name="customerDistrict" id="customerDistrict" required disabled>
-    <option value="">আগে বিভাগ নির্বাচন করুন</option>
-  </select>
-</label>
-
-<label>থানা / উপজেলা
-  <select name="customerArea" id="customerArea" required disabled>
-    <option value="">আগে জেলা নির্বাচন করুন</option>
-  </select>
-</label>
-
-          <label>সম্পূর্ণ ঠিকানা
-            <input name="customerAddress" required placeholder="বাসা, রোড, গ্রাম ইত্যাদি">
-          </label>
-        </div>
-<label>পরিমাণ
-  <input name="quantity" type="number" min="1" max="20" value="1" required>
-</label>
-        <label>অতিরিক্ত নির্দেশনা (ঐচ্ছিক)
-          <textarea name="customerNote" rows="3" maxlength="500" placeholder="কিছু জানাতে চাইলে লিখুন"></textarea>
-        </label>
-
-        <button class="submit-button" type="submit" id="submit-button">
-          অর্ডার কনফার্ম করুন
-        </button>
-
-        <p class="form-footnote">অর্ডার পাঠানোর আগে আপনার তথ্য যাচাই করুন।</p>
-      </form>
+      <section class="detail-description-section">
+        <h3>Product Description</h3>
+        <div class="detail-description" id="detail-description"></div>
+      </section>
+      <div class="detail-variants" id="detail-variants"></div>
+      <div class="price-summary">
+        <div><span>ডেলিভারি চার্জ</span><b id="delivery-price">API থেকে নির্ধারিত</b></div>
+      </div>
+      <div class="detail-form-toggle">
+        <h3>অর্ডার করতে নিচের বাটনে ক্লিক করুন</h3>
+        <button type="button" class="detail-form-open" id="detail-form-open">অর্ডার ফর্ম খুলুন</button>
+      </div>
+      <div id="detail-order-form-wrap" hidden>
+        <h3>আপনার অর্ডারের তথ্য</h3>
+        <form id="order-form" class="order-form">
+          <input type="hidden" id="productId">
+          <div class="field-grid">
+            <label>আপনার নাম<input name="customerName" required maxlength="100" placeholder="পূর্ণ নাম"></label>
+            <label>মোবাইল নম্বর<input name="customerPhone" required inputmode="tel" maxlength="20" placeholder="01XXXXXXXXX"></label>
+            <label>বিভাগ
+              <select name="customerDivision" id="customerDivision" required>
+                <option value="">বিভাগ নির্বাচন করুন</option><option value="ঢাকা">ঢাকা</option><option value="চট্টগ্রাম">চট্টগ্রাম</option><option value="রাজশাহী">রাজশাহী</option><option value="খুলনা">খুলনা</option><option value="বরিশাল">বরিশাল</option><option value="সিলেট">সিলেট</option><option value="রংপুর">রংপুর</option><option value="ময়মনসিংহ">ময়মনসিংহ</option>
+              </select>
+            </label>
+            <label>জেলা<select name="customerDistrict" id="customerDistrict" required disabled><option value="">আগে বিভাগ নির্বাচন করুন</option></select></label>
+            <label>থানা / উপজেলা<select name="customerArea" id="customerArea" required disabled><option value="">আগে জেলা নির্বাচন করুন</option></select></label>
+            <label>সম্পূর্ণ ঠিকানা<input name="customerAddress" required placeholder="বাসা, রোড, গ্রাম ইত্যাদি"></label>
+          </div>
+          <label>পরিমাণ<input name="quantity" type="number" min="1" max="20" value="1" required></label>
+          <label>অতিরিক্ত নির্দেশনা (ঐচ্ছিক)<textarea name="customerNote" rows="3" maxlength="500" placeholder="কিছু জানাতে চাইলে লিখুন"></textarea></label>
+          <button class="submit-button" type="submit" id="submit-button">অর্ডার কনফার্ম করুন</button>
+          <p class="form-footnote">অর্ডার পাঠানোর আগে আপনার তথ্য যাচাই করুন।</p>
+        </form>
+      </div>
     </div>
-
   </div>
 </section>
 
