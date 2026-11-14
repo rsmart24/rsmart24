@@ -217,13 +217,24 @@ function addProductToCart(product,color="",size="") {
   const button=document.querySelector("#detail-add-cart");
   if(button&&chosenProduct&&String(chosenProduct.id)===String(product.id)){button.textContent="✓ কার্টে যোগ হয়েছে";button.classList.add("is-added");}
 }
+function cartVariantSelect(item, type, values) {
+  if (!values.length) return "";
+  const selected=String(item[type]||"");
+  const label=type==="color"?"রং":"সাইজ";
+  return '<label class="cart-variant-field">'+label+'<select data-cart-variant="'+type+'"><option value="">'+label+' নির্বাচন করুন</option>'+values.map(v=>'<option value="'+escapeHtml(v)+'" '+(selected===String(v)?"selected":"")+'>'+escapeHtml(v)+'</option>').join("")+'</select></label>';
+}
 function renderCartPage() {
   const box=document.querySelector("#cart-items"),empty=document.querySelector("#cart-empty"),summary=document.querySelector("#cart-summary");
   if(!box||!empty||!summary)return;
-  const items=liveCartItems();
+  const raw=readCart(),items=liveCartItems();
   if(!items.length){box.innerHTML="";empty.hidden=false;summary.hidden=true;return;}
   empty.hidden=true;summary.hidden=false;
-  box.innerHTML=items.map(item=>'<article class="cart-item" data-cart-item="'+escapeHtml(item.id)+'" data-cart-color="'+escapeHtml(item.color||"")+'" data-cart-size="'+escapeHtml(item.size||"")+'"><div class="cart-item-image">'+productImage(item.product)+'</div><div class="cart-item-info"><h3>'+escapeHtml(item.product.name)+'</h3><div class="cart-item-variant">'+escapeHtml([item.color,item.size].filter(Boolean).join(" / ")||"ভ্যারিয়েন্ট প্রযোজ্য নয়")+'</div><strong>'+money(item.price)+'</strong><div class="cart-quantity"><button type="button" data-cart-decrease>−</button><span>'+item.quantity+'</span><button type="button" data-cart-increase>+</button><button type="button" class="cart-remove" data-cart-remove>সরান</button></div></div><b class="cart-line-total">'+money(item.price*item.quantity)+'</b></article>').join("");
+  box.innerHTML=items.map(item=>{
+    const variants=Array.isArray(item.product.variants)?item.product.variants:[];
+    const colors=[...new Set(variants.map(v=>v.color).filter(Boolean))];
+    const sizes=[...new Set(variants.map(v=>v.size).filter(Boolean))];
+    return '<article class="cart-item" data-cart-item="'+escapeHtml(item.id)+'" data-cart-color="'+escapeHtml(item.color||"")+'" data-cart-size="'+escapeHtml(item.size||"")+'"><div class="cart-item-image">'+productImage(item.product)+'</div><div class="cart-item-info"><h3>'+escapeHtml(item.product.name)+'</h3><div class="cart-variant-edit">'+cartVariantSelect(item,"color",colors)+cartVariantSelect(item,"size",sizes)+'</div><strong>'+money(item.price)+'</strong><div class="cart-quantity"><button type="button" data-cart-decrease aria-label="পরিমাণ কমান">−</button><span>'+item.quantity+'</span><button type="button" data-cart-increase aria-label="পরিমাণ বাড়ান">+</button><button type="button" class="cart-remove" data-cart-remove>সরান</button></div></div><b class="cart-line-total">'+money(item.price*item.quantity)+'</b></article>';
+  }).join("");
   const subtotal=items.reduce((sum,item)=>sum+item.price*item.quantity,0);
   document.querySelector("#cart-subtotal").textContent=money(subtotal);
   document.querySelector("#cart-total").textContent=money(subtotal);
@@ -251,7 +262,7 @@ function startCartCheckout() {
   orderSection.classList.add("cart-checkout-mode");
   const summary=document.querySelector("#cart-checkout-summary");
   summary.hidden=false;
-  summary.innerHTML="<h3>আপনার নির্বাচিত পণ্য ("+items.length+"টি)</h3>"+items.map(x=>"<div><span>"+escapeHtml(x.product.name)+" × "+x.quantity+"</span><b>"+money(x.price*x.quantity)+"</b></div>").join("");
+  summary.innerHTML="<h3>আপনার নির্বাচিত পণ্য ("+items.length+"টি)</h3>"+items.map(x=>"<div><span>"+escapeHtml(x.product.name)+" — "+escapeHtml([x.color,x.size].filter(Boolean).join(" / ")||"ভ্যারিয়েন্ট নেই")+" × "+x.quantity+"</span><b>"+money(x.price*x.quantity)+"</b></div>").join("");
   document.querySelector("#productId").value=chosenProduct.id;
   document.querySelector("#selected-product").textContent="একাধিক পণ্যের অর্ডার";
   document.querySelector("#order-quantity").closest("label").hidden=true;
@@ -272,6 +283,18 @@ document.querySelector("#cart-items")?.addEventListener("click",event=>{
   else if(event.target.closest("[data-cart-increase]"))cart[index].quantity=Math.min(20,Number(cart[index].quantity||1)+1);
   else if(event.target.closest("[data-cart-decrease]"))cart[index].quantity=Math.max(1,Number(cart[index].quantity||1)-1);
   else return;
+  saveCart(cart);
+});
+document.querySelector("#cart-items")?.addEventListener("change",event=>{
+  const select=event.target.closest("[data-cart-variant]");if(!select)return;
+  const row=select.closest("[data-cart-item]");if(!row)return;
+  const cart=readCart(),oldColor=row.dataset.cartColor||"",oldSize=row.dataset.cartSize||"";
+  const index=cart.findIndex(x=>String(x.id)===String(row.dataset.cartItem)&&String(x.color||"")===oldColor&&String(x.size||"")===oldSize);
+  if(index<0)return;
+  const type=select.dataset.cartVariant;
+  cart[index][type]=select.value;
+  const duplicate=cart.findIndex((x,i)=>i!==index&&String(x.id)===String(cart[index].id)&&String(x.color||"")===String(cart[index].color||"")&&String(x.size||"")===String(cart[index].size||""));
+  if(duplicate>=0){cart[duplicate].quantity=Math.min(20,Number(cart[duplicate].quantity||1)+Number(cart[index].quantity||1));cart.splice(index,1);}
   saveCart(cart);
 });
 document.querySelector("#cart-continue-shopping")?.addEventListener("click",showProductsPage);
@@ -405,7 +428,7 @@ function chooseProduct(id) {
   if (sizes.length) {
     variantHTML += `<label>সাইজ নির্বাচন করুন<select id="selected-size" required><option value="">সাইজ বেছে নিন</option>${sizes.map(size => `<option value="${escapeHtml(size)}">${escapeHtml(size)}</option>`).join("")}</select></label>`;
   }
-  variantBox.innerHTML = variantHTML;
+  variantBox.innerHTML = variantHTML || '<p class="no-variants-note">এই পণ্যে কালার বা সাইজ নির্বাচন করার প্রয়োজন নেই।</p>';
 
   document.querySelector("#delivery-price").textContent =
     `ঢাকার ভিতরে ${money(deliveryCharges.insideDhaka)} / ঢাকার বাইরে ${money(deliveryCharges.outsideDhaka)}`;
@@ -473,14 +496,22 @@ form.addEventListener("submit", async event => {
   const color = document.querySelector("#selected-color")?.value || "";
   const size = document.querySelector("#selected-size")?.value || "";
 
-  if (document.querySelector("#selected-color") && !color) {
-    alert("পণ্যের রং নির্বাচন করুন।");
-    return;
-  }
-
-  if (document.querySelector("#selected-size") && !size) {
-    alert("পণ্যের সাইজ নির্বাচন করুন।");
-    return;
+  if (!cartCheckoutMode) {
+    if (document.querySelector("#selected-color") && !color) {
+      alert("পণ্যের রং নির্বাচন করুন।");
+      return;
+    }
+    if (document.querySelector("#selected-size") && !size) {
+      alert("পণ্যের সাইজ নির্বাচন করুন।");
+      return;
+    }
+  } else {
+    for (const item of (chosenCartItems||[])) {
+      const p=products.find(x=>String(x.id)===String(item.id));
+      const vars=Array.isArray(p?.variants)?p.variants:[];
+      if(vars.some(v=>v.color)&&!item.color){alert(p.name+" পণ্যের রং নির্বাচন করুন।");return;}
+      if(vars.some(v=>v.size)&&!item.size){alert(p.name+" পণ্যের সাইজ নির্বাচন করুন।");return;}
+    }
   }
 
   submitButton.disabled = true;
