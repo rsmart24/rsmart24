@@ -41,10 +41,11 @@ function escapeHtml(value) {
 }
 
 function productImage(product) {
-  const src = Array.isArray(product.images) ? product.images[0] : "";
+  const raw = Array.isArray(product.images) ? product.images[0] : (product.image || "");
+  const src = typeof raw === "string" ? raw : (raw?.url || raw?.src || raw?.imageUrl || "");
   return src
-    ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(product.name)}" loading="lazy">`
-    : `<span class="image-placeholder">RS</span>`;
+    ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(product.name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'image-placeholder',textContent:'ছবি পাওয়া যায়নি'}))">`
+    : `<span class="image-placeholder">ছবি পাওয়া যায়নি</span>`;
 }
 
 function renderProducts() {
@@ -72,30 +73,56 @@ function renderProducts() {
     const outOfStock = p.inStock === false;
 
     return `
-      <article class="product-card">
+      <article class="product-card" data-product-card="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
         <div class="product-image">${productImage(p)}</div>
         <div class="product-info">
           <h3>${escapeHtml(p.name)}</h3>
-          <p>${escapeHtml(p.description || "বিস্তারিত জানতে পণ্যটি দেখুন।")}</p>
           <div class="product-bottom">
             <span class="price">
-  ${p.originalPrice !== null && p.originalPrice !== undefined && p.originalPrice > p.sellingPrice
-    ? `<del class="old-price">${money(p.originalPrice)}</del>`
-    : ""}
-  <strong>${money(p.sellingPrice)}</strong>
-</span>
-            <button class="buy-button"
-              data-buy="${escapeHtml(p.id)}"
-              ${outOfStock || !hasPrice ? "disabled" : ""}>
-              ${outOfStock ? (currentLanguage === "bn" ? "স্টক নেই" : "Out of stock") : !hasPrice ? (currentLanguage === "bn" ? "দাম আসছে" : "Price pending") : (currentLanguage === "bn" ? "অর্ডার করুন" : "Order now")}
+              ${p.originalPrice !== null && p.originalPrice !== undefined && p.originalPrice > p.sellingPrice
+                ? `<del class="old-price">${money(p.originalPrice)}</del>`
+                : ""}
+              <strong>${money(p.sellingPrice)}</strong>
+            </span>
+          </div>
+          <div class="product-card-actions">
+            <button class="buy-button" data-buy="${escapeHtml(p.id)}" ${outOfStock || !hasPrice ? "disabled" : ""}>
+              ${outOfStock ? "স্টক নেই" : !hasPrice ? "দাম আসছে" : "অর্ডার নাও"}
             </button>
+            <button class="card-cart-button" type="button" data-cart="${escapeHtml(p.id)}" ${outOfStock || !hasPrice ? "disabled" : ""}>🛒 কার্টে যোগ</button>
           </div>
         </div>
       </article>`;
   }).join("");
 
+  grid.querySelectorAll("[data-product-card]").forEach(card => {
+    const open = () => chooseProduct(card.dataset.productCard);
+    card.addEventListener("click", event => {
+      if (event.target.closest("button")) return;
+      open();
+    });
+    card.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        open();
+      }
+    });
+  });
   grid.querySelectorAll("[data-buy]").forEach(button => {
-    button.addEventListener("click", () => chooseProduct(button.dataset.buy));
+    button.addEventListener("click", event => {
+      event.stopPropagation();
+      chooseProduct(button.dataset.buy);
+    });
+  });
+  grid.querySelectorAll("[data-cart]").forEach(button => {
+    button.addEventListener("click", event => {
+      event.stopPropagation();
+      const product = products.find(p => String(p.id) === String(button.dataset.cart));
+      if (!product) return;
+      chosenProduct = product;
+      addChosenProductToCart();
+      button.textContent = "✓ যোগ হয়েছে";
+    });
   });
 }
 
