@@ -349,8 +349,34 @@ if (
             </select>
           </label>
           <button class="save-status" data-order="${escapeHTML(o.id)}">অবস্থা সংরক্ষণ</button></div>
+          ${o.payment_method === "advance" ? `<div class="order-actions"><label>অগ্রিম পেমেন্ট যাচাই
+            <select data-payment-status="${escapeHTML(o.id)}">
+              <option value="pending_manual" ${o.payment_verification_status === "pending_manual" ? "selected" : ""}>যাচাই বাকি</option>
+              <option value="verified" ${o.payment_verification_status === "verified" ? "selected" : ""}>পেমেন্ট পেয়েছি / যাচাই হয়েছে</option>
+              <option value="rejected" ${o.payment_verification_status === "rejected" ? "selected" : ""}>পেমেন্ট মেলেনি</option>
+            </select>
+          </label><button type="button" data-payment-save="${escapeHTML(o.id)}">পেমেন্ট যাচাই সংরক্ষণ</button></div>` : ""}
         </article>
       `).join("");
+
+      ordersBox.querySelectorAll("[data-payment-save]").forEach(button => {
+        button.addEventListener("click", async () => {
+          const id = button.dataset.paymentSave;
+          const paymentVerificationStatus = ordersBox.querySelector(`[data-payment-status="${CSS.escape(id)}"]`).value;
+          button.disabled = true;
+          try {
+            await api(`/api/admin/orders/${encodeURIComponent(id)}`, {
+              method: "PATCH",
+              body: JSON.stringify({ paymentVerificationStatus })
+            });
+            alert("পেমেন্ট যাচাইয়ের অবস্থা সংরক্ষণ হয়েছে।");
+          } catch (error) {
+            alert(error.message);
+          } finally {
+            button.disabled = false;
+          }
+        });
+      });
 
       ordersBox.querySelectorAll("[data-order]").forEach(button => {
         button.addEventListener("click", async () => {
