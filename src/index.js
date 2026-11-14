@@ -71,7 +71,8 @@ async function ensureOrderSchema(env) {
     ["advance_payment_amount", "INTEGER NOT NULL DEFAULT 0"],
     ["transaction_id", "TEXT"],
     ["transaction_id_format_valid", "INTEGER NOT NULL DEFAULT 0"],
-    ["payment_verification_status", "TEXT NOT NULL DEFAULT 'not_required'"]
+    ["payment_verification_status", "TEXT NOT NULL DEFAULT 'not_required'"],
+    ["order_items_json", "TEXT"]
   ];
   for (const [name, definition] of additions) {
     if (!orderNames.has(name)) {
@@ -264,135 +265,69 @@ async function saveProductSettings(request, env, productId) {
 async function createOrder(request, env) {
   await ensureOrderSchema(env);
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "অর্ডারের তথ্য সঠিকভাবে পাওয়া যায়নি।" }, 400);
-  }
-
-  const required = [
-    "productId", "customerName", "customerPhone", "customerAddress",
-    "customerDivision", "customerDistrict", "customerArea"
-  ];
-
+  try { body = await request.json(); }
+  catch { return json({ error: "অর্ডারের তথ্য সঠিকভাবে পাওয়া যায়নি।" }, 400); }
+  const required = ["customerName","customerPhone","customerAddress","customerDivision","customerDistrict","customerArea"];
   for (const key of required) {
-    if (body[key] === undefined || String(body[key]).trim() === "") {
-      return json({ error: `অনুগ্রহ করে ${key} পূরণ করুন।` }, 400);
-    }
+    if (body[key] === undefined || String(body[key]).trim() === "") return json({ error: "অনুগ্রহ করে " + key + " পূরণ করুন।" }, 400);
   }
-
-  const quantity = Number(body.quantity || 1);
-  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
-    return json({ error: "পরিমাণ ১ থেকে ২০-এর মধ্যে হতে হবে।" }, 400);
-  }
-
+  const requestedItems = Array.isArray(body.items) && body.items.length ? body.items : [{ id: body.productId, quantity: body.quantity || 1, color: body.color || "", size: body.size || "" }];
+  if (requestedItems.length > 20) return json({error:"এক অর্ডারে সর্বোচ্চ ২০ ধরনের পণ্য যোগ করতে পারবেন।"},400);
   const catalog = await getCatalog(env);
-  const product = catalog.products.find(
-    p => String(p.id) === String(body.productId)
-  );
-
-  if (!product) return json({ error: "পণ্যটি পাওয়া যায়নি।" }, 404);
-  if (product.inStock === false) {
-    return json({ error: "দুঃখিত, পণ্যটি স্টকে নেই।" }, 409);
-  }
-
-  const settings = await env.DB.prepare(
-    "SELECT selling_price, is_visible, discount_percent FROM product_settings WHERE product_id = ?"
-  ).bind(String(product.id)).first();
-
-  if (!settings || Number(settings.is_visible) !== 1) {
-    return json({ error: "এই পণ্যটি বর্তমানে অর্ডার করা যাচ্ছে না।" }, 400);
-  }
-
-  const variants = Array.isArray(product.variants) ? product.variants : [];
-  let selectedVariant = null;
-
-  if (variants.length) {
-    const colorRequired = variants.some(v => v.color);
-    const sizeRequired = variants.some(v => v.size);
-
-    if (colorRequired && !body.color) {
-      return json({ error: "পণ্যের রং নির্বাচন করুন।" }, 400);
+  const orderItems = [];
+  let subtotal = 0, totalDiscount = 0, totalQuantity = 0;
+  for (const item of requestedItems) {
+    const productId = item.id ?? item.productId;
+    const quantity = Number(item.quantity || 1);
+    if (!productId || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) return json({error:"প্রতিটি পণ্যের পরিমাণ ১ থেকে ২০-এর মধ্যে হতে হবে।"},400);
+    const product = catalog.products.find(p => String(p.id) === String(productId));
+    if (!product || product.inStock === false) return json({error:"কার্টের একটি পণ্য পাওয়া যাচ্ছে না বা স্টকে নেই।"},409);
+    const settings = await env.DB.prepare("SELECT selling_price,is_visible,discount_percent FROM product_settings WHERE product_id = ?").bind(String(product.id)).first();
+    if (!settings || Number(settings.is_visible) !== 1) return json({error:"পণ্যটি বর্তমানে অর্ডার করা যাচ্ছে না: " + product.name},400);
+    const variants = Array.isArray(product.variants) ? product.variants : [];
+    const color = String(item.color || "").trim(), size = String(item.size || "").trim();
+    if (variants.length) {
+      if (variants.some(v => v.color) && !color) return json({error:product.name + ": রং নির্বাচন করুন।"},400);
+      if (variants.some(v => v.size) && !size) return json({error:product.name + ": সাইজ নির্বাচন করুন।"},400);
+      const selected = variants.find(v => (!v.color || String(v.color) === color) && (!v.size || String(v.size) === size));
+      if (!selected || selected.inStock === false) return json({error:product.name + ": নির্বাচিত ভ্যারিয়েন্ট স্টকে নেই।"},409);
     }
-    if (sizeRequired && !body.size) {
-      return json({ error: "পণ্যের সাইজ নির্বাচন করুন।" }, 400);
-    }
-
-    selectedVariant = variants.find(v =>
-      (!v.color || String(v.color) === String(body.color || "")) &&
-      (!v.size || String(v.size) === String(body.size || ""))
-    );
-
-    if (!selectedVariant || selectedVariant.inStock === false) {
-      return json({ error: "নির্বাচিত রং বা সাইজ স্টকে নেই।" }, 409);
-    }
+    const unitPrice = Number(settings.selling_price);
+    if (!Number.isSafeInteger(unitPrice) || unitPrice < 0) return json({error:"একটি পণ্যের দাম সঠিক নয়।"},400);
+    const lineSubtotal = unitPrice * quantity;
+    const discountPercent = body.paymentMethod === "advance" ? Number(settings.discount_percent || 0) : 0;
+    const discountAmount = Math.round(lineSubtotal * discountPercent / 100);
+    subtotal += lineSubtotal; totalDiscount += discountAmount; totalQuantity += quantity;
+    orderItems.push({id:String(product.id),name:String(product.name || ""),quantity,unitPrice,color,size,subtotal:lineSubtotal,discountPercent,discountAmount});
   }
-
-  const unitPrice = Number(settings.selling_price);
   const division = String(body.customerDivision).trim().toLowerCase();
   const isDhaka = division === "dhaka" || division === "ঢাকা";
-  const deliveryCharge = Number(
-    isDhaka
-      ? catalog.deliveryCharges.insideDhaka || 0
-      : catalog.deliveryCharges.outsideDhaka || 0
-  );
-
-  const subtotal = unitPrice * quantity;
+  const deliveryCharge = Number(isDhaka ? catalog.deliveryCharges.insideDhaka || 0 : catalog.deliveryCharges.outsideDhaka || 0);
   const paymentMethod = body.paymentMethod === "advance" ? "advance" : "cod";
-  const discountPercent = paymentMethod === "advance" ? Number(settings.discount_percent || 0) : 0;
-  const discountAmount = Math.round(subtotal * discountPercent / 100);
-  const totalAmount = subtotal + deliveryCharge - discountAmount;
+  const totalAmount = subtotal + deliveryCharge - totalDiscount;
   const advancePaymentAmount = paymentMethod === "advance" ? deliveryCharge : 0;
   const transactionId = String(body.transactionId || "").trim().toUpperCase();
   const transactionIdFormatValid = paymentMethod === "advance" && /^[A-Z0-9]{8,12}$/.test(transactionId);
-  if (paymentMethod === "advance" && !transactionIdFormatValid) {
-    return json({ error: "বিকাশ Transaction ID সঠিক ফরম্যাটে দিন (৮–১২ অক্ষরের আলফানিউমেরিক আইডি)।" }, 400);
-  }
-  if (!Number.isSafeInteger(totalAmount) || totalAmount < 0) {
-    return json({ error: "অর্ডারের মোট মূল্য সঠিক নয়।" }, 400);
-  }
-
+  if (paymentMethod === "advance" && !transactionIdFormatValid) return json({error:"বিকাশ Transaction ID সঠিক ফরম্যাটে দিন (৮–১২ অক্ষরের আলফানিউমেরিক আইডি)।"},400);
+  if (!Number.isSafeInteger(totalAmount) || totalAmount < 0) return json({error:"অর্ডারের মোট মূল্য সঠিক নয়।"},400);
   const orderId = crypto.randomUUID();
-
-  await env.DB.prepare(`
-    INSERT INTO orders (
-      id, product_id, product_name, customer_name, customer_phone,
-      customer_division, customer_district, customer_area, customer_address,
-      color, size, quantity, unit_price, delivery_charge, total_amount, note,
-      payment_method, discount_percent, discount_amount, advance_payment_amount,
-      transaction_id, transaction_id_format_valid, payment_verification_status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    orderId,
-    String(product.id),
-    String(product.name || ""),
-    String(body.customerName).trim().slice(0, 100),
-    String(body.customerPhone).trim().slice(0, 20),
-    String(body.customerDivision).trim().slice(0, 100),
-    String(body.customerDistrict).trim().slice(0, 100),
-    String(body.customerArea).trim().slice(0, 150),
-    String(body.customerAddress).trim().slice(0, 500),
-    String(body.color || "").trim().slice(0, 60),
-    String(body.size || "").trim().slice(0, 60),
-    quantity,
-    unitPrice,
-    deliveryCharge,
-    totalAmount,
-    String(body.customerNote || "").trim().slice(0, 500),
-    paymentMethod,
-    discountPercent,
-    discountAmount,
-    advancePaymentAmount,
-    paymentMethod === "advance" ? transactionId : null,
-    transactionIdFormatValid ? 1 : 0,
-    paymentMethod === "advance" ? "pending_manual" : "not_required"
+  const first = orderItems[0];
+  const productName = orderItems.length === 1 ? first.name : "একাধিক পণ্য (" + orderItems.length + " ধরনের)";
+  const effectiveDiscountPercent = subtotal ? Math.round(totalDiscount * 100 / subtotal) : 0;
+  await env.DB.prepare(
+    "INSERT INTO orders (id,product_id,product_name,customer_name,customer_phone,customer_division,customer_district,customer_area,customer_address,color,size,quantity,unit_price,delivery_charge,total_amount,note,payment_method,discount_percent,discount_amount,advance_payment_amount,transaction_id,transaction_id_format_valid,payment_verification_status,order_items_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+  ).bind(
+    orderId,String(first.id),productName,
+    String(body.customerName).trim().slice(0,100),String(body.customerPhone).trim().slice(0,20),
+    String(body.customerDivision).trim().slice(0,100),String(body.customerDistrict).trim().slice(0,100),
+    String(body.customerArea).trim().slice(0,150),String(body.customerAddress).trim().slice(0,500),
+    orderItems.length===1?first.color:"",orderItems.length===1?first.size:"",
+    totalQuantity,subtotal,deliveryCharge,totalAmount,String(body.customerNote||"").trim().slice(0,500),
+    paymentMethod,effectiveDiscountPercent,totalDiscount,advancePaymentAmount,
+    paymentMethod==="advance"?transactionId:null,transactionIdFormatValid?1:0,
+    paymentMethod==="advance"?"pending_manual":"not_required",JSON.stringify(orderItems)
   ).run();
-
-  return json({
-    success: true,
-    orderId,
-    message: "আপনার অর্ডার RS Mart-এ জমা হয়েছে। আমাদের প্রতিনিধি ফোন করে অর্ডার নিশ্চিত করবেন।"
-  }, 201);
+  return json({success:true,orderId,message:"আপনার অর্ডার RS Mart-এ জমা হয়েছে। আমাদের প্রতিনিধি ফোন করে অর্ডার নিশ্চিত করবেন।"},201);
 }
 
 async function adminOrders(env) {
