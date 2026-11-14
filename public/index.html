@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=checkout-20261115-v2">
+  <link rel="stylesheet" href="/style.css?v=cart-20261115-v1">
 </head>
 <body>
   
@@ -36,7 +36,7 @@
         <input type="search" id="product-search" placeholder="Search smart gadgets, fashion or more..." data-i18n-placeholder="search">
         <button type="button" aria-label="Search" id="search-button">⌕</button>
       </div>
-      <a class="header-cart" href="#products"><span class="cart-symbol">🛒</span><span data-i18n="cart">Cart</span></a>
+      <a class="header-cart" href="#cart" aria-label="কার্ট দেখুন"><span class="cart-symbol">🛒</span><span data-i18n="cart">Cart</span></a>
     </div>
   </div>
 
@@ -117,6 +117,14 @@
     </section>
 
     
+
+<section class="cart-page" id="cart-page" hidden aria-labelledby="cart-heading">
+  <div class="cart-page-header"><div><span class="eyebrow">YOUR SHOPPING CART</span><h2 id="cart-heading">আপনার কার্ট</h2><p>পণ্য, পরিমাণ ও মোট দাম যাচাই করুন।</p></div><button type="button" id="cart-continue-shopping" class="cart-continue">আরও পণ্য দেখুন</button></div>
+  <div id="cart-items" class="cart-items"></div>
+  <div id="cart-empty" class="cart-empty" hidden><div class="cart-empty-icon">🛒</div><h3>আপনার কার্টে এখনো কিছু নেই</h3><p>পছন্দের পণ্য কার্টে যোগ করলে এখানে দেখা যাবে।</p><button type="button" id="cart-empty-shop">পণ্য দেখুন</button></div>
+  <div id="cart-summary" class="cart-summary" hidden><div><span>পণ্যের মোট</span><b id="cart-subtotal">৳0</b></div><div><span>আনুমানিক ডেলিভারি চার্জ</span><b id="cart-delivery">ঠিকানা অনুযায়ী</b></div><div class="cart-summary-total"><span>সর্বমোট (ডেলিভারি ছাড়া)</span><b id="cart-total">৳0</b></div><button type="button" id="cart-checkout" class="cart-checkout-button">সব পণ্য একসাথে অর্ডার করুন</button></div>
+</section>
+
 <section class="order-section product-detail-section" id="order" role="dialog" aria-modal="true" aria-labelledby="selected-product" hidden>
   <button type="button" class="order-modal-close" id="close-order" aria-label="পণ্য বন্ধ করুন">×</button>
   <div class="product-detail-layout">
@@ -129,6 +137,7 @@
       <div class="detail-actions">
         <button type="button" class="detail-order-now" id="detail-order-now">Order Now</button>
         <button type="button" class="detail-add-cart" id="detail-add-cart">🛒 Add to Cart</button>
+        <button type="button" class="detail-multi-order" id="detail-multi-order">আরও পণ্য একসাথে অর্ডার</button>
       </div>
       <section class="detail-description-section">
         <h3>Product Description</h3>
@@ -168,6 +177,7 @@
               <small id="transaction-id-hint">৮–১২ অক্ষরের Transaction ID লিখুন। ফরম্যাট ঠিক থাকলে ✓ দেখাবে। আসল পেমেন্ট অ্যাডমিন যাচাই করবেন।</small>
             </div>
           </section>
+          <div id="cart-checkout-summary" class="cart-checkout-summary" hidden></div>
           <div class="order-total-box" id="order-total-box">
             <div><span>পণ্যের মোট দাম</span><b id="subtotal-value">৳—</b></div>
             <div><span>ডেলিভারি চার্জ</span><b id="delivery-value">ঠিকানা নির্বাচন করুন</b></div>
@@ -196,6 +206,7 @@
   </main>
 
   <a class="floating-shop" href="#products" aria-label="Shop products"><span>♧</span></a>
+  <button type="button" class="floating-cart" id="floating-cart" aria-label="কার্ট খুলুন">🛒<span id="floating-cart-count">0</span></button>
   <footer class="site-footer">
     <div class="footer-main">
       <div class="footer-about">
@@ -233,6 +244,6 @@
       <span>Made for smart everyday shopping</span>
     </div>
   </footer>
-  <script src="/app.js?v=checkout-20261115-v2"></script>
+  <script src="/app.js?v=cart-20261115-v1"></script>
 </body>
 </html>
