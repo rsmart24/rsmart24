@@ -88,11 +88,11 @@ function renderProducts() {
 
   grid.innerHTML = filteredProducts.map(p => {
     const hasPrice = p.sellingPrice !== null && p.sellingPrice !== undefined;
-    const outOfStock = p.inStock === false;
+    const outOfStock = p.inStock === false || String(p.stockStatus || p.stock_status || "").toLowerCase() === "out_of_stock";
 
     return `
-      <article class="product-card" data-product-card="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
-        <div class="product-image">${productImage(p)}</div>
+      <article class="product-card ${outOfStock ? "is-out-of-stock" : ""}" data-product-card="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
+        <div class="product-image">${productImage(p)}${outOfStock ? '<span class="stock-out-overlay">স্টক আউট</span>' : ""}</div>
         <div class="product-info">
           <h3>${escapeHtml(p.name)}</h3>
           <div class="product-bottom">
@@ -137,7 +137,6 @@ function renderProducts() {
       event.stopPropagation();
       const product = products.find(p => String(p.id) === String(button.dataset.cart));
       if (!product) return;
-      if ((product.variants || []).some(v => v.color || v.size)) { chooseProduct(product.id); return; }
       addProductToCart(product);
       button.textContent = "✓ যোগ হয়েছে";
     });
@@ -262,7 +261,7 @@ function startCartCheckout() {
   orderSection.classList.add("cart-checkout-mode");
   const summary=document.querySelector("#cart-checkout-summary");
   summary.hidden=false;
-  summary.innerHTML="<h3>আপনার নির্বাচিত পণ্য ("+items.length+"টি)</h3>"+items.map(x=>"<div><span>"+escapeHtml(x.product.name)+" — "+escapeHtml([x.color,x.size].filter(Boolean).join(" / ")||"ভ্যারিয়েন্ট নেই")+" × "+x.quantity+"</span><b>"+money(x.price*x.quantity)+"</b></div>").join("");
+  summary.innerHTML="<h3>আপনার নির্বাচিত পণ্য ("+items.length+"টি)</h3>"+items.map((x,i)=>{const vars=Array.isArray(x.product.variants)?x.product.variants:[];const colors=[...new Set(vars.map(v=>v.color).filter(Boolean))];const sizes=[...new Set(vars.map(v=>v.size).filter(Boolean))];const field=(type,values,label)=>values.length?'<label class="cart-variant-field">'+label+'<select data-checkout-variant="'+type+'" data-checkout-index="'+i+'"><option value="">'+label+' নির্বাচন করুন</option>'+values.map(v=>'<option value="'+escapeHtml(v)+'" '+(String(x[type]||"")===String(v)?"selected":"")+'>'+escapeHtml(v)+'</option>').join("")+'</select></label>':"";return "<div class=\"checkout-cart-line\"><span>"+escapeHtml(x.product.name)+" × "+x.quantity+"<span class=\"checkout-cart-variants\">"+field("color",colors,"রং")+field("size",sizes,"সাইজ")+"</span></span><b>"+money(x.price*x.quantity)+"</b></div>";}).join("");
   document.querySelector("#productId").value=chosenProduct.id;
   document.querySelector("#selected-product").textContent="একাধিক পণ্যের অর্ডার";
   document.querySelector("#order-quantity").closest("label").hidden=true;
@@ -284,6 +283,12 @@ document.querySelector("#cart-items")?.addEventListener("click",event=>{
   else if(event.target.closest("[data-cart-decrease]"))cart[index].quantity=Math.max(1,Number(cart[index].quantity||1)-1);
   else return;
   saveCart(cart);
+});
+document.querySelector("#cart-checkout-summary")?.addEventListener("change",event=>{
+  const select=event.target.closest("[data-checkout-variant]");if(!select||!chosenCartItems)return;
+  const index=Number(select.dataset.checkoutIndex),type=select.dataset.checkoutVariant;
+  if(!Number.isInteger(index)||!chosenCartItems[index])return;
+  chosenCartItems[index][type]=select.value;
 });
 document.querySelector("#cart-items")?.addEventListener("change",event=>{
   const select=event.target.closest("[data-cart-variant]");if(!select)return;
