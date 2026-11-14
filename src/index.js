@@ -27,23 +27,49 @@ function apiHeaders(env) {
 }
 
 async function getCatalog(env) {
-  const response = await fetch(`${API_BASE}/products`, {
-    headers: apiHeaders(env)
-  });
-  const raw = await response.text();
-  let data;
-  try {
-    data = JSON.parse(raw);
-  } catch {
-    throw new Error("Business Koro returned an unreadable response.");
+  const headers = apiHeaders(env);
+  const allProducts = [];
+  const seen = new Set();
+  let deliveryCharges = {};
+  let expectedLastPage = 1;
+  const maxPages = 100;
+
+  for (let page = 1; page <= maxPages; page++) {
+    const url = new URL(`${API_BASE}/products`);
+    if (page > 1) url.searchParams.set("page", String(page));
+    const response = await fetch(url.toString(), { headers });
+    const raw = await response.text();
+    let data;
+    try { data = JSON.parse(raw); }
+    catch { throw new Error("Business Koro returned an unreadable response."); }
+    if (!response.ok) {
+      if (page > 1 && allProducts.length) break;
+      throw new Error(data?.message || "Could not load products.");
+    }
+
+    const pageProducts = Array.isArray(data?.data) ? data.data
+      : Array.isArray(data?.products) ? data.products : [];
+    if (page === 1) {
+      deliveryCharges = data?.deliveryCharges || data?.delivery_charges || {};
+      const last = Number(data?.meta?.last_page ?? data?.pagination?.last_page ?? data?.last_page ?? 0);
+      if (Number.isInteger(last) && last > 0) expectedLastPage = Math.min(last, maxPages);
+    }
+    let added = 0;
+    for (const product of pageProducts) {
+      const key = String(product?.id ?? product?.productId ?? "");
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      allProducts.push(product);
+      added++;
+    }
+    if (!pageProducts.length || (page > 1 && added === 0)) break;
+    const last = Number(data?.meta?.last_page ?? data?.pagination?.last_page ?? data?.last_page ?? 0);
+    const hasNext = Boolean(data?.links?.next ?? data?.pagination?.next_page_url ?? data?.next_page_url);
+    if (last > 0) expectedLastPage = Math.min(last, maxPages);
+    if (page >= expectedLastPage && !hasNext) break;
+    if (page === 1 && expectedLastPage === 1 && !hasNext && pageProducts.length < 20) break;
   }
-  if (!response.ok) {
-    throw new Error(data?.message || "Could not load products.");
-  }
-  return {
-    products: Array.isArray(data?.data) ? data.data : [],
-    deliveryCharges: data?.deliveryCharges || {}
-  };
+  return { products: allProducts, deliveryCharges };
 }
 
 function requireDB(env) {
@@ -98,12 +124,13 @@ function publicProduct(p, setting) {
     name: p.name,
     description: p.description || "",
     images: Array.isArray(p.images) && p.images.length ? p.images : (Array.isArray(p.imageUrls) && p.imageUrls.length ? p.imageUrls : (p.image || p.imageUrl || p.thumbnailUrl ? [p.image || p.imageUrl || p.thumbnailUrl] : [])),
-    inStock: p.inStock,
+    inStock: p.inStock === false || ["out_of_stock","out of stock","sold_out","sold out"].includes(String(p.stockStatus || p.stock_status || "").toLowerCase()) ? false : p.inStock,
+    stockStatus: p.stockStatus || p.stock_status || (p.inStock === false ? "out_of_stock" : "in_stock"),
     variants: Array.isArray(p.variants)
       ? p.variants.map(v => ({
           color: v.color || "",
           size: v.size || "",
-          inStock: v.inStock
+          inStock: v.inStock === false || ["out_of_stock","out of stock","sold_out","sold out"].includes(String(v.stockStatus || v.stock_status || "").toLowerCase()) ? false : v.inStock
         }))
       : [],
     sellingPrice: setting ? Number(setting.selling_price) : null,
