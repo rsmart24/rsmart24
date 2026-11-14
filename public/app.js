@@ -144,7 +144,8 @@ function renderProducts() {
   });
 }
 
-function closeOrderModal() {
+function closeOrderModal(syncHistory = false) {
+  if (syncHistory && /^#product-/.test(location.hash)) history.back();
   orderSection.hidden = true;
   document.body.classList.remove("order-modal-open");
   document.querySelector(".floating-shop")?.classList.remove("is-hidden");
@@ -152,10 +153,10 @@ function closeOrderModal() {
   lastOrderTrigger = null;
 }
 
-document.querySelector("#close-order")?.addEventListener("click", closeOrderModal);
+document.querySelector("#close-order")?.addEventListener("click", () => closeOrderModal(true));
 
 orderSection.addEventListener("click", event => {
-  if (event.target === orderSection) closeOrderModal();
+  if (event.target === orderSection) closeOrderModal(true);
 });
 
 document.addEventListener("keydown", event => {
@@ -163,7 +164,7 @@ document.addEventListener("keydown", event => {
 
   if (event.key === "Escape") {
     event.preventDefault();
-    closeOrderModal();
+    closeOrderModal(true);
     return;
   }
 
@@ -394,21 +395,25 @@ document.querySelector("#detail-add-cart")?.addEventListener("click", () => {
 });
 document.querySelector("#detail-multi-order")?.addEventListener("click", () => {
   if (!chosenProduct) return;
-  const lastMultiItem=cartCheckoutMode&&chosenCartItems?.length?chosenCartItems[chosenCartItems.length-1]:null;
-  const color=lastMultiItem?lastMultiItem.color||"":document.querySelector("#selected-color")?.value||"";
-  const size=lastMultiItem?lastMultiItem.size||"":document.querySelector("#selected-size")?.value||"";
-  const quantity=lastMultiItem?lastMultiItem.quantity:Math.max(1,Math.min(20,Number(document.querySelector("#order-quantity")?.value||1)));
-  if(cartCheckoutMode && chosenCartItems?.length){
-    chosenCartItems[chosenCartItems.length-1]={id:chosenProduct.id,quantity,color,size};
-    multiOrderItems=chosenCartItems.map(x=>({...x}));
+  if (cartCheckoutMode && chosenCartItems?.length) {
+    // Preserve every cart item; do not replace the first item with the last one.
+    multiOrderItems = chosenCartItems.map(item => ({...item}));
   } else {
+    const color=document.querySelector("#selected-color")?.value||"";
+    const size=document.querySelector("#selected-size")?.value||"";
+    const quantity=Math.max(1,Math.min(20,Number(document.querySelector("#order-quantity")?.value||1)));
     const existing=multiOrderItems.find(x=>String(x.id)===String(chosenProduct.id)&&x.color===color&&x.size===size);
     if(existing) existing.quantity=Math.min(20,existing.quantity+quantity);
     else multiOrderItems.push({id:chosenProduct.id,quantity,color,size});
   }
+  cartCheckoutMode=false;
+  chosenCartItems=null;
+  orderSection.classList.remove("cart-checkout-mode");
+  document.querySelector("#cart-checkout-summary").hidden=true;
+  document.querySelector("#order-quantity").closest("label").hidden=false;
   closeOrderModal();
   showProductsPage();
-  showNotice("পণ্যটি অর্ডারের তালিকায় রাখা হয়েছে। আরও পণ্য বেছে নিন।");
+  showNotice("আগের পণ্যগুলো অর্ডারের তালিকায় রাখা হয়েছে। আরও পণ্য বেছে নিন।");
 });
 document.querySelector(".header-cart")?.addEventListener("click", event => { event.preventDefault(); openCartPage(); });
 
@@ -680,10 +685,10 @@ async function setupAddressDropdowns() {
 
   } catch (error) {
     console.error("Address dropdown error:", error);
-    divisionSelect.innerHTML =
-      '<option value="">ঠিকানার তালিকা লোড হয়নি</option>';
-    districtSelect.disabled = true;
-    areaSelect.disabled = true;
+    // Keep the built-in division options and allow manual district/upazila entry
+    // so a third-party location-data outage cannot block checkout.
+    districtSelect.outerHTML = '<input name="customerDistrict" id="customerDistrict" required maxlength="100" placeholder="জেলার নাম লিখুন">';
+    areaSelect.outerHTML = '<input name="customerArea" id="customerArea" required maxlength="150" placeholder="থানা / উপজেলার নাম লিখুন">';
   }
 }
 
