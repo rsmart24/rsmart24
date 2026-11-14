@@ -26,6 +26,17 @@ function apiHeaders(env) {
   return headers;
 }
 
+function isOutOfStock(product) {
+  if (!product || typeof product !== "object") return false;
+  const normalize = value => String(value ?? "").trim().toLowerCase().replace(/[\\s-]+/g, "_");
+  const status = normalize(product.stockStatus ?? product.stock_status ?? product.availability ?? product.status);
+  const stock = product.inStock ?? product.in_stock ?? product.available;
+  const stockText = normalize(stock);
+  return stock === false || stock === 0 || stock === "0" || stockText === "false" ||
+    ["out_of_stock", "sold_out", "outofstock", "unavailable"].includes(status) ||
+    ["out_of_stock", "sold_out", "outofstock", "unavailable"].includes(stockText);
+}
+
 async function getCatalog(env) {
   const headers = apiHeaders(env);
   const allProducts = [];
@@ -124,13 +135,13 @@ function publicProduct(p, setting) {
     name: p.name,
     description: p.description || "",
     images: Array.isArray(p.images) && p.images.length ? p.images : (Array.isArray(p.imageUrls) && p.imageUrls.length ? p.imageUrls : (p.image || p.imageUrl || p.thumbnailUrl ? [p.image || p.imageUrl || p.thumbnailUrl] : [])),
-    inStock: p.inStock === false || ["out_of_stock","out of stock","sold_out","sold out"].includes(String(p.stockStatus || p.stock_status || p.inStock || "").toLowerCase()) ? false : p.inStock,
-    stockStatus: p.stockStatus || p.stock_status || (p.inStock === false || ["out_of_stock","out of stock","sold_out","sold out"].includes(String(p.inStock || "").toLowerCase()) ? "out_of_stock" : "in_stock"),
+    inStock: isOutOfStock(p) ? false : (p.inStock ?? p.in_stock ?? p.available),
+    stockStatus: isOutOfStock(p) ? "out_of_stock" : (p.stockStatus || p.stock_status || "in_stock"),
     variants: Array.isArray(p.variants)
       ? p.variants.map(v => ({
           color: v.color || "",
           size: v.size || "",
-          inStock: v.inStock === false || ["out_of_stock","out of stock","sold_out","sold out"].includes(String(v.stockStatus || v.stock_status || "").toLowerCase()) ? false : v.inStock
+          inStock: isOutOfStock(v) ? false : (v.inStock ?? v.in_stock ?? v.available)
         }))
       : [],
     sellingPrice: setting ? Number(setting.selling_price) : null,
@@ -308,7 +319,7 @@ async function createOrder(request, env) {
     const quantity = Number(item.quantity || 1);
     if (!productId || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) return json({error:"প্রতিটি পণ্যের পরিমাণ ১ থেকে ২০-এর মধ্যে হতে হবে।"},400);
     const product = catalog.products.find(p => String(p.id) === String(productId));
-    if (!product || product.inStock === false) return json({error:"কার্টের একটি পণ্য পাওয়া যাচ্ছে না বা স্টকে নেই।"},409);
+    if (!product || isOutOfStock(product)) return json({error:"কার্টের একটি পণ্য পাওয়া যাচ্ছে না বা স্টকে নেই।"},409);
     const settings = await env.DB.prepare("SELECT selling_price,is_visible,discount_percent FROM product_settings WHERE product_id = ?").bind(String(product.id)).first();
     if (!settings || Number(settings.is_visible) !== 1) return json({error:"পণ্যটি বর্তমানে অর্ডার করা যাচ্ছে না: " + product.name},400);
     const variants = Array.isArray(product.variants) ? product.variants : [];
@@ -317,7 +328,7 @@ async function createOrder(request, env) {
       if (variants.some(v => v.color) && !color) return json({error:product.name + ": রং নির্বাচন করুন।"},400);
       if (variants.some(v => v.size) && !size) return json({error:product.name + ": সাইজ নির্বাচন করুন।"},400);
       const selected = variants.find(v => (!v.color || String(v.color) === color) && (!v.size || String(v.size) === size));
-      if (!selected || selected.inStock === false) return json({error:product.name + ": নির্বাচিত ভ্যারিয়েন্ট স্টকে নেই।"},409);
+      if (!selected || isOutOfStock(selected)) return json({error:product.name + ": নির্বাচিত ভ্যারিয়েন্ট স্টকে নেই।"},409);
     }
     const unitPrice = Number(settings.selling_price);
     if (!Number.isSafeInteger(unitPrice) || unitPrice < 0) return json({error:"একটি পণ্যের দাম সঠিক নয়।"},400);
