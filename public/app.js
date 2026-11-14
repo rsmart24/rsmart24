@@ -10,6 +10,7 @@ const submitButton = document.querySelector("#submit-button");
 let products = [];
 let deliveryCharges = {};
 let chosenProduct = null;
+let lastOrderTrigger = null;
 let activeCategory = "all";
 let currentLanguage = "bn";
 
@@ -102,6 +103,8 @@ function closeOrderModal() {
   orderSection.hidden = true;
   document.body.classList.remove("order-modal-open");
   document.querySelector(".floating-shop")?.classList.remove("is-hidden");
+  if (lastOrderTrigger?.isConnected) lastOrderTrigger.focus();
+  lastOrderTrigger = null;
 }
 
 document.querySelector("#close-order")?.addEventListener("click", closeOrderModal);
@@ -111,10 +114,38 @@ orderSection.addEventListener("click", event => {
 });
 
 document.addEventListener("keydown", event => {
-  if (event.key === "Escape" && !orderSection.hidden) closeOrderModal();
+  if (orderSection.hidden) return;
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeOrderModal();
+    return;
+  }
+
+  if (event.key !== "Tab") return;
+  const focusable = [...orderSection.querySelectorAll(
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )].filter(element => element.getClientRects().length > 0);
+
+  if (!focusable.length) {
+    event.preventDefault();
+    document.querySelector("#close-order")?.focus();
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 });
 
 function chooseProduct(id) {
+  lastOrderTrigger = document.activeElement;
   chosenProduct = products.find(p => String(p.id) === String(id));
   if (!chosenProduct) return;
 
@@ -189,7 +220,7 @@ document.querySelectorAll(".category-nav [data-category], .footer-links [data-ca
     activeCategory = button.dataset.category;
 
     document.querySelectorAll(".category-nav [data-category]").forEach(item => {
-      item.classList.toggle("active", item === button);
+      item.classList.toggle("active", item.dataset.category === activeCategory);
     });
 
     renderProducts();
