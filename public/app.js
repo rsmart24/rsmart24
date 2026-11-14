@@ -244,6 +244,21 @@ document.querySelector("#copy-bkash-number")?.addEventListener("click", async ()
   try { await navigator.clipboard.writeText("01716862470"); showNotice("বিকাশ নম্বর কপি হয়েছে।"); }
   catch (_) { showNotice("বিকাশ নম্বর: 01716862470"); }
 });
+document.querySelector("#transaction-id")?.addEventListener("input", event => {
+  const value = event.target.value.trim().toUpperCase();
+  event.target.value = value;
+  const hint = document.querySelector("#transaction-id-hint");
+  const valid = /^[A-Z0-9]{10}$/.test(value);
+  if (hint) {
+    hint.textContent = valid
+      ? "✓ Transaction ID-এর ফরম্যাট সঠিক। আসল পেমেন্ট অ্যাডমিন যাচাই করবেন।"
+      : "১০ অক্ষরের আলফানিউমেরিক Transaction ID লিখুন।";
+    hint.classList.toggle("is-valid", valid);
+  }
+});
+document.querySelector("#close-order-success")?.addEventListener("click", () => {
+  document.querySelector("#order-success").hidden = true;
+});
 document.querySelector("#detail-form-open")?.addEventListener("click", openDetailOrderForm);
 document.querySelector("#detail-add-cart")?.addEventListener("click", addChosenProductToCart);
 document.querySelector(".header-cart")?.addEventListener("click", event => {
@@ -407,11 +422,11 @@ form.addEventListener("submit", async event => {
       throw new Error(result.error || result.message || "অর্ডার জমা হয়নি।");
     }
 
-    alert(`ধন্যবাদ! আপনার অর্ডার গ্রহণ করা হয়েছে।\nঅর্ডার নম্বর: ${result.orderId}\nআমাদের প্রতিনিধি ফোন করে আপনার অর্ডার নিশ্চিত করবেন।`);
-
     form.reset();
     closeOrderModal();
     chosenProduct = null;
+    document.querySelector("#success-order-id").textContent = result.orderId;
+    document.querySelector("#order-success").hidden = false;
 
   } catch (error) {
     alert(`অর্ডার জমা হয়নি: ${error.message}`);
