@@ -2183,3 +2183,21 @@ body.order-modal-open {
   }
   .footer-bottom p,.footer-bottom span,.footer-bottom a { font-size: 10px; }
 }
+
+
+/* Accessibility and keyboard focus improvements */
+.order-section :focus-visible,
+.site-footer a:focus-visible {
+  outline: 3px solid #ff9a43;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .order-section *,
+  .site-footer *,
+  .banner-slide {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
