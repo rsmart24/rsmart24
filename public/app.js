@@ -225,7 +225,7 @@ function chooseProduct(id) {
   oldPrice.textContent = hasDiscount ? money(chosenProduct.originalPrice) : "";
   document.querySelector("#detail-offer").hidden = !hasDiscount;
 
-  const category = String(chosenProduct.category || "অন্যান্য").replace(/[-_]/g, " ").replace(/\\b\\w/g, letter => letter.toUpperCase());
+  const category = String(chosenProduct.category || "অন্যান্য").replace(/[-_]/g, " ").replace(/\b\w/g, letter => letter.toUpperCase());
   document.querySelector("#detail-category").textContent = "📁 " + category;
   document.querySelector("#detail-stock").textContent = "✓ In stock";
 
