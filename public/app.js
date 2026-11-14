@@ -16,8 +16,20 @@ let currentLanguage = "bn";
 let chosenCartItems = null;
 let cartCheckoutMode = false;
 let multiOrderItems = [];
+let orderOriginView = "products";
 
 document.querySelector("#year").textContent = new Date().getFullYear();
+
+function isOutOfStock(item) {
+  if (!item || typeof item !== "object") return false;
+  const normalize = value => String(value ?? "").trim().toLowerCase().replace(/[\\s-]+/g, "_");
+  const status = normalize(item.stockStatus ?? item.stock_status ?? item.availability ?? item.status);
+  const stock = item.inStock ?? item.in_stock ?? item.available;
+  const stockText = normalize(stock);
+  return stock === false || stock === 0 || stock === "0" || stockText === "false" ||
+    ["out_of_stock", "sold_out", "outofstock", "unavailable"].includes(status) ||
+    ["out_of_stock", "sold_out", "outofstock", "unavailable"].includes(stockText);
+}
 
 function money(value) {
   if (value === null || value === undefined || value === "") {
@@ -89,7 +101,7 @@ function renderProducts() {
 
   grid.innerHTML = filteredProducts.map(p => {
     const hasPrice = p.sellingPrice !== null && p.sellingPrice !== undefined;
-    const outOfStock = p.inStock === false || String(p.stockStatus || p.stock_status || "").toLowerCase() === "out_of_stock";
+    const outOfStock = isOutOfStock(p);
 
     return `
       <article class="product-card ${outOfStock ? "is-out-of-stock" : ""}" data-product-card="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
@@ -204,7 +216,7 @@ function updateCartCount() {
 function liveCartItems() {
   return readCart().map(item=>{
     const product=products.find(p=>String(p.id)===String(item.id));
-    if(!product||product.inStock===false||product.sellingPrice==null)return null;
+    if(!product||isOutOfStock(product)||product.sellingPrice==null)return null;
     return {...item,product,quantity:Math.max(1,Math.min(20,Number(item.quantity||1))),price:Number(product.sellingPrice)};
   }).filter(Boolean);
 }
@@ -427,7 +439,7 @@ function chooseProduct(id, pushHistory = true) {
     return;
   }
 
-  if (chosenProduct.inStock === false) {
+  if (isOutOfStock(chosenProduct)) {
     alert("দুঃখিত, পণ্যটি স্টকে নেই।");
     return;
   }
@@ -597,7 +609,7 @@ form.addEventListener("submit", async event => {
 
     form.reset();
     if(cartCheckoutMode){localStorage.removeItem("rsMartCart");updateCartCount();renderCartPage();}
-    cartCheckoutMode=false;chosenCartItems=null;multiOrderItems=[];orderSection.classList.remove("cart-checkout-mode");
+    cartCheckoutMode=false;chosenCartItems=null;multiOrderItems=[];orderOriginView="products";orderSection.classList.remove("cart-checkout-mode");
     document.querySelector("#cart-checkout-summary").hidden=true;
     document.querySelector("#order-quantity").closest("label").hidden=false;
     closeOrderModal();
