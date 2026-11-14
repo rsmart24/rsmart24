@@ -184,7 +184,7 @@ function chooseProduct(id) {
   document.querySelector("#close-order")?.focus();
 }
 
-document.querySelectorAll(".category-nav [data-category]").forEach(button => {
+document.querySelectorAll(".category-nav [data-category], .footer-links [data-category]").forEach(button => {
   button.addEventListener("click", () => {
     activeCategory = button.dataset.category;
 
