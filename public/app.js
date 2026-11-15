@@ -718,7 +718,16 @@ setupAddressDropdowns();
   let active = 0, timer = null, touchStartX = 0;
   function showSlide(index) {
     active = (index + slides.length) % slides.length;
-    slides.forEach((slide, i) => {\n      slide.classList.toggle("active", i === active);\n      if (i === active) {\n        const image = slide.querySelector("img[data-src]");\n        if (image) { image.src = image.dataset.src; image.removeAttribute("data-src"); }\n      }\n    });
+    slides.forEach((slide, i) => {
+      slide.classList.toggle("active", i === active);
+      if (i === active) {
+        const image = slide.querySelector("img[data-src]");
+        if (image) {
+          image.src = image.dataset.src;
+          image.removeAttribute("data-src");
+        }
+      }
+    });
     dots.forEach((dot, i) => dot.classList.toggle("active", i === active));
   }
   function startAuto() {
