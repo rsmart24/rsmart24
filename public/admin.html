@@ -176,7 +176,6 @@
       <div class="panel" id="products-panel">
         <h2>পণ্য ব্যবস্থাপনা</h2>
         <p class="muted">বিক্রয়মূল্য, ক্যাটাগরি, মিডিয়া লিংক এবং পণ্যের দৃশ্যমানতা নিয়ন্ত্রণ করুন।</p>
-        <section class="media-global-setting"><div><strong>সব পণ্যের “ছবি ও ভিডিও দেখুন” বাটন</strong><p class="muted">এখান থেকে একসঙ্গে সব পণ্যের বাটন চালু বা বন্ধ করতে পারবেন।</p></div><label class="media-toggle-label"><input type="checkbox" id="global-media-enabled" checked> সব পণ্যে দেখান</label><button type="button" class="secondary" id="save-global-media">সেটিংস সংরক্ষণ</button><span id="global-media-message" class="muted" role="status"></span></section>
         <div class="admin-toolbar">
           <input id="product-search" type="search" placeholder="পণ্যের নাম দিয়ে খুঁজুন..." aria-label="পণ্য খুঁজুন">
           <select id="product-stock-filter" aria-label="স্টক অনুযায়ী পণ্য"><option value="all">সব পণ্য</option><option value="in">শুধু স্টকে আছে</option><option value="out">শুধু স্টক আউট</option></select>
@@ -316,8 +315,6 @@
     async function loadProducts() {
       const result = await api("/api/admin/products");
       adminProducts = Array.isArray(result.data) ? result.data : [];
-      const globalMediaToggle = document.querySelector("#global-media-enabled");
-      if (globalMediaToggle) globalMediaToggle.checked = result.mediaButtonEnabled !== false;
       updateAdminStats();
 
       if (!result.data.length) {
@@ -601,12 +598,6 @@ if (
     document.querySelector("#refresh-products").addEventListener("click", async e => { e.currentTarget.disabled=true; try { await loadProducts(); } catch(err) { alert(err.message); } finally { e.currentTarget.disabled=false; } });
     document.querySelector("#refresh-orders").addEventListener("click", async e => { e.currentTarget.disabled=true; try { await loadOrders(); } catch(err) { alert(err.message); } finally { e.currentTarget.disabled=false; } });
     document.querySelector("#export-orders").addEventListener("click", downloadOrdersCSV);
-    document.querySelector("#save-global-media").addEventListener("click", async event => {
-      const button = event.currentTarget, toggle = document.querySelector("#global-media-enabled"), message = document.querySelector("#global-media-message");
-      button.disabled = true; message.textContent = "";
-      try { await api("/api/admin/settings/media-button", { method: "PUT", body: JSON.stringify({ enabled: toggle.checked }) }); message.textContent = toggle.checked ? "সব পণ্যের বাটন চালু হয়েছে।" : "সব পণ্যের বাটন বন্ধ হয়েছে।"; }
-      catch (error) { message.textContent = error.message; } finally { button.disabled = false; }
-    });
     openDashboard();
   </script>
 </body>
