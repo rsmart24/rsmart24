@@ -105,7 +105,6 @@ async function ensureOrderSchema(env) {
       catch (error) { if (!/duplicate column/i.test(String(error?.message || error))) throw error; }
     }
   }
-  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS site_settings (setting_key TEXT PRIMARY KEY, setting_value TEXT NOT NULL, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`).run();
   const orderColumns = await env.DB.prepare("PRAGMA table_info(orders)").all();
   const orderNames = new Set((orderColumns.results || []).map(row => row.name));
   const additions = [
@@ -247,8 +246,7 @@ async function publicProducts(env) {
     .map(p => publicProduct(p, settings.get(String(p.id))))
     .filter(p => p.isVisible);
 
-  const mediaSetting = await env.DB.prepare("SELECT setting_value FROM site_settings WHERE setting_key = ?").bind("media_button_enabled").first();
-  return json({ data: products, deliveryCharges: catalog.deliveryCharges, mediaButtonEnabled: mediaSetting ? mediaSetting.setting_value === "1" : true });
+  return json({ data: products, deliveryCharges: catalog.deliveryCharges });
 }
 
 async function adminProducts(env) {
@@ -260,8 +258,7 @@ async function adminProducts(env) {
     suggestedPrice: p.suggestedPrice
   }));
 
-  const mediaSetting = await env.DB.prepare("SELECT setting_value FROM site_settings WHERE setting_key = ?").bind("media_button_enabled").first();
-  return json({ data: products, mediaButtonEnabled: mediaSetting ? mediaSetting.setting_value === "1" : true });
+  return json({ data: products });
 }
 
 async function saveProductSettings(request, env, productId) {
@@ -308,14 +305,6 @@ async function saveProductSettings(request, env, productId) {
   `).bind(String(productId), price, originalPrice, category, isVisible, discountPercent, mediaUrl || null, mediaEnabled).run();
 
   return json({ success: true, message: "পণ্যের সেটিংস সংরক্ষণ হয়েছে।" });
-}
-
-async function saveMediaButtonSetting(request, env) {
-  let body; try { body = await request.json(); } catch { return json({ error: "সঠিক সেটিংস পাঠান।" }, 400); }
-  const enabled = body.enabled === true ? "1" : "0";
-  await env.DB.prepare(`INSERT INTO site_settings (setting_key, setting_value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
-    ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = CURRENT_TIMESTAMP`).bind("media_button_enabled", enabled).run();
-  return json({ success: true, enabled: enabled === "1" });
 }
 
 async function createOrder(request, env) {
@@ -458,9 +447,6 @@ export default {
 
         if (path === "/api/admin/orders" && method === "GET") {
           return await adminOrders(env);
-        }
-        if (path === "/api/admin/settings/media-button" && method === "PUT") {
-          return await saveMediaButtonSetting(request, env);
         }
 
         const productMatch = path.match(/^\/api\/admin\/products\/([^/]+)$/);
