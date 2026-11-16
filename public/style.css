@@ -2908,3 +2908,26 @@ body.order-modal-open {
   .checkout-section-heading { margin-bottom:13px; }
   .order-section .checkout-variants { grid-template-columns:1fr; }
 }
+
+
+/* ===== CUSTOMER MY ORDERS ===== */
+.header-my-orders{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:1px solid #e5e7eb;border-radius:10px;color:#242424;text-decoration:none;font-weight:700;font-size:14px;white-space:nowrap;background:#fff}
+.header-my-orders:hover{border-color:#c90018;color:#c90018}
+.my-orders-section{max-width:1120px;margin:24px auto 40px;padding:clamp(18px,3vw,32px);background:#fff;border:1px solid #ececec;border-radius:18px;box-shadow:0 8px 30px rgba(0,0,0,.045)}
+.my-orders-heading h2{margin:5px 0;font-size:clamp(24px,4vw,32px)}
+.my-orders-heading p{margin:0;color:#6b7280}
+.my-orders-form{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin-top:24px}
+.my-orders-form label{display:grid;gap:7px;font-weight:600;font-size:14px}
+.my-orders-form input{width:100%;min-height:48px;border:1px solid #d8dce2;border-radius:10px;padding:0 13px;font:inherit}
+.my-orders-form button{min-height:48px;padding:0 22px;border:0;border-radius:10px;background:#c90018;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+.my-orders-form button:disabled{opacity:.65;cursor:wait}
+.my-orders-privacy{font-size:13px;color:#777;margin:12px 0}
+.my-orders-message{margin:14px 0;color:#555;font-weight:600}
+.my-orders-results{display:grid;gap:12px}
+.my-order-card{padding:16px;border:1px solid #e8e8e8;border-radius:12px;background:#fff}
+.my-order-card-top,.my-order-card-bottom{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.my-order-card-top span,.my-order-card-bottom span{font-size:13px;color:#777}
+.my-order-card-top b{font-size:12px;overflow-wrap:anywhere}
+.my-order-product{margin:12px 0;font-weight:600}
+.my-order-card-bottom strong{font-size:13px;color:#b00018;background:#fff1f2;padding:6px 10px;border-radius:20px}
+@media(max-width:650px){.my-orders-form{grid-template-columns:1fr}.my-orders-form button{width:100%}.header-my-orders{min-height:36px;padding:0 9px;font-size:12px}.my-orders-section{margin:16px 10px 28px;padding:17px}}
