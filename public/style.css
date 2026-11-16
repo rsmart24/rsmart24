@@ -2996,3 +2996,5 @@ body.order-modal-open {
 .featured-product-price strong{font-size:12px;color:#14532d}
 @media(min-width:700px){.featured-product-card{flex-basis:132px}.featured-product-image{height:100px}.featured-rail{padding:15px 17px}}
 @media(max-width:480px){.featured-sections{width:calc(100% - 20px);margin:12px auto 6px;gap:10px}.featured-rail{padding:10px;border-radius:12px}.featured-rail-heading h2{font-size:16px}.featured-rail-note{font-size:9px}.featured-product-card{flex-basis:105px}.featured-product-image{height:78px}}
+
+.product-image{position:relative}.product-special-offer-badge{position:absolute;top:9px;left:9px;z-index:2;padding:5px 9px;border-radius:8px;background:linear-gradient(120deg,#e11d48,#fb493d);color:#fff;font-size:12px;font-weight:900;box-shadow:0 3px 10px #0002}
