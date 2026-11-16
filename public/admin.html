@@ -140,6 +140,17 @@
     .admin-toolbar button{white-space:nowrap}
     @media(max-width:700px){.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.stat-card{padding:12px}.stat-card strong{font-size:20px}.admin-toolbar{grid-template-columns:1fr 1fr}.admin-toolbar input{grid-column:1/-1}.admin-toolbar button{white-space:normal;min-height:42px}}
     @media(max-width:380px){.admin-toolbar{grid-template-columns:1fr}.admin-toolbar input{grid-column:auto}}
+  
+    .new-order-alert{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 18px;padding:15px 18px;border:1px solid #f5b544;border-radius:12px;background:linear-gradient(120deg,#fff7df,#fff0c2);color:#7a3e00;box-shadow:0 5px 18px rgba(180,110,0,.10)}
+    .new-order-alert[hidden]{display:none!important}
+    .new-order-alert strong{display:block;font-size:15px}
+    .new-order-alert p{margin:4px 0 0;font-size:13px;line-height:1.5}
+    .new-order-alert-actions{display:flex;flex-wrap:wrap;gap:8px;flex:0 0 auto}
+    .new-order-alert-actions button{padding:9px 12px;background:#b45309;color:#fff}
+    .new-order-alert-actions .secondary{background:#475467}
+    .notification-status{margin:0 0 14px;color:#667085;font-size:12px}
+    @media(max-width:650px){.new-order-alert{align-items:stretch;flex-direction:column}.new-order-alert-actions{display:grid;grid-template-columns:1fr 1fr}.new-order-alert-actions button{min-height:42px}}
+
   </style>
 </head>
 <body>
@@ -162,7 +173,17 @@
     </section>
 
     <section id="dashboard" class="hidden">
-
+      <section id="new-order-alert" class="new-order-alert" role="alert" aria-live="polite" hidden>
+        <div>
+          <strong>🔔 নতুন অর্ডার এসেছে: <span id="new-order-alert-count">০</span>টি</strong>
+          <p id="new-order-alert-text">নতুন অর্ডার দেখতে অর্ডার ব্যবস্থাপনায় যান।</p>
+        </div>
+        <div class="new-order-alert-actions">
+          <button type="button" id="view-new-orders">অর্ডার দেখুন</button>
+          <button type="button" class="secondary" id="enable-order-notifications">ব্রাউজার নোটিফিকেশন চালু</button>
+        </div>
+      </section>
+      <p id="notification-status" class="notification-status">নতুন অর্ডার খুঁজতে Admin Panel প্রতি ৩০ সেকেন্ডে স্বয়ংক্রিয়ভাবে আপডেট হবে।</p>
       <section class="admin-stats" aria-label="ব্যবসার সারসংক্ষেপ">
         <article class="stat-card"><span>মোট অর্ডার</span><strong id="stat-total-orders">০</strong></article>
         <article class="stat-card"><span>নতুন অর্ডার</span><strong id="stat-new-orders">০</strong></article>
@@ -207,6 +228,9 @@
     const logoutButton = document.querySelector("#logout");
     let adminProducts = [];
     let adminOrders = [];
+    let knownOrderIds = null;
+    let orderPollTimer = null;
+    let orderPollBusy = false;
     const money = value => "৳" + Number(value || 0).toLocaleString("en-BD");
     function updateAdminStats() {
       const set = (id, value) => { const el = document.querySelector(id); if (el) el.textContent = Number(value || 0).toLocaleString("bn-BD"); };
@@ -427,10 +451,46 @@ if (
       });
     }
 
-    async function loadOrders() {
+    function showNewOrderAlert(newOrders) {
+      if (!newOrders.length) return;
+      const alertBox = document.querySelector("#new-order-alert");
+      const count = newOrders.length;
+      document.querySelector("#new-order-alert-count").textContent = count.toLocaleString("bn-BD");
+      document.querySelector("#new-order-alert-text").textContent =
+        newOrders.length === 1 ? "একটি নতুন অর্ডার এসেছে। বিস্তারিত দেখতে অর্ডার ব্যবস্থাপনায় যান।" :
+        "নতুন " + count.toLocaleString("bn-BD") + "টি অর্ডার এসেছে। বিস্তারিত দেখতে অর্ডার ব্যবস্থাপনায় যান।";
+      alertBox.hidden = false;
+
+      if ("Notification" in window && Notification.permission === "granted") {
+        const notification = new Notification("RS Mart — নতুন অর্ডার", {
+          body: newOrders.length === 1
+            ? "নতুন অর্ডার এসেছে: " + String(newOrders[0].id)
+            : "নতুন " + count + "টি অর্ডার এসেছে। Admin Panel খুলে দেখুন।",
+          tag: "rs-mart-new-order-" + String(newOrders[0].id)
+        });
+        notification.onclick = () => {
+          window.focus();
+          document.querySelector('[data-tab="orders"]').click();
+          notification.close();
+        };
+      }
+    }
+
+    async function loadOrders({ notifyNew = true } = {}) {
       const result = await api("/api/admin/orders");
-      adminOrders = Array.isArray(result.data) ? result.data : [];
+      const incomingOrders = Array.isArray(result.data) ? result.data : [];
+      const incomingIds = new Set(incomingOrders.map(order => String(order.id)));
+      const previousSnapshot = adminOrders.map(order => [order.id, order.status, order.payment_verification_status].join(":")).join("|");
+      const nextSnapshot = incomingOrders.map(order => [order.id, order.status, order.payment_verification_status].join(":")).join("|");
+      const shouldRenderOrders = knownOrderIds === null || previousSnapshot !== nextSnapshot;
+      if (knownOrderIds !== null && notifyNew) {
+        const newOrders = incomingOrders.filter(order => !knownOrderIds.has(String(order.id)));
+        showNewOrderAlert(newOrders);
+      }
+      knownOrderIds = incomingIds;
+      adminOrders = incomingOrders;
       updateAdminStats();
+      if (!shouldRenderOrders) return;
       const labels = {
         new: "নতুন",
         confirmed: "নিশ্চিত",
@@ -511,11 +571,58 @@ if (
       });
     }
 
+    function startOrderPolling() {
+      if (orderPollTimer) clearInterval(orderPollTimer);
+      orderPollTimer = setInterval(async () => {
+        if (dashboard.classList.contains("hidden") || orderPollBusy) return;
+        orderPollBusy = true;
+        try { await loadOrders(); } catch (_) { /* Keep the dashboard usable during temporary network errors. */ }
+        finally { orderPollBusy = false; }
+      }, 30000);
+    }
+
+    function stopOrderPolling() {
+      if (orderPollTimer) clearInterval(orderPollTimer);
+      orderPollTimer = null;
+      knownOrderIds = null;
+    }
+
+    document.querySelector("#view-new-orders").addEventListener("click", () => {
+      document.querySelector('[data-tab="orders"]').click();
+      document.querySelector("#new-order-alert").hidden = true;
+      document.querySelector("#orders").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    document.querySelector("#enable-order-notifications").addEventListener("click", async () => {
+      const status = document.querySelector("#notification-status");
+      if (!("Notification" in window)) {
+        status.textContent = "এই ব্রাউজারে নোটিফিকেশন সমর্থিত নয়। Admin Panel খোলা থাকলে উপরের অ্যালার্ট দেখা যাবে।";
+        return;
+      }
+      try {
+        const permission = await Notification.requestPermission();
+        status.textContent = permission === "granted"
+          ? "ব্রাউজার নোটিফিকেশন চালু হয়েছে। নতুন অর্ডার এলে ডেস্কটপ/ব্রাউজারে নোটিফিকেশন পাবেন।"
+          : "নোটিফিকেশন অনুমতি দেওয়া হয়নি। ব্রাউজারের Site Settings থেকে Notifications Allow করুন।";
+      } catch (_) {
+        status.textContent = "নোটিফিকেশন চালু করা যায়নি। ব্রাউজারের Site Settings পরীক্ষা করুন।";
+      }
+    });
+
+    window.addEventListener("focus", async () => {
+      if (dashboard.classList.contains("hidden") || orderPollBusy) return;
+      orderPollBusy = true;
+      try { await loadOrders(); } catch (_) {}
+      finally { orderPollBusy = false; }
+    });
+
     async function openDashboard() {
       try {
         await api("/api/admin/products");
         showDashboard();
-        await Promise.all([loadProducts(), loadOrders()]);
+        knownOrderIds = null;
+        await Promise.all([loadProducts(), loadOrders({ notifyNew: false })]);
+        startOrderPolling();
       } catch (error) {
         if (error.message.includes("Admin login")) {
           showLogin();
@@ -541,7 +648,9 @@ if (
         });
         document.querySelector("#password").value = "";
         showDashboard();
-        await Promise.all([loadProducts(), loadOrders()]);
+        knownOrderIds = null;
+        await Promise.all([loadProducts(), loadOrders({ notifyNew: false })]);
+        startOrderPolling();
       } catch (error) {
         loginMessage.textContent = error.message;
       } finally {
@@ -550,6 +659,7 @@ if (
     });
 
     logoutButton.addEventListener("click", async () => {
+      stopOrderPolling();
       try {
         await api("/api/admin/logout", { method: "POST" });
       } finally {
