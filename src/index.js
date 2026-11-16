@@ -626,9 +626,7 @@ export default {
               headers: { "content-type": "application/json" },
               body: JSON.stringify({
                 chat_id: env.TELEGRAM_GROUP_ID,
-                text: "✅ RS Mart Telegram Test
-
-আপনার Telegram Order Alert সংযোগ কাজ করছে। এটি শুধু পরীক্ষামূলক বার্তা—কোনো অর্ডার তৈরি হয়নি।"
+                text: "✅ RS Mart Telegram Test\n\nআপনার Telegram Order Alert সংযোগ কাজ করছে। এটি শুধু পরীক্ষামূলক বার্তা—কোনো অর্ডার তৈরি হয়নি।"
               })
             });
             const telegramResult = await telegramResponse.json().catch(() => ({}));
