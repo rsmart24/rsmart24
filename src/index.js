@@ -115,7 +115,11 @@ async function ensureOrderSchema(env) {
     ["transaction_id", "TEXT"],
     ["transaction_id_format_valid", "INTEGER NOT NULL DEFAULT 0"],
     ["payment_verification_status", "TEXT NOT NULL DEFAULT 'not_required'"],
-    ["order_items_json", "TEXT"]
+    ["order_items_json", "TEXT"],
+    ["business_koro_status", "TEXT NOT NULL DEFAULT 'not_sent'"],
+    ["business_koro_order_id", "TEXT"],
+    ["business_koro_response", "TEXT"],
+    ["business_koro_sent_at", "TEXT"]
   ];
   for (const [name, definition] of additions) {
     if (!orderNames.has(name)) {
@@ -407,6 +411,58 @@ async function createOrder(request, env) {
   return json({success:true,orderId,message:"আপনার অর্ডার RS Mart-এ জমা হয়েছে। আমাদের প্রতিনিধি ফোন করে অর্ডার নিশ্চিত করবেন।"},201);
 }
 
+async function sendOrderToBusinessKoro(env, orderId) {
+  await ensureOrderSchema(env);
+  const order = await env.DB.prepare("SELECT * FROM orders WHERE id = ?").bind(orderId).first();
+  if (!order) return json({error:"অর্ডার পাওয়া যায়নি।"},404);
+  if (order.business_koro_status === "sent") {
+    return json({error:"এই অর্ডারটি আগেই Business Koro-তে পাঠানো হয়েছে।", businessKoroOrderId:order.business_koro_order_id},409);
+  }
+  if (order.business_koro_status === "sending") {
+    return json({error:"অর্ডারটি পাঠানোর প্রক্রিয়ায় আছে। কিছুক্ষণ পর অবস্থা দেখুন।"},409);
+  }
+  let items=[];
+  try { items=JSON.parse(order.order_items_json || "[]"); } catch {}
+  if (!items.length && order.product_id) items=[{id:order.product_id,name:order.product_name,quantity:Number(order.quantity||1),unitPrice:Number(order.unit_price||0),color:order.color||"",size:order.size||""}];
+  if (items.length !== 1) return json({error:"এই অর্ডারে একাধিক পণ্য আছে। Business Koro-র দেওয়া API একবারে একটি পণ্য নেয়। তাই ভুল ডেলিভারি/চার্জ এড়াতে এটি পাঠানো হয়নি।"},400);
+  const item=items[0];
+  if (Number(item.quantity||1) !== 1) return json({error:"এই API-তে quantity গ্রহণ করা হয় না। একাধিক পিসের অর্ডার আপাতত পাঠানো যাচ্ছে না।"},400);
+  const sellingPrice=Number(item.unitPrice ?? order.unit_price);
+  if (!Number.isSafeInteger(sellingPrice) || sellingPrice <= 0) return json({error:"বিক্রয়মূল্য সঠিক নয়।"},400);
+  const address=[order.customer_address,order.customer_area,order.customer_district,order.customer_division].filter(Boolean).join(", ");
+  const payload={
+    productId:String(item.id || order.product_id),
+    customerName:String(order.customer_name||"").trim(),
+    customerPhone:String(order.customer_phone||"").trim(),
+    customerAddress:address,
+    customerDivision:String(order.customer_division||"").trim(),
+    customerDistrict:String(order.customer_district||"").trim(),
+    customerArea:String(order.customer_area||"").trim(),
+    sellingPrice,
+    deliveryChargePaidByCustomer:order.payment_method !== "advance",
+    customerNote:String(order.note||"").trim()
+  };
+  if (order.payment_method === "advance") payload.deliveryChargeCollectionMode="CUSTOMER_PAID_RESELLER_UPFRONT";
+  const claim=await env.DB.prepare("UPDATE orders SET business_koro_status='sending', business_koro_response=NULL WHERE id=? AND business_koro_status IN ('not_sent','failed')").bind(orderId).run();
+  if (!claim.meta?.changes) return json({error:"অর্ডারটি ইতিমধ্যে পাঠানো হচ্ছে বা পাঠানো হয়েছে।"},409);
+  try {
+    const response=await fetch(`${API_BASE}/orders`,{method:"POST",headers:apiHeaders(env),body:JSON.stringify(payload)});
+    const raw=await response.text();
+    let data; try { data=JSON.parse(raw); } catch { data={message:raw.slice(0,1000)}; }
+    if (!response.ok) {
+      const message=String(data?.message || data?.error || "Business Koro অর্ডার গ্রহণ করেনি।").slice(0,1500);
+      await env.DB.prepare("UPDATE orders SET business_koro_status='failed', business_koro_response=? WHERE id=?").bind(JSON.stringify(data).slice(0,5000),orderId).run();
+      return json({error:message,details:data},response.status>=400&&response.status<500?400:502);
+    }
+    const externalId=data?.data?.id ?? data?.order?.id ?? data?.orderId ?? data?.id ?? null;
+    await env.DB.prepare("UPDATE orders SET business_koro_status='sent', business_koro_order_id=?, business_koro_response=?, business_koro_sent_at=CURRENT_TIMESTAMP WHERE id=?").bind(externalId==null?null:String(externalId),JSON.stringify(data).slice(0,5000),orderId).run();
+    return json({success:true,businessKoroOrderId:externalId,message:"Business Koro-তে অর্ডার পাঠানো হয়েছে।",response:data});
+  } catch(error) {
+    await env.DB.prepare("UPDATE orders SET business_koro_status='failed', business_koro_response=? WHERE id=?").bind(JSON.stringify({message:String(error?.message||error)}).slice(0,5000),orderId).run();
+    return json({error:"Business Koro সার্ভারে সংযোগ করা যায়নি। "+String(error?.message||"")},502);
+  }
+}
+
 async function adminOrders(env) {
   await ensureOrderSchema(env);
   const result = await env.DB.prepare(
@@ -516,6 +572,11 @@ export default {
           return await saveProductSettings(
             request, env, decodeURIComponent(productMatch[1])
           );
+        }
+
+        const businessKoroMatch = path.match(/^\/api\/admin\/orders\/([^/]+)\/business-koro$/);
+        if (businessKoroMatch && method === "POST") {
+          return await sendOrderToBusinessKoro(env, decodeURIComponent(businessKoroMatch[1]));
         }
 
         const orderMatch = path.match(/^\/api\/admin\/orders\/([^/]+)$/);
