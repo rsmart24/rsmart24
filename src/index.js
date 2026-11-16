@@ -242,6 +242,45 @@ async function adminLogout() {
   );
 }
 
+
+function normalizeBangladeshPhone(value) {
+  let phone=String(value||"").trim().replace(/[০-৯]/g,d=>"০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/[\\s()-]/g,"");
+  if(phone.startsWith("+880")) phone="0"+phone.slice(4);
+  else if(phone.startsWith("880")) phone="0"+phone.slice(3);
+  return phone;
+}
+
+async function lookupCustomerOrders(request, env) {
+  await ensureOrderSchema(env);
+  const url=new URL(request.url);
+  const phone=normalizeBangladeshPhone(url.searchParams.get("phone"));
+  const district=String(url.searchParams.get("district")||"").trim().slice(0,100);
+  if(!/^01[3-9][0-9]{8}$/.test(phone) || !district) {
+    return json({error:"সঠিক মোবাইল নম্বর ও জেলা দিন।"},400);
+  }
+  const result=await env.DB.prepare(
+    "SELECT id, product_name, order_items_json, created_at, status FROM orders WHERE customer_phone = ? AND LOWER(TRIM(customer_district)) = LOWER(?) ORDER BY created_at DESC LIMIT 50"
+  ).bind(phone,district).all();
+  const orders=(result.results||[]).map(order=>{
+    let items=[];
+    try {
+      const parsed=JSON.parse(order.order_items_json||"[]");
+      if(Array.isArray(parsed)) items=parsed.slice(0,20).map(item=>({
+        name:String(item.name||"পণ্য").slice(0,150),
+        quantity:Math.max(1,Number(item.quantity||1))
+      }));
+    } catch {}
+    return {
+      orderId:String(order.id),
+      productName:String(order.product_name||"অর্ডার").slice(0,200),
+      items,
+      createdAt:order.created_at||null,
+      status:String(order.status||"new")
+    };
+  });
+  return json({success:true,data:orders});
+}
+
 async function publicProducts(env) {
   const catalog = await getCatalog(env);
   const settings = await getSettings(env);
@@ -610,7 +649,7 @@ export default {
         return await publicProducts(env);
       }
 
-      if (path === "/api/orders" && method === "POST") {
+      if (path === "/api/orders/lookup" && method === "GET") {\n        requireDB(env);\n        return await lookupCustomerOrders(request, env);\n      }\n\n      if (path === "/api/orders" && method === "POST") {
         requireDB(env);
         return await createOrder(request, env);
       }
