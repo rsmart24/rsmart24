@@ -248,7 +248,6 @@ async function publicProducts(env) {
 
   return json({ data: products, deliveryCharges: catalog.deliveryCharges });
 }
-
 async function adminProducts(env) {
   const catalog = await getCatalog(env);
   const settings = await getSettings(env);
@@ -313,41 +312,11 @@ function escapeTelegramHtml(value) {
 
 async function sendTelegramOrderAlert(env, order) {
   if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_GROUP_ID) return;
-  const itemsText = order.items.map((item, index) =>
-    `${index + 1}. ${escapeTelegramHtml(item.name)} × ${item.quantity} — ৳${item.subtotal}${item.color ? ` | রং: ${escapeTelegramHtml(item.color)}` : ""}${item.size ? ` | সাইজ: ${escapeTelegramHtml(item.size)}` : ""}`
-  ).join("\n");
-  const message = [
-    "🛍️ <b>RS Mart — নতুন অর্ডার!</b>",
-    `অর্ডার ID: <code>${escapeTelegramHtml(order.id)}</code>`,
-    "",
-    "<b>পণ্য:</b>",
-    itemsText,
-    "",
-    `👤 নাম: ${escapeTelegramHtml(order.name)}`,
-    `📞 ফোন: ${escapeTelegramHtml(order.phone)}`,
-    `📍 ঠিকানা: ${escapeTelegramHtml([order.area, order.district, order.division, order.address].filter(Boolean).join(", "))}`,
-    `💳 পেমেন্ট: ${order.paymentMethod === "advance" ? "অগ্রিম" : "ক্যাশ অন ডেলিভারি"}`,
-    `🚚 ডেলিভারি চার্জ: ৳${order.deliveryCharge}`,
-    `💰 মোট: ৳${order.totalAmount}`,
-    order.note ? `📝 নোট: ${escapeTelegramHtml(order.note)}` : ""
-  ].filter(Boolean).join("\n");
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        chat_id: env.TELEGRAM_GROUP_ID,
-        text: message.slice(0, 4000),
-        parse_mode: "HTML",
-        disable_web_page_preview: true
-      })
-    });
-    if (!response.ok) {
-      console.error("Telegram order alert failed with HTTP status:", response.status);
-    }
-  } catch (error) {
-    console.error("Telegram order alert request failed:", error?.message || "Unknown error");
-  }
+  const code=value=>`<code>${escapeTelegramHtml(value)}</code>`;
+  const itemsText=order.items.map((item,i)=>{const v=[item.color?"রং: "+escapeTelegramHtml(item.color):"",item.size?"সাইজ: "+escapeTelegramHtml(item.size):""].filter(Boolean).join(" · ");return `<b>${i+1}. ${escapeTelegramHtml(item.name)}</b>\n   ${item.quantity} টি × ${code("৳"+item.unitPrice)} = <b>${code("৳"+item.subtotal)}</b>${v?"\n   "+v:""}`;}).join("\n\n");
+  const address=[order.area,order.district,order.division,order.address].filter(Boolean).join(", ");
+  const message=["🛍️ <b>RS MART | নতুন অর্ডার</b>","━━━━━━━━━━━━━━━━━━","<b>📦 অর্ডারের তথ্য</b>","অর্ডার ID: "+code(order.id),"","<b>🛒 পণ্যের তালিকা</b>",itemsText,"","━━━━━━━━━━━━━━━━━━","<b>👤 ক্রেতার তথ্য</b>","নাম: <b>"+escapeTelegramHtml(order.name)+"</b>","মোবাইল: "+code(order.phone),"ঠিকানা: "+escapeTelegramHtml(address),"","━━━━━━━━━━━━━━━━━━","<b>💳 পেমেন্ট ও হিসাব</b>","পেমেন্ট পদ্ধতি: "+(order.paymentMethod==="advance"?"অগ্রিম পেমেন্ট":"ক্যাশ অন ডেলিভারি"),"ডেলিভারি চার্জ: "+code("৳"+order.deliveryCharge),"<b>সর্বমোট: "+code("৳"+order.totalAmount)+"</b>",order.note?"<b>📝 ক্রেতার নোট</b>\n"+escapeTelegramHtml(order.note):null,"","⚡ অর্ডারটি Admin Panel থেকে নিশ্চিত করুন."].filter(x=>x!==null).join("\n");
+  try{const response=await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:env.TELEGRAM_GROUP_ID,text:message.slice(0,4000),parse_mode:"HTML",disable_web_page_preview:true})});if(!response.ok)console.error("Telegram order alert failed with HTTP status:",response.status);}catch(error){console.error("Telegram order alert request failed:",error?.message||"Unknown error");}
 }
 
 async function createOrder(request, env) {
@@ -497,8 +466,7 @@ export default {
       }
 
       if (path === "/api/admin/logout" && method === "POST") {
-        if (!(await isAdmin(request, env))) {
-          return json({ error: "অনুমতি নেই।" }, 401);
+        if (!(await isAdmin(request, env))) {          return json({ error: "অনুমতি নেই।" }, 401);
         }
         return await adminLogout();
       }
