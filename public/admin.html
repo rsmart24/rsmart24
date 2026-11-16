@@ -3,7 +3,7 @@
 <html lang="bn">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow, noarchive">
   <title>RS Mart | Admin Dashboard</title>
   <style>
     * { box-sizing: border-box; }
@@ -153,6 +153,34 @@
     .notification-controls button{flex:0 0 auto;background:#475467}
     @media(max-width:650px){.new-order-alert{align-items:stretch;flex-direction:column}.new-order-alert-actions{display:grid;grid-template-columns:1fr}.new-order-alert-actions button{min-height:42px}.notification-controls{align-items:stretch;flex-direction:column}.notification-controls button{min-height:42px}}
 
+body{background:linear-gradient(145deg,#e7f7ed,#f2fbf5 48%,#e8f4ec);color:#153b2b}
+header{background:linear-gradient(110deg,#14532d,#166534 58%,#15803d);box-shadow:0 5px 22px #14532d30}
+main{max-width:1180px;margin:24px auto}
+.panel{border:1px solid #d5eadb;box-shadow:0 8px 26px #16653412;border-radius:16px}
+.login-box{border-top:5px solid #16a34a}
+input,select{border:1px solid #c9dfcf;border-radius:10px;min-height:42px}
+input:focus,select:focus{outline:3px solid #22c55e29;border-color:#16a34a}
+button{background:linear-gradient(110deg,#15803d,#16a34a);border-radius:10px;min-height:40px;padding:10px 14px;box-shadow:0 2px 7px #15803d20;transition:transform .15s,filter .15s}
+button:hover{filter:brightness(1.04);transform:translateY(-1px)}
+button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-shadow:none}
+.danger,.delete-order{background:linear-gradient(110deg,#b42318,#dc2626);color:white}
+.admin-nav{padding:6px;background:#dff1e4;border:1px solid #c9e5d0;border-radius:13px}
+.admin-nav button{background:transparent;color:#28533a;box-shadow:none}
+.admin-nav button[aria-selected=true]{background:#166534;color:white}
+.stat-card{border-color:#d5eadb;background:linear-gradient(145deg,#fff,#f0faf2)}
+.stat-card strong{color:#166534}
+.order,.product{border-color:#d8e9dc;background:white;border-radius:13px;box-shadow:0 3px 12px #1665340b}
+.order h3{color:#14532d;overflow-wrap:anywhere}
+.copy-field{border-color:#dcebe0;background:#fbfefb}
+.copy-field button{background:#e5f4e9;color:#166534;border:1px solid #cce5d2}
+.copy-all{background:#166534;color:white}
+.order-actions{flex-wrap:wrap;align-items:end}
+.order-actions label{min-width:180px}
+.delete-order{margin-top:10px;width:100%}
+.admin-help{padding:12px 14px;border:1px solid #cce5d2;border-radius:12px;background:#f0faf2;color:#315c40;font-size:13px;line-height:1.65;margin:0 0 14px}
+.order-customer-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+@media(max-width:650px){main{margin:14px auto;padding:0 10px}.panel{padding:14px;margin-bottom:14px}.admin-nav{position:sticky;top:0;z-index:5}.admin-nav button{min-height:44px;padding:8px 5px;font-size:13px}.order{padding:11px}.order-customer-strip{grid-template-columns:1fr}.order-actions{display:grid;grid-template-columns:1fr}.order-actions label,.order-actions button{width:100%;min-width:0}.notification-controls{display:grid;grid-template-columns:1fr}.notification-controls button{width:100%}.admin-toolbar{grid-template-columns:1fr 1fr}.admin-toolbar input{grid-column:1/-1}.admin-toolbar button{min-height:44px}}
+@media(max-width:380px){.admin-toolbar{grid-template-columns:1fr}.admin-toolbar input{grid-column:auto}.admin-stats{grid-template-columns:1fr 1fr}.stat-card strong{font-size:18px}}
   </style>
 </head>
 <body>
@@ -174,7 +202,7 @@
       <p id="login-message" class="message"></p>
     </section>
 
-    <section id="dashboard" class="hidden">
+    <section id="dashboard" class="hidden"><p class="admin-help">এটি আপনার ব্যক্তিগত Admin Dashboard। এখান থেকে পণ্য, স্টক, অর্ডার, পেমেন্ট ও গ্রাহকের তথ্য পরিচালনা করুন। প্রয়োজনীয় তথ্যের পাশে কপি চাপলে এক ক্লিকেই কপি হবে।</p>
       <section id="new-order-alert" class="new-order-alert" role="alert" aria-live="polite" hidden>
         <div>
           <strong>🔔 নতুন অর্ডার এসেছে: <span id="new-order-alert-count">০</span>টি</strong>
