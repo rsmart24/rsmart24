@@ -835,6 +835,7 @@ document.querySelector("#search-button")?.addEventListener("click", () => search
   const message=document.querySelector("#my-orders-message");
   const results=document.querySelector("#my-orders-results");
   const button=document.querySelector("#lookup-orders-button");
+  const back=document.querySelector("#my-orders-back");
   if(!section||!form) return;
   function showSection() {
     section.hidden=false;
@@ -843,6 +844,7 @@ document.querySelector("#search-button")?.addEventListener("click", () => search
     document.querySelector("#order-success")?.setAttribute("hidden","");
     section.scrollIntoView({behavior:"smooth",block:"start"});
   }
+  back?.addEventListener("click",()=>{section.hidden=true;document.querySelectorAll(".products-section").forEach(el=>el.hidden=false);document.querySelector("#products")?.scrollIntoView({behavior:"smooth",block:"start"});});
   function statusLabel(status) {
     return ({new:"নতুন অর্ডার",confirmed:"অর্ডার নিশ্চিত হয়েছে",shipped:"ডেলিভারির জন্য পাঠানো হয়েছে",delivered:"ডেলিভারি সম্পন্ন",cancelled:"অর্ডার বাতিল"})[status]||"প্রক্রিয়াধীন";
   }
