@@ -411,7 +411,7 @@ async function createOrder(request, env) {
   return json({success:true,orderId,message:"আপনার অর্ডার RS Mart-এ জমা হয়েছে। আমাদের প্রতিনিধি ফোন করে অর্ডার নিশ্চিত করবেন।"},201);
 }
 
-async function sendOrderToBusinessKoro(env, orderId) {
+async function sendOrderToBusinessKoro(request, env, orderId) {
   await ensureOrderSchema(env);
   const order = await env.DB.prepare("SELECT * FROM orders WHERE id = ?").bind(orderId).first();
   if (!order) return json({error:"অর্ডার পাওয়া যায়নি।"},404);
@@ -427,6 +427,11 @@ async function sendOrderToBusinessKoro(env, orderId) {
   if (items.length !== 1) return json({error:"এই অর্ডারে একাধিক পণ্য আছে। Business Koro-র দেওয়া API একবারে একটি পণ্য নেয়। তাই ভুল ডেলিভারি/চার্জ এড়াতে এটি পাঠানো হয়নি।"},400);
   const item=items[0];
   if (Number(item.quantity||1) !== 1) return json({error:"এই API-তে quantity গ্রহণ করা হয় না। একাধিক পিসের অর্ডার আপাতত পাঠানো যাচ্ছে না।"},400);
+  let requestBody={};
+  try { requestBody=await request.json(); } catch {}
+  const deliveryChargeMode=String(requestBody.deliveryChargeMode || "customer_delivery");
+  const allowedDeliveryModes=["customer_delivery","customer_upfront","reseller_bears"];
+  if (!allowedDeliveryModes.includes(deliveryChargeMode)) return json({error:"ডেলিভারি চার্জের অপশন সঠিক নয়।"},400);
   const sellingPrice=Number(item.unitPrice ?? order.unit_price);
   if (!Number.isSafeInteger(sellingPrice) || sellingPrice <= 0) return json({error:"বিক্রয়মূল্য সঠিক নয়।"},400);
   const address=[order.customer_address,order.customer_area,order.customer_district,order.customer_division].filter(Boolean).join(", ");
@@ -439,12 +444,14 @@ async function sendOrderToBusinessKoro(env, orderId) {
     customerDistrict:String(order.customer_district||"").trim(),
     customerArea:String(order.customer_area||"").trim(),
     sellingPrice,
-    deliveryChargePaidByCustomer:order.payment_method !== "advance",
+    deliveryChargePaidByCustomer:deliveryChargeMode === "customer_delivery",
     customerNote:String(order.note||"").trim()
   };
   if (item.color) payload.color=String(item.color);
   if (item.size) payload.size=String(item.size);
-  if (order.payment_method === "advance") payload.deliveryChargeCollectionMode="CUSTOMER_PAID_RESELLER_UPFRONT";
+  if (deliveryChargeMode === "customer_upfront") {
+    payload.deliveryChargeCollectionMode="CUSTOMER_PAID_RESELLER_UPFRONT";
+  }
   const claim=await env.DB.prepare("UPDATE orders SET business_koro_status='sending', business_koro_response=NULL WHERE id=? AND business_koro_status IN ('not_sent','failed')").bind(orderId).run();
   if (!claim.meta?.changes) return json({error:"অর্ডারটি ইতিমধ্যে পাঠানো হচ্ছে বা পাঠানো হয়েছে।"},409);
   try {
@@ -578,7 +585,7 @@ export default {
 
         const businessKoroMatch = path.match(/^\/api\/admin\/orders\/([^/]+)\/business-koro$/);
         if (businessKoroMatch && method === "POST") {
-          return await sendOrderToBusinessKoro(env, decodeURIComponent(businessKoroMatch[1]));
+          return await sendOrderToBusinessKoro(request, env, decodeURIComponent(businessKoroMatch[1]));
         }
 
         const orderMatch = path.match(/^\/api\/admin\/orders\/([^/]+)$/);
