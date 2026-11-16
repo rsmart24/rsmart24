@@ -134,7 +134,7 @@ function renderProducts() {
 
     return `
       <article class="product-card ${outOfStock ? "is-out-of-stock" : ""}" data-product-card="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
-        <div class="product-image">${productImage(p)}${outOfStock ? '<span class="stock-out-overlay">স্টক আউট</span>' : ""}</div>
+        <div class="product-image">${productImage(p)}${p.specialOfferEnabled && Number(p.specialOfferPercent) > 0 ? `<span class="product-special-offer-badge">${Number(p.specialOfferPercent)}% ছাড়</span>` : ""}${outOfStock ? '<span class="stock-out-overlay">স্টক আউট</span>' : ""}</div>
         <div class="product-info">
           <h3>${escapeHtml(p.name)}</h3>
           <div class="product-bottom">
@@ -514,6 +514,7 @@ function chooseProduct(id, pushHistory = true) {
   oldPrice.hidden = !hasDiscount;
   oldPrice.textContent = hasDiscount ? money(chosenProduct.originalPrice) : "";
   document.querySelector("#detail-offer").hidden = !hasDiscount;
+  document.querySelector("#detail-offer").textContent = chosenProduct.specialOfferEnabled && Number(chosenProduct.specialOfferPercent) > 0 ? `Special Offer — ${Number(chosenProduct.specialOfferPercent)}% ছাড়` : "Limited Time Offer";
 
   const category = String(chosenProduct.category || "অন্যান্য").replace(/[-_]/g, " ").replace(/\b\w/g, letter => letter.toUpperCase());
   document.querySelector("#detail-category").textContent = "📁 " + category;
