@@ -361,7 +361,7 @@ async function createOrder(request, env) {
   }
   const customerPhone = String(body.customerPhone).trim()
     .replace(/[০-৯]/g, digit => "০১২৩৪৫৬৭৮৯".indexOf(digit))
-    .replace(/[\\s-]/g, "");
+    .replace(/[\s-]/g, "");
   if (!/^(?:01[3-9][0-9]{8}|\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})$/.test(customerPhone)) {
     return json({ error: "সঠিক বাংলাদেশি মোবাইল নম্বর দিন (যেমন 017XXXXXXXX)।" }, 400);
   }
