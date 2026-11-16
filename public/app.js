@@ -80,8 +80,8 @@ function productImage(product) {
 }
 
 function renderFeaturedSections() {
-  const offers = products.filter(p => p.isVisible !== false && p.specialOfferEnabled && Number(p.specialOfferPercent) > 0 && Number(p.sellingPrice) >= 0);
-  const trending = products.filter(p => p.isVisible !== false && p.isTrending);
+  const offers = products.filter(p => p.isVisible !== false && !isOutOfStock(p) && p.specialOfferEnabled && Number(p.specialOfferPercent) > 0 && Number(p.sellingPrice) >= 0);
+  const trending = products.filter(p => p.isVisible !== false && !isOutOfStock(p) && p.isTrending);
   const renderRail = (items, sectionId, stripId, type) => {
     const section = document.querySelector("#" + sectionId);
     const strip = document.querySelector("#" + stripId);
