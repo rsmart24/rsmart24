@@ -362,7 +362,7 @@ async function createOrder(request, env) {
   const customerPhone = String(body.customerPhone).trim()
     .replace(/[০-৯]/g, digit => "০১২৩৪৫৬৭৮৯".indexOf(digit))
     .replace(/[\\s-]/g, "");
-  if (!/^(?:01[3-9][0-9]{8}|\\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})$/.test(customerPhone)) {
+  if (!/^(?:01[3-9][0-9]{8}|\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})$/.test(customerPhone)) {
     return json({ error: "সঠিক বাংলাদেশি মোবাইল নম্বর দিন (যেমন 017XXXXXXXX)।" }, 400);
   }
   const requestedItems = Array.isArray(body.items) && body.items.length ? body.items : [{ id: body.productId, quantity: body.quantity || 1, color: body.color || "", size: body.size || "" }];
