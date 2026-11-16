@@ -379,12 +379,13 @@ async function saveProductSettings(request, env, productId) {
     catch { return json({ error: "Google Drive-এর সঠিক লিংক দিন।" }, 400); }
   }
   const mediaEnabled = body.mediaEnabled === false ? 0 : 1;
-  const specialOfferEnabled = body.specialOfferEnabled === true ? 1 : 0;
-  const specialOfferPercent = Number(body.specialOfferPercent ?? 0);
+  const existingFeatured = await env.DB.prepare("SELECT special_offer_enabled,special_offer_percent,is_trending FROM product_settings WHERE product_id = ?").bind(String(productId)).first();
+  const specialOfferEnabled = body.specialOfferEnabled === undefined ? Number(existingFeatured?.special_offer_enabled || 0) : (body.specialOfferEnabled === true ? 1 : 0);
+  const specialOfferPercent = Number(body.specialOfferPercent ?? existingFeatured?.special_offer_percent ?? 0);
   if (!Number.isInteger(specialOfferPercent) || specialOfferPercent < 0 || specialOfferPercent > 90 || (specialOfferEnabled && specialOfferPercent < 1)) {
     return json({ error: "স্পেশাল অফারের ছাড় ১ থেকে ৯০ শতাংশের মধ্যে দিন।" }, 400);
   }
-  const isTrending = body.isTrending === true ? 1 : 0;
+  const isTrending = body.isTrending === undefined ? Number(existingFeatured?.is_trending || 0) : (body.isTrending === true ? 1 : 0);
   await env.DB.prepare(`
     INSERT INTO product_settings (product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, special_offer_enabled, special_offer_percent, is_trending, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
