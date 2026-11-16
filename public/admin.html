@@ -359,7 +359,6 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       return o.product_name || "—";
     }
     function renderOrderDetails(o) {
-      const address = [o.customer_division,o.customer_district,o.customer_area,o.customer_address].filter(Boolean).join(", ") || "—";
       const payment = o.payment_method === "advance" ? "অগ্রিম ডেলিভারি চার্জ" : "ক্যাশ অন ডেলিভারি";
       const verification = o.payment_verification_status === "pending_manual" ? "যাচাই বাকি" : (o.payment_verification_status === "verified" ? "যাচাই হয়েছে" : (o.payment_verification_status || "—"));
       const fields = [
@@ -370,8 +369,11 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
         ["অগ্রিম জমা","৳"+(o.advance_payment_amount || 0),false],
         ["Transaction ID",o.transaction_id || "প্রযোজ্য নয়",Boolean(o.transaction_id)],
         ["পেমেন্ট যাচাই",verification,false],
-        ["ঠিকানা",address,true],["নির্দেশনা",o.note || "নেই",false]
-      ];
+        ["বিভাগ",o.customer_division,false],["জেলা",o.customer_district,false],
+        ["থানা / এলাকা",o.customer_area,false],
+        ["গ্রাহকের দেওয়া ঠিকানা",o.customer_address,true],
+        ["নির্দেশনা",o.note || "নেই",false]
+      ].filter(([label,value]) => value !== null && value !== undefined && String(value).trim() !== "");
       const allText = [
         "অর্ডার ID: "+o.id,"তারিখ: "+(o.created_at || o.createdAt || "—"),
         "ক্রেতা: "+(o.customer_name || "—"),"মোবাইল: "+(o.customer_phone || "—"),
