@@ -226,7 +226,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
     .detail-action-card .order-actions{margin-top:0;gap:7px}.detail-action-card .delete-order{margin-top:8px}
     .back-orders{background:#e8f4ec;color:#166534;border:1px solid #cce5d2;box-shadow:none;min-height:36px;padding:7px 11px}
     @media(max-width:650px){.detail-compact-grid{grid-template-columns:1fr}.order-detail-screen{padding:10px}.detail-customer-card{padding:12px}.detail-phone-line strong{font-size:20px}.order-detail-top h2{font-size:16px}}
-    .business-koro-response pre{max-height:420px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:12px;border-radius:9px;background:#f4f7f5;color:#26352b;font:12px/1.5 ui-monospace,monospace}.business-koro-response details{margin:10px 0}.business-koro-response summary{cursor:pointer;font-weight:700;color:#14532d;padding:8px 0}\n    .business-koro-card{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px;margin:10px 0;border:1px solid #cfe7d5;border-radius:12px;background:linear-gradient(120deg,#f0faf3,#fff)}
+    .business-koro-card{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px;margin:10px 0;border:1px solid #cfe7d5;border-radius:12px;background:linear-gradient(120deg,#f0faf3,#fff)}
     .business-koro-card>div{display:grid;gap:3px}.business-koro-card b{font-size:14px;color:#14532d}.business-koro-card small{font-size:11px;color:#64748b}.business-koro-card button{background:linear-gradient(110deg,#166534,#15803d);color:#fff;min-height:38px}.business-koro-card button:disabled{opacity:.65;cursor:not-allowed}
     .business-koro-delivery{display:grid;gap:5px;min-width:min(100%,260px);flex:1}
     .business-koro-delivery label{font-size:11px;font-weight:700;color:#14532d}
@@ -364,27 +364,6 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       } catch (_) {}
       return o.product_name || "—";
     }
-    function businessKoroResponseText(value) {
-      if (!value) return "";
-      let parsed;
-      try { parsed = typeof value === "string" ? JSON.parse(value) : value; }
-      catch (_) { return String(value).slice(0, 20000); }
-      const redact = (item, depth = 0) => {
-        if (depth > 8) return "[গভীরতা সীমা]";
-        if (Array.isArray(item)) return item.slice(0, 100).map(v => redact(v, depth + 1));
-        if (!item || typeof item !== "object") return item;
-        const out = {};
-        for (const [key, val] of Object.entries(item).slice(0, 150)) {
-          if (/(api.?key|access.?token|refresh.?token|secret|password|authorization)/i.test(key)) out[key] = "[গোপন]";
-          else if (/^(cost.?price|packaging.?cost)$/i.test(key)) out[key] = "[Admin view-এ লুকানো]";
-          else out[key] = redact(val, depth + 1);
-        }
-        return out;
-      };
-      try { return JSON.stringify(redact(parsed), null, 2).slice(0, 20000); }
-      catch (_) { return "তথ্য প্রদর্শন করা যায়নি।"; }
-    }
-
     function renderOrderDetails(o) {
       const payment = o.payment_method === "advance" ? "অগ্রিম ডেলিভারি চার্জ" : "ক্যাশ অন ডেলিভারি";
       const verification = o.payment_verification_status === "pending_manual" ? "যাচাই বাকি" : (o.payment_verification_status === "verified" ? "যাচাই হয়েছে" : (o.payment_verification_status || "—"));
@@ -681,7 +660,7 @@ function renderOrderDetail(o){
  <h3 class="detail-section-title">অর্ডারের তথ্য</h3>${renderOrderDetails(o)}
  <div class="detail-action-card"><h3 class="detail-section-title">অর্ডার পরিচালনা</h3><div class="order-actions"><label>অর্ডারের অবস্থা<select data-status="${escapeHTML(o.id)}">${Object.entries(labels).map(([v,l])=>`<option value="${v}" ${s===v?"selected":""}>${l}</option>`).join("")}</select></label><button type="button" data-order="${escapeHTML(o.id)}">অবস্থা সংরক্ষণ</button></div>
  ${o.payment_method==="advance"?`<div class="order-actions" style="margin-top:12px"><label>অগ্রিম পেমেন্ট যাচাই<select data-payment-status="${escapeHTML(o.id)}"><option value="pending_manual" ${p==="pending_manual"?"selected":""}>যাচাই বাকি</option><option value="verified" ${p==="verified"?"selected":""}>পেমেন্ট পেয়েছি / যাচাই হয়েছে</option><option value="rejected" ${p==="rejected"?"selected":""}>পেমেন্ট মেলেনি</option></select></label><button type="button" data-payment-save="${escapeHTML(o.id)}">পেমেন্ট যাচাই সংরক্ষণ</button></div>`:""}
- <section class="detail-action-card business-koro-response"><h3 class="detail-section-title">Business Koro থেকে পাওয়া তথ্য</h3><p class="muted">API-তে যে তথ্য পাওয়া গেছে, তা এখানে দেখা যাবে। গোপন কী/টোকেন ও খরচের তথ্য আড়াল করা হয়।</p>${o.business_koro_response?`<details><summary>অর্ডার পাঠানোর সময়ের Response</summary><pre>${escapeHTML(businessKoroResponseText(o.business_koro_response))}</pre></details>`:""}${o.business_koro_live_response?`<details open><summary>সর্বশেষ Live Order Response</summary><pre>${escapeHTML(businessKoroResponseText(o.business_koro_live_response))}</pre><small>সর্বশেষ পরীক্ষা: ${escapeHTML(o.business_koro_status_checked_at||"সময় পাওয়া যায়নি")}</small></details>`:"<p class=\"muted\">এখনো Live Response পাওয়া যায়নি। অর্ডার পাঠানো এবং Business Koro Order ID তৈরি হওয়ার পর তথ্য আসবে।</p>"}</section>\n <div class="business-koro-card"><div><b>Business Koro</b><small>${o.business_koro_status==="sent"?"পাঠানো হয়েছে":o.business_koro_status==="failed"?"পাঠাতে সমস্যা হয়েছে":o.business_koro_status==="sending"?"পাঠানো হচ্ছে...":"এখনো পাঠানো হয়নি"}</small>${o.business_koro_order_id?`<small>Business Koro ID: ${escapeHTML(o.business_koro_order_id)}</small>`:""}</div><div class="business-koro-delivery"><label for="bk-delivery-${escapeHTML(o.id)}">ডেলিভারি চার্জ কে দেবে?</label><select id="bk-delivery-${escapeHTML(o.id)}" data-business-koro-delivery>${[["customer_delivery","কাস্টমার ডেলিভারির সময় দেবে"],["customer_upfront","কাস্টমার আগে থেকেই দিয়েছে"],["reseller_bears","RS Mart ডেলিভারি চার্জ বহন করবে"]].map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div><button type="button" data-business-koro-send="${escapeHTML(o.id)}" ${o.business_koro_status==="sent"||o.business_koro_status==="sending"?"disabled":""}>${o.business_koro_status==="sent"?"✓ পাঠানো হয়েছে":o.business_koro_status==="sending"?"পাঠানো হচ্ছে...":o.business_koro_status==="failed"?"আবার চেষ্টা করুন":"Business Koro-তে পাঠান"}</button></div>
+\n <div class="business-koro-card"><div><b>Business Koro</b><small>${o.business_koro_status==="sent"?"পাঠানো হয়েছে":o.business_koro_status==="failed"?"পাঠাতে সমস্যা হয়েছে":o.business_koro_status==="sending"?"পাঠানো হচ্ছে...":"এখনো পাঠানো হয়নি"}</small>${o.business_koro_order_id?`<small>Business Koro ID: ${escapeHTML(o.business_koro_order_id)}</small>`:""}</div><div class="business-koro-delivery"><label for="bk-delivery-${escapeHTML(o.id)}">ডেলিভারি চার্জ কে দেবে?</label><select id="bk-delivery-${escapeHTML(o.id)}" data-business-koro-delivery>${[["customer_delivery","কাস্টমার ডেলিভারির সময় দেবে"],["customer_upfront","কাস্টমার আগে থেকেই দিয়েছে"],["reseller_bears","RS Mart ডেলিভারি চার্জ বহন করবে"]].map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div><button type="button" data-business-koro-send="${escapeHTML(o.id)}" ${o.business_koro_status==="sent"||o.business_koro_status==="sending"?"disabled":""}>${o.business_koro_status==="sent"?"✓ পাঠানো হয়েছে":o.business_koro_status==="sending"?"পাঠানো হচ্ছে...":o.business_koro_status==="failed"?"আবার চেষ্টা করুন":"Business Koro-তে পাঠান"}</button></div>
  <div class="detail-action-card"><h3 class="detail-section-title">কুরিয়ার ট্র্যাকিং</h3><label>Steadfast Tracking ID<input type="text" maxlength="100" data-courier-tracking value="${escapeHTML(o.courier_tracking_code||"")}" placeholder="যেমন: SFR261111ST51D7CDABD"></label><button type="button" data-courier-save="${escapeHTML(o.id)}">Tracking ID সংরক্ষণ</button><p class="muted">Tracking ID সংরক্ষণের পর গ্রাহক অর্ডার খুঁজলে কুরিয়ার স্ট্যাটাস আপডেট হবে।</p>${o.courier_live_status?`<small>সর্বশেষ কুরিয়ার অবস্থা: ${escapeHTML(o.courier_live_status)}</small>`:""}</div>
  <button type="button" class="delete-order" data-delete-order="${escapeHTML(o.id)}">এই অর্ডার স্থায়ীভাবে ডিলিট করুন</button></div></div>`;
 }

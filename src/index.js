@@ -121,7 +121,6 @@ async function ensureOrderSchema(env) {
     ["business_koro_response", "TEXT"],
     ["business_koro_sent_at", "TEXT"],
     ["business_koro_live_status", "TEXT"],
-    ["business_koro_live_response", "TEXT"],
     ["business_koro_status_checked_at", "TEXT"],
     ["courier_tracking_code", "TEXT"],
     ["courier_live_status", "TEXT"],
@@ -259,7 +258,7 @@ function normalizeBangladeshPhone(value) {
 
 function findExternalStatus(v,d=0){if(!v||typeof v!=="object"||d>5)return "";for(const k of ["status","order_status","delivery_status","current_status","state"]){if(typeof v[k]==="string"&&v[k].trim())return v[k].trim()}for(const k of ["data","order","result","consignment","courier"]){const z=findExternalStatus(v[k],d+1);if(z)return z}return ""}
 async function refreshExternalOrderStatuses(env,orders){const now=Date.now();await Promise.all((orders||[]).map(async o=>{
-const bt=Date.parse(o.business_koro_status_checked_at||"");if(o.business_koro_order_id&&env.BUSINESS_KORO_API_KEY&&(!Number.isFinite(bt)||now-bt>120000)){try{const r=await fetch(`${API_BASE}/orders/${encodeURIComponent(o.business_koro_order_id)}`,{headers:apiHeaders(env)});let d={};try{d=await r.json()}catch{}if(r.ok){const s=findExternalStatus(d);await env.DB.prepare("UPDATE orders SET business_koro_live_status=?,business_koro_live_response=?,business_koro_status_checked_at=CURRENT_TIMESTAMP WHERE id=?").bind(s?s.slice(0,100):null,JSON.stringify(d).slice(0,20000),o.id).run()}}catch{}}
+const bt=Date.parse(o.business_koro_status_checked_at||"");if(o.business_koro_order_id&&env.BUSINESS_KORO_API_KEY&&(!Number.isFinite(bt)||now-bt>120000)){try{const r=await fetch(`${API_BASE}/orders/${encodeURIComponent(o.business_koro_order_id)}`,{headers:apiHeaders(env)});let d={};try{d=await r.json()}catch{}if(r.ok){const s=findExternalStatus(d);await env.DB.prepare("UPDATE orders SET business_koro_live_status=?,business_koro_status_checked_at=CURRENT_TIMESTAMP WHERE id=?").bind(s?s.slice(0,100):null,o.id).run()}}catch{}}
 const st=Date.parse(o.courier_status_checked_at||"");if(o.courier_tracking_code&&env.STEADFAST_API_KEY&&env.STEADFAST_SECRET_KEY&&(!Number.isFinite(st)||now-st>120000)){try{const r=await fetch(`https://portal.packzy.com/api/v1/status_by_trackingcode/${encodeURIComponent(o.courier_tracking_code)}`,{headers:{"Api-Key":env.STEADFAST_API_KEY,"Secret-Key":env.STEADFAST_SECRET_KEY,"Accept":"application/json"}});let d={};try{d=await r.json()}catch{}if(r.ok){const s=findExternalStatus(d);await env.DB.prepare(s?"UPDATE orders SET courier_live_status=?,courier_status_checked_at=CURRENT_TIMESTAMP WHERE id=?":"UPDATE orders SET courier_status_checked_at=CURRENT_TIMESTAMP WHERE id=?").bind(...(s?[s.slice(0,100),o.id]:[o.id])).run()}}catch{}}
 }))}
 
