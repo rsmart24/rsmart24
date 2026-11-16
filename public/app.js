@@ -391,7 +391,7 @@ customerPhoneInput?.addEventListener("input", event => {
     .replace(/[০-৯]/g, digit => "০১২৩৪৫৬৭৮৯".indexOf(digit))
     .replace(/[^0-9+]/g, "");
   const value = input.value;
-  const valid = /^(?:01[3-9][0-9]{8}|\\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})$/.test(value);
+  const valid = /^(?:01[3-9][0-9]{8}|\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})$/.test(value);
   input.setCustomValidity(value && !valid ? "সঠিক বাংলাদেশি মোবাইল নম্বর লিখুন (যেমন 017XXXXXXXX)।" : "");
   const icon = document.querySelector("#phone-valid-icon");
   const hint = document.querySelector("#phone-validation-hint");
