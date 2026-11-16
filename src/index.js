@@ -28,7 +28,7 @@ function apiHeaders(env) {
 
 function isOutOfStock(product) {
   if (!product || typeof product !== "object") return false;
-  const normalize = value => String(value ?? "").trim().toLowerCase().replace(/[\\s-]+/g, "_");
+  const normalize = value => String(value ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
   const status = normalize(product.stockStatus ?? product.stock_status ?? product.availability ?? product.status);
   const stock = product.inStock ?? product.in_stock ?? product.available;
   const stockText = normalize(stock);
@@ -89,6 +89,7 @@ function requireDB(env) {
 
 async function ensureOrderSchema(env) {
   requireDB(env);
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS admin_login_attempts (ip_hash TEXT PRIMARY KEY, attempts INTEGER NOT NULL DEFAULT 0, window_started_at INTEGER NOT NULL, blocked_until INTEGER NOT NULL DEFAULT 0)").run();
   const productColumns = await env.DB.prepare("PRAGMA table_info(product_settings)").all();
   const productNames = new Set((productColumns.results || []).map(row => row.name));
   if (!productNames.has("discount_percent")) {
@@ -213,33 +214,35 @@ async function isAdmin(request, env) {
 }
 
 async function adminLogin(request, env) {
-  if (!env.ADMIN_PASSWORD) {
-    return json({ error: "Admin password is not configured." }, 500);
+  if (!env.ADMIN_PASSWORD) return json({ error: "Admin password is not configured." }, 500);
+  await ensureOrderSchema(env);
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(env.ADMIN_PASSWORD + ":" + ip));
+  const ipHash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+  const now = Date.now();
+  const attempt = await env.DB.prepare("SELECT attempts, window_started_at, blocked_until FROM admin_login_attempts WHERE ip_hash = ?").bind(ipHash).first();
+  if (Number(attempt?.blocked_until || 0) > now) {
+    const retrySeconds = Math.max(1, Math.ceil((Number(attempt.blocked_until) - now) / 1000));
+    return json({ error: "অনেকবার ভুল পাসওয়ার্ড দেওয়া হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।" }, 429, { "Retry-After": String(retrySeconds) });
   }
-
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "সঠিক পাসওয়ার্ড দিন।" }, 400);
-  }
-
+  try { body = await request.json(); } catch { return json({ error: "সঠিক পাসওয়ার্ড দিন।" }, 400); }
   if (body.password !== env.ADMIN_PASSWORD) {
+    const sameWindow = attempt && now - Number(attempt.window_started_at || 0) < 15 * 60 * 1000;
+    const attempts = sameWindow ? Number(attempt.attempts || 0) + 1 : 1;
+    const windowStartedAt = sameWindow ? Number(attempt.window_started_at) : now;
+    const blockedUntil = attempts >= 5 ? now + 15 * 60 * 1000 : 0;
+    await env.DB.prepare("INSERT INTO admin_login_attempts (ip_hash, attempts, window_started_at, blocked_until) VALUES (?, ?, ?, ?) ON CONFLICT(ip_hash) DO UPDATE SET attempts=excluded.attempts, window_started_at=excluded.window_started_at, blocked_until=excluded.blocked_until").bind(ipHash, attempts, windowStartedAt, blockedUntil).run();
+    if (blockedUntil) return json({ error: "৫ বার ভুল পাসওয়ার্ড দেওয়া হয়েছে। ১৫ মিনিট পর আবার চেষ্টা করুন।" }, 429, { "Retry-After": "900" });
     return json({ error: "পাসওয়ার্ড সঠিক নয়।" }, 401);
   }
-
+  await env.DB.prepare("DELETE FROM admin_login_attempts WHERE ip_hash = ?").bind(ipHash).run();
   const expiry = Date.now() + 8 * 60 * 60 * 1000;
   const token = await signSession(expiry, env.ADMIN_PASSWORD);
-
-  return json(
-    { success: true, message: "Login successful." },
-    200,
-    {
-      "Set-Cookie": `rs_admin=${token}; HttpOnly; Secure; SameSite=Strict; Path=/api/admin; Max-Age=28800`
-    }
-  );
+  return json({ success: true, message: "Login successful." }, 200, {
+    "Set-Cookie": "rs_admin=" + token + "; HttpOnly; Secure; SameSite=Strict; Path=/api/admin; Max-Age=28800"
+  });
 }
-
 async function adminLogout() {
   return json(
     { success: true },
@@ -250,71 +253,6 @@ async function adminLogout() {
   );
 }
 
-
-function normalizeBangladeshPhone(value) {
-  let phone=String(value||"").trim().replace(/[০-৯]/g,d=>"০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/[\s()-]/g,"");
-  if(phone.startsWith("+880")) phone="0"+phone.slice(4);
-  else if(phone.startsWith("880")) phone="0"+phone.slice(3);
-  return phone;
-}
-
-
-function findExternalStatus(v,d=0){if(!v||typeof v!=="object"||d>5)return "";for(const k of ["status","order_status","delivery_status","current_status","state"]){if(typeof v[k]==="string"&&v[k].trim())return v[k].trim()}for(const k of ["data","order","result","consignment","courier"]){const z=findExternalStatus(v[k],d+1);if(z)return z}return ""}
-async function refreshExternalOrderStatuses(env,orders){const now=Date.now();await Promise.all((orders||[]).map(async o=>{
-const bt=Date.parse(o.business_koro_status_checked_at||"");if(o.business_koro_order_id&&env.BUSINESS_KORO_API_KEY&&(!Number.isFinite(bt)||now-bt>120000)){try{const r=await fetch(`${API_BASE}/orders/${encodeURIComponent(o.business_koro_order_id)}`,{headers:apiHeaders(env)});let d={};try{d=await r.json()}catch{}if(r.ok){const s=findExternalStatus(d);await env.DB.prepare("UPDATE orders SET business_koro_live_status=?,business_koro_status_checked_at=CURRENT_TIMESTAMP WHERE id=?").bind(s?s.slice(0,100):null,o.id).run()}}catch{}}
-const st=Date.parse(o.courier_status_checked_at||"");if(o.courier_tracking_code&&env.STEADFAST_API_KEY&&env.STEADFAST_SECRET_KEY&&(!Number.isFinite(st)||now-st>120000)){try{const r=await fetch(`https://portal.packzy.com/api/v1/status_by_trackingcode/${encodeURIComponent(o.courier_tracking_code)}`,{headers:{"Api-Key":env.STEADFAST_API_KEY,"Secret-Key":env.STEADFAST_SECRET_KEY,"Accept":"application/json"}});let d={};try{d=await r.json()}catch{}if(r.ok){const s=findExternalStatus(d);await env.DB.prepare(s?"UPDATE orders SET courier_live_status=?,courier_status_checked_at=CURRENT_TIMESTAMP WHERE id=?":"UPDATE orders SET courier_status_checked_at=CURRENT_TIMESTAMP WHERE id=?").bind(...(s?[s.slice(0,100),o.id]:[o.id])).run()}}catch{}}
-}))}
-
-async function lookupCustomerOrders(request, env) {
-  await ensureOrderSchema(env);
-  const url=new URL(request.url);
-  const phone=normalizeBangladeshPhone(url.searchParams.get("phone"));
-  const district=String(url.searchParams.get("district")||"").trim().slice(0,100);
-  if(!/^01[3-9][0-9]{8}$/.test(phone) || !district) {
-    return json({error:"সঠিক মোবাইল নম্বর ও জেলা দিন।"},400);
-  }
-  const result=await env.DB.prepare(
-    "SELECT id, product_name, order_items_json, created_at, status, total_amount, payment_method, payment_verification_status, business_koro_order_id, business_koro_live_status, business_koro_status_checked_at, courier_tracking_code, courier_live_status, courier_status_checked_at FROM orders WHERE customer_phone = ? AND LOWER(TRIM(customer_district)) = LOWER(?) ORDER BY created_at DESC LIMIT 50"
-  ).bind(phone,district).all();
-  await refreshExternalOrderStatuses(env,(result.results||[]).slice(0,10));
-  const refreshed=await env.DB.prepare(
-    "SELECT id, product_name, order_items_json, created_at, status, total_amount, delivery_charge, discount_amount, payment_method, payment_verification_status, business_koro_order_id, business_koro_live_status, business_koro_status_checked_at, courier_tracking_code, courier_live_status, courier_status_checked_at FROM orders WHERE customer_phone = ? AND LOWER(TRIM(customer_district)) = LOWER(?) ORDER BY created_at DESC LIMIT 50"
-  ).bind(phone,district).all();
-  const orders=(refreshed.results||[]).map(order=>{
-    let items=[];
-    try {
-      const parsed=JSON.parse(order.order_items_json||"[]");
-      if(Array.isArray(parsed)) items=parsed.slice(0,20).map(item=>({
-        name:String(item.name||"পণ্য").slice(0,150),
-        quantity:Math.max(1,Number(item.quantity||1)),
-        color:String(item.color||"").slice(0,60),
-        size:String(item.size||"").slice(0,60),
-        unitPrice:Number(item.unitPrice||0),
-        subtotal:Number(item.subtotal||0),
-        discountAmount:Number(item.discountAmount||0)
-      }));
-    } catch {}
-    return {
-      orderId:String(order.id),
-      productName:String(order.product_name||"অর্ডার").slice(0,200),
-      items,
-      createdAt:order.created_at||null,
-      deliveryCharge:Number(order.delivery_charge||0),
-      discountAmount:Number(order.discount_amount||0),
-      status:String(order.status||"new"),
-      totalAmount:Number(order.total_amount||0),
-      paymentMethod:String(order.payment_method||"cod"),
-      paymentVerificationStatus:String(order.payment_verification_status||"not_required"),
-      businessKoroOrderId:String(order.business_koro_order_id||""),
-      businessKoroStatus:String(order.business_koro_live_status||""),
-      businessKoroCheckedAt:order.business_koro_status_checked_at||null,
-      courierTrackingCode:String(order.courier_tracking_code||""),
-      courierStatus:String(order.courier_live_status||""),
-      courierCheckedAt:order.courier_status_checked_at||null
-    };
-  });
-  return json({success:true,data:orders});
-}
 
 async function publicProducts(env) {
   const catalog = await getCatalog(env);
@@ -715,11 +653,6 @@ export default {
 
       if (path === "/api/products" && method === "GET") {
         return await publicProducts(env);
-      }
-
-      if (path === "/api/orders/lookup" && method === "GET") {
-        requireDB(env);
-        return await lookupCustomerOrders(request, env);
       }
 
       if (path === "/api/orders" && method === "POST") {
