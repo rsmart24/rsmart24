@@ -325,7 +325,7 @@ async function publicProducts(env) {
       const product = publicProduct(p, settings.get(String(p.id)));
       if (product.specialOfferEnabled && product.specialOfferPercent > 0 && product.sellingPrice !== null) {
         const regularPrice = Number(product.sellingPrice);
-        product.originalPrice = product.originalPrice ?? regularPrice;
+        product.originalPrice = regularPrice;
         product.sellingPrice = Math.max(0, Math.round(regularPrice * (100 - product.specialOfferPercent) / 100));
       }
       return product;
