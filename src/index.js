@@ -275,7 +275,7 @@ async function lookupCustomerOrders(request, env) {
   ).bind(phone,district).all();
   await refreshExternalOrderStatuses(env,(result.results||[]).slice(0,10));
   const refreshed=await env.DB.prepare(
-    "SELECT id, product_name, order_items_json, created_at, status, total_amount, payment_method, payment_verification_status, business_koro_live_status, courier_tracking_code, courier_live_status FROM orders WHERE customer_phone = ? AND LOWER(TRIM(customer_district)) = LOWER(?) ORDER BY created_at DESC LIMIT 50"
+    "SELECT id, product_name, order_items_json, created_at, status, total_amount, delivery_charge, discount_amount, payment_method, payment_verification_status, business_koro_order_id, business_koro_live_status, business_koro_status_checked_at, courier_tracking_code, courier_live_status, courier_status_checked_at FROM orders WHERE customer_phone = ? AND LOWER(TRIM(customer_district)) = LOWER(?) ORDER BY created_at DESC LIMIT 50"
   ).bind(phone,district).all();
   const orders=(refreshed.results||[]).map(order=>{
     let items=[];
@@ -283,7 +283,12 @@ async function lookupCustomerOrders(request, env) {
       const parsed=JSON.parse(order.order_items_json||"[]");
       if(Array.isArray(parsed)) items=parsed.slice(0,20).map(item=>({
         name:String(item.name||"পণ্য").slice(0,150),
-        quantity:Math.max(1,Number(item.quantity||1))
+        quantity:Math.max(1,Number(item.quantity||1)),
+        color:String(item.color||"").slice(0,60),
+        size:String(item.size||"").slice(0,60),
+        unitPrice:Number(item.unitPrice||0),
+        subtotal:Number(item.subtotal||0),
+        discountAmount:Number(item.discountAmount||0)
       }));
     } catch {}
     return {
@@ -291,13 +296,18 @@ async function lookupCustomerOrders(request, env) {
       productName:String(order.product_name||"অর্ডার").slice(0,200),
       items,
       createdAt:order.created_at||null,
+      deliveryCharge:Number(order.delivery_charge||0),
+      discountAmount:Number(order.discount_amount||0),
       status:String(order.status||"new"),
       totalAmount:Number(order.total_amount||0),
       paymentMethod:String(order.payment_method||"cod"),
       paymentVerificationStatus:String(order.payment_verification_status||"not_required"),
+      businessKoroOrderId:String(order.business_koro_order_id||""),
       businessKoroStatus:String(order.business_koro_live_status||""),
+      businessKoroCheckedAt:order.business_koro_status_checked_at||null,
       courierTrackingCode:String(order.courier_tracking_code||""),
-      courierStatus:String(order.courier_live_status||"")
+      courierStatus:String(order.courier_live_status||""),
+      courierCheckedAt:order.courier_status_checked_at||null
     };
   });
   return json({success:true,data:orders});
