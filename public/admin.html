@@ -752,7 +752,7 @@ if (
         setTimeout(() => { button.textContent = old; button.classList.remove("copied"); }, 1600);
       } catch (error) { alert("কপি করা যায়নি। আবার চেষ্টা করুন।"); }
     }
-    ordersBox.addEventListener("click", event => {
+    ordersBox.addEventListener("click", async event => {
       const one = event.target.closest(".copy-one");
       const all = event.target.closest(".copy-all");
       const deleteButton = event.target.closest("[data-delete-order]");
