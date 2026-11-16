@@ -496,6 +496,31 @@ export default {
           return json({ error: "Admin login প্রয়োজন।" }, 401);
         }
 
+        if (path === "/api/admin/telegram-test" && method === "POST") {
+          if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+            return json({ error: "Telegram Bot Token বা Chat ID সেট করা নেই।" }, 503);
+          }
+          try {
+            const telegramResponse = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                chat_id: env.TELEGRAM_CHAT_ID,
+                text: "✅ RS Mart Telegram Test\n\nআপনার Telegram Order Alert সংযোগ কাজ করছে। এটি শুধু পরীক্ষামূলক বার্তা—কোনো অর্ডার তৈরি হয়নি।"
+              })
+            });
+            const telegramResult = await telegramResponse.json().catch(() => ({}));
+            if (!telegramResponse.ok || !telegramResult.ok) {
+              console.error("Telegram test message failed:", telegramResult.description || telegramResponse.status);
+              return json({ error: "Telegram বার্তা পাঠানো যায়নি। Cloudflare Logs পরীক্ষা করুন।" }, 502);
+            }
+            return json({ success: true, message: "Telegram test message sent." });
+          } catch (error) {
+            console.error("Telegram test request failed:", error?.message || "Unknown error");
+            return json({ error: "Telegram সার্ভারে সংযোগ করা যায়নি।" }, 502);
+          }
+        }
+
         requireDB(env);
 
         if (path === "/api/admin/products" && method === "GET") {
