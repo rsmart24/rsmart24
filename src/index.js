@@ -99,6 +99,12 @@ async function ensureOrderSchema(env) {
     }
   }
 
+  for (const [name, definition] of [["media_url", "TEXT"], ["media_enabled", "INTEGER NOT NULL DEFAULT 1"]]) {
+    if (!productNames.has(name)) {
+      try { await env.DB.prepare(`ALTER TABLE product_settings ADD COLUMN ${name} ${definition}`).run(); }
+      catch (error) { if (!/duplicate column/i.test(String(error?.message || error))) throw error; }
+    }
+  }
   const orderColumns = await env.DB.prepare("PRAGMA table_info(orders)").all();
   const orderNames = new Set((orderColumns.results || []).map(row => row.name));
   const additions = [
@@ -125,7 +131,7 @@ async function ensureOrderSchema(env) {
 async function getSettings(env) {
   await ensureOrderSchema(env);
   const result = await env.DB.prepare(
-    "SELECT product_id, selling_price, original_price, category, is_visible, discount_percent FROM product_settings"
+    "SELECT product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled FROM product_settings"
   ).all();
   return new Map((result.results || []).map(row => [String(row.product_id), row]));
 }
@@ -150,7 +156,9 @@ function publicProduct(p, setting) {
   : null,
     category: setting?.category || "",
     isVisible: setting ? Number(setting.is_visible) === 1 : true,
-    discountPercent: Number(setting?.discount_percent || 0)
+    discountPercent: Number(setting?.discount_percent || 0),
+    mediaUrl: setting?.media_url || "",
+    mediaEnabled: setting ? Number(setting.media_enabled) === 1 : true
   };
 }
 
@@ -238,10 +246,7 @@ async function publicProducts(env) {
     .map(p => publicProduct(p, settings.get(String(p.id))))
     .filter(p => p.isVisible);
 
-  return json({
-    data: products,
-    deliveryCharges: catalog.deliveryCharges
-  });
+  return json({ data: products, deliveryCharges: catalog.deliveryCharges });
 }
 
 async function adminProducts(env) {
@@ -283,19 +288,21 @@ async function saveProductSettings(request, env, productId) {
   }
   const category = String(body.category || "").trim().slice(0, 100);
   const isVisible = body.isVisible === false ? 0 : 1;
-
+  const mediaUrl = String(body.mediaUrl || "").trim().slice(0, 2000);
+  if (mediaUrl) {
+    try { const parsed = new URL(mediaUrl); if (parsed.protocol !== "https:" || !["drive.google.com", "docs.google.com"].includes(parsed.hostname)) return json({ error: "Google Drive-এর HTTPS লিংক দিন।" }, 400); }
+    catch { return json({ error: "Google Drive-এর সঠিক লিংক দিন।" }, 400); }
+  }
+  const mediaEnabled = body.mediaEnabled === false ? 0 : 1;
   await env.DB.prepare(`
-    INSERT INTO product_settings
-      (product_id, selling_price, original_price, category, is_visible, discount_percent, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    INSERT INTO product_settings (product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(product_id) DO UPDATE SET
-      selling_price = excluded.selling_price,
-      original_price = excluded.original_price,
-      category = excluded.category,
-      is_visible = excluded.is_visible,
-      discount_percent = excluded.discount_percent,
-      updated_at = CURRENT_TIMESTAMP
-  `).bind(String(productId), price, originalPrice, category, isVisible, discountPercent).run();
+      selling_price = excluded.selling_price, original_price = excluded.original_price,
+      category = excluded.category, is_visible = excluded.is_visible,
+      discount_percent = excluded.discount_percent, media_url = excluded.media_url,
+      media_enabled = excluded.media_enabled, updated_at = CURRENT_TIMESTAMP
+  `).bind(String(productId), price, originalPrice, category, isVisible, discountPercent, mediaUrl || null, mediaEnabled).run();
 
   return json({ success: true, message: "পণ্যের সেটিংস সংরক্ষণ হয়েছে।" });
 }

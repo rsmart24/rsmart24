@@ -466,6 +466,9 @@ function chooseProduct(id, pushHistory = true) {
 
   document.querySelector("#detail-description").textContent =
     chosenProduct.description || "এই পণ্যের বিস্তারিত তথ্য পাওয়া যায়নি।";
+  const mediaButton = document.querySelector("#detail-media-button");
+  const showMediaButton = chosenProduct.mediaEnabled !== false && Boolean(chosenProduct.mediaUrl);
+  if (mediaButton) { mediaButton.hidden = !showMediaButton; if (showMediaButton) mediaButton.href = chosenProduct.mediaUrl; else mediaButton.removeAttribute("href"); }
 
   const variants = Array.isArray(chosenProduct.variants) ? chosenProduct.variants : [];
   const variantBox = document.querySelector("#detail-variants");

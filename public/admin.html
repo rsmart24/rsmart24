@@ -175,7 +175,7 @@
       <nav class="admin-nav" aria-label="Admin sections"><button type="button" data-tab="products" aria-selected="true">পণ্য ব্যবস্থাপনা</button><button type="button" data-tab="orders" aria-selected="false">অর্ডার ব্যবস্থাপনা</button></nav>
       <div class="panel" id="products-panel">
         <h2>পণ্য ব্যবস্থাপনা</h2>
-        <p class="muted">বিক্রয়মূল্য, ক্যাটাগরি এবং পণ্যের দৃশ্যমানতা নিয়ন্ত্রণ করুন।</p>
+        <p class="muted">বিক্রয়মূল্য, ক্যাটাগরি, মিডিয়া লিংক এবং পণ্যের দৃশ্যমানতা নিয়ন্ত্রণ করুন।</p>
         <div class="admin-toolbar">
           <input id="product-search" type="search" placeholder="পণ্যের নাম দিয়ে খুঁজুন..." aria-label="পণ্য খুঁজুন">
           <select id="product-stock-filter" aria-label="স্টক অনুযায়ী পণ্য"><option value="all">সব পণ্য</option><option value="in">শুধু স্টকে আছে</option><option value="out">শুধু স্টক আউট</option></select>
@@ -358,6 +358,12 @@
                   <option value="gaming" ${p.category === "gaming" ? "selected" : ""}>গেমিং আইটেম</option>
                 </select>
               </label>
+              <label>Google Drive ছবি ও ভিডিওর লিংক
+                <input type="url" id="media-url-${escapeHTML(p.id)}" value="${escapeHTML(p.mediaUrl || "")}" placeholder="https://drive.google.com/drive/folders/...">
+              </label>
+              <label>এই পণ্যে মিডিয়া বাটন
+                <select id="media-enabled-${escapeHTML(p.id)}"><option value="yes" ${p.mediaEnabled !== false ? "selected" : ""}>চালু</option><option value="no" ${p.mediaEnabled === false ? "selected" : ""}>বন্ধ</option></select>
+              </label>
               <label>ওয়েবসাইটে দেখাবেন?
                 <select id="visible-${escapeHTML(p.id)}">
                   <option value="yes" ${p.isVisible ? "selected" : ""}>হ্যাঁ</option>
@@ -379,6 +385,8 @@
           const discountPercent = document.querySelector(`#discount-${CSS.escape(id)}`).value;
           const category = document.querySelector(`#category-${CSS.escape(id)}`).value;
           const visible = document.querySelector(`#visible-${CSS.escape(id)}`).value;
+          const mediaUrl = document.querySelector(`#media-url-${CSS.escape(id)}`).value.trim();
+          const mediaEnabled = document.querySelector(`#media-enabled-${CSS.escape(id)}`).value;
 if (
   originalPrice.trim() !== "" &&
   (!Number.isSafeInteger(Number(originalPrice)) || Number(originalPrice) < 0)
@@ -404,7 +412,9 @@ if (
   originalPrice: originalPrice.trim() === "" ? null : Number(originalPrice),
   discountPercent: Number(discountPercent),
   category,
-  isVisible: visible === "yes"
+  isVisible: visible === "yes",
+  mediaUrl,
+  mediaEnabled: mediaEnabled === "yes"
 })
             });
             alert("পণ্যের সেটিংস সংরক্ষণ হয়েছে।");
