@@ -312,7 +312,7 @@ function escapeTelegramHtml(value) {
 }
 
 async function sendTelegramOrderAlert(env, order) {
-  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return;
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_GROUP_ID) return;
   const itemsText = order.items.map((item, index) =>
     `${index + 1}. ${escapeTelegramHtml(item.name)} × ${item.quantity} — ৳${item.subtotal}${item.color ? ` | রং: ${escapeTelegramHtml(item.color)}` : ""}${item.size ? ` | সাইজ: ${escapeTelegramHtml(item.size)}` : ""}`
   ).join("\n");
@@ -336,7 +336,7 @@ async function sendTelegramOrderAlert(env, order) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        chat_id: env.TELEGRAM_CHAT_ID,
+        chat_id: env.TELEGRAM_GROUP_ID,
         text: message.slice(0, 4000),
         parse_mode: "HTML",
         disable_web_page_preview: true
@@ -497,7 +497,7 @@ export default {
         }
 
         if (path === "/api/admin/telegram-test" && method === "POST") {
-          if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+          if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_GROUP_ID) {
             return json({ error: "Telegram Bot Token বা Chat ID সেট করা নেই।" }, 503);
           }
           try {
@@ -505,7 +505,7 @@ export default {
               method: "POST",
               headers: { "content-type": "application/json" },
               body: JSON.stringify({
-                chat_id: env.TELEGRAM_CHAT_ID,
+                chat_id: env.TELEGRAM_GROUP_ID,
                 text: "✅ RS Mart Telegram Test\n\nআপনার Telegram Order Alert সংযোগ কাজ করছে। এটি শুধু পরীক্ষামূলক বার্তা—কোনো অর্ডার তৈরি হয়নি।"
               })
             });
