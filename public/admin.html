@@ -318,7 +318,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       const verification = o.payment_verification_status === "pending_manual" ? "অ্যাডমিন যাচাই বাকি" : (o.payment_verification_status || "—");
       const fields = [
         ["অর্ডার নম্বর",o.id],["তারিখ",o.created_at || o.createdAt],["পণ্য",orderItemsText(o)],
-        ["ক্রেতার নাম",o.customer_name],["মোবাইল নম্বর",o.customer_phone],["পরিমাণ",o.quantity],
+        ["ক্রেতার নাম",o.customer_name],["মোবাইল নম্বর",o.customer_phone],["বিভাগ",o.customer_division],["জেলা",o.customer_district],["থানা / এলাকা",o.customer_area],["বিস্তারিত ঠিকানা",o.customer_address],["পরিমাণ",o.quantity],
         ["রং",o.color || "প্রযোজ্য নয়"],["সাইজ",o.size || "প্রযোজ্য নয়"],
         ["পণ্যের মোট মূল্য","৳"+(o.unit_price ?? 0)],["ডেলিভারি চার্জ","৳"+(o.delivery_charge ?? 0)],
         ["মোট টাকা","৳"+(o.total_amount ?? 0)],["পেমেন্ট পদ্ধতি",payment],
@@ -540,6 +540,13 @@ if (
       ordersBox.innerHTML = result.data.map(o => `
         <article class="order">
           <h3>অর্ডার: ${escapeHTML(o.id)}</h3>
+          <div class="order-customer-strip">
+            ${copyField("ক্রেতার নাম",o.customer_name)}
+            ${copyField("মোবাইল নম্বর",o.customer_phone)}
+            ${copyField("বিভাগ",o.customer_division)}
+            ${copyField("জেলা",o.customer_district)}
+            ${copyField("থানা / এলাকা",o.customer_area)}
+          </div>
           <details><summary>অর্ডারের সম্পূর্ণ তথ্য দেখুন</summary>
           ${renderOrderDetails(o)}
           </details>
@@ -551,6 +558,7 @@ if (
             </select>
           </label>
           <button class="save-status" data-order="${escapeHTML(o.id)}">অবস্থা সংরক্ষণ</button></div>
+          <button type="button" class="delete-order" data-delete-order="${escapeHTML(o.id)}">এই অর্ডার স্থায়ীভাবে ডিলিট করুন</button>
           ${o.payment_method === "advance" ? `<div class="order-actions"><label>অগ্রিম পেমেন্ট যাচাই
             <select data-payment-status="${escapeHTML(o.id)}">
               <option value="pending_manual" ${o.payment_verification_status === "pending_manual" ? "selected" : ""}>যাচাই বাকি</option>
@@ -747,6 +755,26 @@ if (
     ordersBox.addEventListener("click", event => {
       const one = event.target.closest(".copy-one");
       const all = event.target.closest(".copy-all");
+      const deleteButton = event.target.closest("[data-delete-order]");
+      if (deleteButton) {
+        const id = deleteButton.dataset.deleteOrder;
+        const order = adminOrders.find(item => String(item.id) === String(id));
+        const customer = order ? order.customer_name : "এই ক্রেতা";
+        if (!confirm("সতর্কতা: " + customer + " এর অর্ডারটি স্থায়ীভাবে ডিলিট করবেন? ওয়েবসাইটের অর্ডার তালিকা ও ডাটাবেস থেকে আর ফেরত আনা যাবে না।")) return;
+        deleteButton.disabled = true;
+        deleteButton.textContent = "ডিলিট হচ্ছে...";
+        try {
+          await api("/api/admin/orders/" + encodeURIComponent(id), { method: "DELETE" });
+          adminOrders = adminOrders.filter(item => String(item.id) !== String(id));
+          knownOrderIds = new Set(adminOrders.map(item => String(item.id)));
+          updateAdminStats();
+          await loadOrders({ notifyNew: false });
+        } catch (error) {
+          alert(error.message || "অর্ডার ডিলিট করা যায়নি।");
+          deleteButton.disabled = false;
+          deleteButton.textContent = "এই অর্ডার স্থায়ীভাবে ডিলিট করুন";
+        }
+      }
       if (one) copyText(one.dataset.copyValue || "", one);
       if (all) copyText(all.dataset.copyAll || "", all);
     });
