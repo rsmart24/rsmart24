@@ -307,6 +307,49 @@ async function saveProductSettings(request, env, productId) {
   return json({ success: true, message: "পণ্যের সেটিংস সংরক্ষণ হয়েছে।" });
 }
 
+function escapeTelegramHtml(value) {
+  return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+async function sendTelegramOrderAlert(env, order) {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return;
+  const itemsText = order.items.map((item, index) =>
+    `${index + 1}. ${escapeTelegramHtml(item.name)} × ${item.quantity} — ৳${item.subtotal}${item.color ? ` | রং: ${escapeTelegramHtml(item.color)}` : ""}${item.size ? ` | সাইজ: ${escapeTelegramHtml(item.size)}` : ""}`
+  ).join("\n");
+  const message = [
+    "🛍️ <b>RS Mart — নতুন অর্ডার!</b>",
+    `অর্ডার ID: <code>${escapeTelegramHtml(order.id)}</code>`,
+    "",
+    "<b>পণ্য:</b>",
+    itemsText,
+    "",
+    `👤 নাম: ${escapeTelegramHtml(order.name)}`,
+    `📞 ফোন: ${escapeTelegramHtml(order.phone)}`,
+    `📍 ঠিকানা: ${escapeTelegramHtml([order.area, order.district, order.division, order.address].filter(Boolean).join(", "))}`,
+    `💳 পেমেন্ট: ${order.paymentMethod === "advance" ? "অগ্রিম" : "ক্যাশ অন ডেলিভারি"}`,
+    `🚚 ডেলিভারি চার্জ: ৳${order.deliveryCharge}`,
+    `💰 মোট: ৳${order.totalAmount}`,
+    order.note ? `📝 নোট: ${escapeTelegramHtml(order.note)}` : ""
+  ].filter(Boolean).join("\n");
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        chat_id: env.TELEGRAM_CHAT_ID,
+        text: message.slice(0, 4000),
+        parse_mode: "HTML",
+        disable_web_page_preview: true
+      })
+    });
+    if (!response.ok) {
+      console.error("Telegram order alert failed with HTTP status:", response.status);
+    }
+  } catch (error) {
+    console.error("Telegram order alert request failed:", error?.message || "Unknown error");
+  }
+}
+
 async function createOrder(request, env) {
   await ensureOrderSchema(env);
   let body;
@@ -372,6 +415,20 @@ async function createOrder(request, env) {
     paymentMethod==="advance"?transactionId:null,transactionIdFormatValid?1:0,
     paymentMethod==="advance"?"pending_manual":"not_required",JSON.stringify(orderItems)
   ).run();
+  await sendTelegramOrderAlert(env, {
+    id: orderId,
+    items: orderItems,
+    name: String(body.customerName).trim().slice(0,100),
+    phone: String(body.customerPhone).trim().slice(0,20),
+    division: String(body.customerDivision).trim().slice(0,100),
+    district: String(body.customerDistrict).trim().slice(0,100),
+    area: String(body.customerArea).trim().slice(0,150),
+    address: String(body.customerAddress).trim().slice(0,500),
+    note: String(body.customerNote || "").trim().slice(0,500),
+    paymentMethod,
+    deliveryCharge,
+    totalAmount
+  });
   return json({success:true,orderId,message:"আপনার অর্ডার RS Mart-এ জমা হয়েছে। আমাদের প্রতিনিধি ফোন করে অর্ডার নিশ্চিত করবেন।"},201);
 }
 
