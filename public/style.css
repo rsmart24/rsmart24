@@ -2546,6 +2546,24 @@ body.order-modal-open {
   color:#fff;
   font-weight:700;
 }
+.order-success-whatsapp {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  width:100%;
+  min-height:48px;
+  margin-top:16px;
+  padding:10px 14px;
+  border-radius:9px;
+  background:linear-gradient(135deg,#25d366,#128c7e);
+  color:#fff;
+  font-weight:800;
+  text-decoration:none;
+  box-shadow:0 5px 14px rgba(18,140,126,.22);
+}
+.order-success-whatsapp:hover { background:linear-gradient(135deg,#20c65d,#0f7e72); }
+.order-success-whatsapp:focus-visible { outline:3px solid rgba(37,211,102,.35); outline-offset:3px; }
 
 
 /* Premium checkout payment choices and Bangladesh address selectors */
