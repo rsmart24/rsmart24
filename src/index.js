@@ -259,7 +259,7 @@ async function lookupCustomerOrders(request, env) {
     return json({error:"সঠিক মোবাইল নম্বর ও জেলা দিন।"},400);
   }
   const result=await env.DB.prepare(
-    "SELECT id, product_name, order_items_json, created_at, status FROM orders WHERE customer_phone = ? AND LOWER(TRIM(customer_district)) = LOWER(?) ORDER BY created_at DESC LIMIT 50"
+    "SELECT id, product_name, order_items_json, created_at, status, total_amount, payment_method, payment_verification_status FROM orders WHERE customer_phone = ? AND LOWER(TRIM(customer_district)) = LOWER(?) ORDER BY created_at DESC LIMIT 50"
   ).bind(phone,district).all();
   const orders=(result.results||[]).map(order=>{
     let items=[];
@@ -275,7 +275,10 @@ async function lookupCustomerOrders(request, env) {
       productName:String(order.product_name||"অর্ডার").slice(0,200),
       items,
       createdAt:order.created_at||null,
-      status:String(order.status||"new")
+      status:String(order.status||"new"),
+      totalAmount:Number(order.total_amount||0),
+      paymentMethod:String(order.payment_method||"cod"),
+      paymentVerificationStatus:String(order.payment_verification_status||"not_required")
     };
   });
   return json({success:true,data:orders});

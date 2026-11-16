@@ -869,7 +869,13 @@ document.querySelector("#search-button")?.addEventListener("click", () => search
       results.innerHTML=data.data.map(order=>{
         const date=order.createdAt?new Date(order.createdAt.replace(" ","T")+"Z").toLocaleString("bn-BD",{dateStyle:"medium",timeStyle:"short"}):"তারিখ পাওয়া যায়নি";
         const itemText=order.items?.length?order.items.map(item=>escapeHtml(item.name)+" × "+item.quantity).join(", "):escapeHtml(order.productName);
-        return '<article class="my-order-card"><div class="my-order-card-top"><span>অর্ডার নম্বর</span><b>'+escapeHtml(order.orderId)+'</b></div><p class="my-order-product">'+itemText+'</p><div class="my-order-card-bottom"><span>'+escapeHtml(date)+'</span><strong>'+escapeHtml(statusLabel(order.status))+'</strong></div></article>';
+        const statusSteps=["new","confirmed","shipped","delivered"];
+        const currentStep=statusSteps.indexOf(order.status);
+        const isCancelled=order.status==="cancelled";
+        const progress=isCancelled?'<div class="my-order-cancelled">অর্ডারটি বাতিল করা হয়েছে</div>':statusSteps.map((step,index)=>'<span class="my-order-step '+(currentStep>=index?'is-done':'')+'">'+({new:"নতুন",confirmed:"নিশ্চিত",shipped:"পাঠানো",delivered:"ডেলিভারি"})[step]+'</span>').join("");
+        const paymentLabel=order.paymentMethod==="advance"?"অগ্রিম ডেলিভারি চার্জ":"ক্যাশ অন ডেলিভারি";
+        const paymentStatus=order.paymentMethod==="advance"?(order.paymentVerificationStatus==="verified"?"পেমেন্ট যাচাই হয়েছে":order.paymentVerificationStatus==="rejected"?"পেমেন্ট যাচাই হয়নি":"পেমেন্ট যাচাই বাকি"):"ডেলিভারির সময় পরিশোধ";
+        return '<article class="my-order-card"><div class="my-order-card-top"><span>অর্ডার নম্বর</span><b>'+escapeHtml(order.orderId)+'</b></div><p class="my-order-product">'+itemText+'</p><div class="my-order-card-bottom"><span>'+escapeHtml(date)+'</span><strong>'+escapeHtml(statusLabel(order.status))+'</strong></div><div class="my-order-progress">'+progress+'</div><div class="my-order-extra"><span>সর্বমোট: <b>৳'+Number(order.totalAmount||0).toLocaleString("en-BD")+'</b></span><span>'+escapeHtml(paymentLabel)+'</span><span>'+escapeHtml(paymentStatus)+'</span></div></article>';
       }).join("");
     } catch(error) {
       message.textContent=error.message||"এই মুহূর্তে অর্ডার দেখা যাচ্ছে না। পরে চেষ্টা করুন।";
