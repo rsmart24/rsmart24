@@ -32,9 +32,9 @@ function isOutOfStock(product) {
   const status = normalize(product.stockStatus ?? product.stock_status ?? product.availability ?? product.status);
   const stock = product.inStock ?? product.in_stock ?? product.available;
   const stockText = normalize(stock);
+  const unavailableStates = ["out_of_stock", "sold_out", "soldout", "outofstock", "unavailable", "not_available", "not_in_stock", "no_stock", "false", "0"];
   return stock === false || stock === 0 || stock === "0" || stockText === "false" ||
-    ["out_of_stock", "sold_out", "outofstock", "unavailable"].includes(status) ||
-    ["out_of_stock", "sold_out", "outofstock", "unavailable"].includes(stockText);
+    unavailableStates.includes(status) || unavailableStates.includes(stockText);
 }
 
 async function getCatalog(env) {
