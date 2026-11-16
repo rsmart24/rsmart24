@@ -181,6 +181,24 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
 .order-customer-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
 @media(max-width:650px){main{margin:14px auto;padding:0 10px}.panel{padding:14px;margin-bottom:14px}.admin-nav{position:sticky;top:0;z-index:5}.admin-nav button{min-height:44px;padding:8px 5px;font-size:13px}.order{padding:11px}.order-customer-strip{grid-template-columns:1fr}.order-actions{display:grid;grid-template-columns:1fr}.order-actions label,.order-actions button{width:100%;min-width:0}.notification-controls{display:grid;grid-template-columns:1fr}.notification-controls button{width:100%}.admin-toolbar{grid-template-columns:1fr 1fr}.admin-toolbar input{grid-column:1/-1}.admin-toolbar button{min-height:44px}}
 @media(max-width:380px){.admin-toolbar{grid-template-columns:1fr}.admin-toolbar input{grid-column:auto}.admin-stats{grid-template-columns:1fr 1fr}.stat-card strong{font-size:18px}}
+  
+    /* Compact order list: show only status, customer, order ID and product until expanded. */
+    .order-compact{padding:12px 14px;margin:9px 0;border-left:4px solid #16a34a}
+    .order-compact-head{display:flex;align-items:flex-start;gap:10px;min-width:0}
+    .order-compact-main{min-width:0;flex:1}
+    .order-compact-main h3{font-size:15px;line-height:1.35;margin:1px 0 3px;font-weight:700}
+    .order-compact-id{font-size:11px;color:#667085;line-height:1.4;overflow-wrap:anywhere}
+    .order-compact-product{font-size:11px;color:#667085;line-height:1.45;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .order-status-badge{flex:0 0 auto;display:inline-block;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:700;white-space:nowrap;background:#e8f1eb;color:#24543a}
+    .status-new{background:#fff3d6;color:#8a4b08}.status-confirmed{background:#dff3e5;color:#166534}.status-shipped{background:#e4efff;color:#1d4ed8}.status-delivered{background:#dcfce7;color:#166534}.status-cancelled{background:#fee2e2;color:#b42318}
+    .order-expanded{margin-top:10px;border-top:1px solid #e5eee7;padding-top:8px}
+    .order-expanded>summary{cursor:pointer;color:#166534;font-size:12px;font-weight:700;list-style:none;display:flex;align-items:center;gap:6px}
+    .order-expanded>summary::-webkit-details-marker{display:none}
+    .order-expanded>summary:after{content:"＋";margin-left:auto;font-size:17px}
+    .order-expanded[open]>summary:after{content:"−"}
+    .order-expanded[open]>summary{margin-bottom:10px}
+    @media(max-width:650px){.order-compact{padding:10px}.order-compact-main h3{font-size:14px}.order-status-badge{font-size:9px;padding:4px 7px}.order-compact-product{font-size:10px}}
+
   </style>
 </head>
 <body>
@@ -537,37 +555,48 @@ if (
         return;
       }
 
-      ordersBox.innerHTML = result.data.map(o => `
-        <article class="order">
-          <h3>অর্ডার: ${escapeHTML(o.id)}</h3>
-          <div class="order-customer-strip">
-            ${copyField("ক্রেতার নাম",o.customer_name)}
-            ${copyField("মোবাইল নম্বর",o.customer_phone)}
-            ${copyField("বিভাগ",o.customer_division)}
-            ${copyField("জেলা",o.customer_district)}
-            ${copyField("থানা / এলাকা",o.customer_area)}
+      ordersBox.innerHTML = result.data.map(o => {
+        const status = o.status || "new";
+        const statusClass = ["new","confirmed","shipped","delivered","cancelled"].includes(status) ? status : "new";
+        return `
+        <article class="order order-compact">
+          <div class="order-compact-head">
+            <span class="order-status-badge status-${statusClass}">${labels[status] || "নতুন"}</span>
+            <div class="order-compact-main">
+              <h3>${escapeHTML(o.customer_name || "নাম দেওয়া হয়নি")}</h3>
+              <div class="order-compact-id">অর্ডার: ${escapeHTML(o.id)}</div>
+              <div class="order-compact-product">${escapeHTML(orderItemsText(o).replace(/\\n/g, " · "))}</div>
+            </div>
           </div>
-          <details><summary>অর্ডারের সম্পূর্ণ তথ্য দেখুন</summary>
-          ${renderOrderDetails(o)}
+          <details class="order-expanded">
+            <summary>বিস্তারিত তথ্য ও কাজের অপশন দেখুন</summary>
+            <div class="order-customer-strip">
+              ${copyField("ক্রেতার নাম",o.customer_name)}
+              ${copyField("মোবাইল নম্বর",o.customer_phone)}
+              ${copyField("বিভাগ",o.customer_division)}
+              ${copyField("জেলা",o.customer_district)}
+              ${copyField("থানা / এলাকা",o.customer_area)}
+            </div>
+            ${renderOrderDetails(o)}
+            <div class="order-actions"><label>অর্ডারের অবস্থা
+              <select data-status="${escapeHTML(o.id)}">
+                ${Object.entries(labels).map(([value, label]) =>
+                  `<option value="${value}" ${status === value ? "selected" : ""}>${label}</option>`
+                ).join("")}
+              </select>
+            </label>
+            <button class="save-status" data-order="${escapeHTML(o.id)}">অবস্থা সংরক্ষণ</button></div>
+            ${o.payment_method === "advance" ? `<div class="order-actions"><label>অগ্রিম পেমেন্ট যাচাই
+              <select data-payment-status="${escapeHTML(o.id)}">
+                <option value="pending_manual" ${o.payment_verification_status === "pending_manual" ? "selected" : ""}>যাচাই বাকি</option>
+                <option value="verified" ${o.payment_verification_status === "verified" ? "selected" : ""}>পেমেন্ট পেয়েছি / যাচাই হয়েছে</option>
+                <option value="rejected" ${o.payment_verification_status === "rejected" ? "selected" : ""}>পেমেন্ট মেলেনি</option>
+              </select>
+            </label><button type="button" data-payment-save="${escapeHTML(o.id)}">পেমেন্ট যাচাই সংরক্ষণ</button></div>` : ""}
+            <button type="button" class="delete-order" data-delete-order="${escapeHTML(o.id)}">এই অর্ডার স্থায়ীভাবে ডিলিট করুন</button>
           </details>
-          <div class="order-actions"><label>অর্ডারের অবস্থা
-            <select data-status="${escapeHTML(o.id)}">
-              ${Object.entries(labels).map(([value, label]) =>
-                `<option value="${value}" ${o.status === value ? "selected" : ""}>${label}</option>`
-              ).join("")}
-            </select>
-          </label>
-          <button class="save-status" data-order="${escapeHTML(o.id)}">অবস্থা সংরক্ষণ</button></div>
-          <button type="button" class="delete-order" data-delete-order="${escapeHTML(o.id)}">এই অর্ডার স্থায়ীভাবে ডিলিট করুন</button>
-          ${o.payment_method === "advance" ? `<div class="order-actions"><label>অগ্রিম পেমেন্ট যাচাই
-            <select data-payment-status="${escapeHTML(o.id)}">
-              <option value="pending_manual" ${o.payment_verification_status === "pending_manual" ? "selected" : ""}>যাচাই বাকি</option>
-              <option value="verified" ${o.payment_verification_status === "verified" ? "selected" : ""}>পেমেন্ট পেয়েছি / যাচাই হয়েছে</option>
-              <option value="rejected" ${o.payment_verification_status === "rejected" ? "selected" : ""}>পেমেন্ট মেলেনি</option>
-            </select>
-          </label><button type="button" data-payment-save="${escapeHTML(o.id)}">পেমেন্ট যাচাই সংরক্ষণ</button></div>` : ""}
-        </article>
-      `).join("");
+        </article>`;
+      }).join("");
 
       applyOrderFilters();
       ordersBox.querySelectorAll("[data-payment-save]").forEach(button => {
