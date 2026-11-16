@@ -551,6 +551,51 @@ async function sendOrderToBusinessKoro(request, env, orderId) {
   }
 }
 
+function findExternalStatus(value, depth = 0) {
+  if (!value || typeof value !== "object" || depth > 5) return "";
+  for (const key of ["status", "order_status", "delivery_status", "current_status", "state"]) {
+    if (typeof value[key] === "string" && value[key].trim()) return value[key].trim();
+  }
+  for (const key of ["data", "order", "result", "consignment", "courier"]) {
+    const found = findExternalStatus(value[key], depth + 1);
+    if (found) return found;
+  }
+  return "";
+}
+
+async function refreshExternalOrderStatuses(env, orders) {
+  const now = Date.now();
+  await Promise.all((orders || []).map(async order => {
+    const businessChecked = Date.parse(order.business_koro_status_checked_at || "");
+    if (order.business_koro_order_id && env.BUSINESS_KORO_API_KEY && (!Number.isFinite(businessChecked) || now - businessChecked > 120000)) {
+      try {
+        const response = await fetch(API_BASE + "/orders/" + encodeURIComponent(order.business_koro_order_id), { headers: apiHeaders(env) });
+        let data = {};
+        try { data = await response.json(); } catch {}
+        if (response.ok) {
+          const status = findExternalStatus(data);
+          await env.DB.prepare("UPDATE orders SET business_koro_live_status=?, business_koro_status_checked_at=CURRENT_TIMESTAMP WHERE id=?").bind(status ? status.slice(0, 100) : null, order.id).run();
+        }
+      } catch (error) { console.error("Business Koro status refresh failed:", error?.message || "Unknown error"); }
+    }
+    const courierChecked = Date.parse(order.courier_status_checked_at || "");
+    if (order.courier_tracking_code && env.STEADFAST_API_KEY && env.STEADFAST_SECRET_KEY && (!Number.isFinite(courierChecked) || now - courierChecked > 120000)) {
+      try {
+        const response = await fetch("https://portal.packzy.com/api/v1/status_by_trackingcode/" + encodeURIComponent(order.courier_tracking_code), {
+          headers: { "Api-Key": env.STEADFAST_API_KEY, "Secret-Key": env.STEADFAST_SECRET_KEY, "Accept": "application/json" }
+        });
+        let data = {};
+        try { data = await response.json(); } catch {}
+        if (response.ok) {
+          const status = findExternalStatus(data);
+          if (status) await env.DB.prepare("UPDATE orders SET courier_live_status=?, courier_status_checked_at=CURRENT_TIMESTAMP WHERE id=?").bind(status.slice(0, 100), order.id).run();
+          else await env.DB.prepare("UPDATE orders SET courier_status_checked_at=CURRENT_TIMESTAMP WHERE id=?").bind(order.id).run();
+        }
+      } catch (error) { console.error("Steadfast status refresh failed:", error?.message || "Unknown error"); }
+    }
+  }));
+}
+
 async function adminOrders(env) {
   await ensureOrderSchema(env);
   const result = await env.DB.prepare(
