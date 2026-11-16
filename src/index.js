@@ -315,7 +315,7 @@ async function sendTelegramOrderAlert(env, order) {
   if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return;
   const itemsText = order.items.map((item, index) =>
     `${index + 1}. ${escapeTelegramHtml(item.name)} × ${item.quantity} — ৳${item.subtotal}${item.color ? ` | রং: ${escapeTelegramHtml(item.color)}` : ""}${item.size ? ` | সাইজ: ${escapeTelegramHtml(item.size)}` : ""}`
-  ).join("\\n");
+  ).join("\n");
   const message = [
     "🛍️ <b>RS Mart — নতুন অর্ডার!</b>",
     `অর্ডার ID: <code>${escapeTelegramHtml(order.id)}</code>`,
@@ -330,7 +330,7 @@ async function sendTelegramOrderAlert(env, order) {
     `🚚 ডেলিভারি চার্জ: ৳${order.deliveryCharge}`,
     `💰 মোট: ৳${order.totalAmount}`,
     order.note ? `📝 নোট: ${escapeTelegramHtml(order.note)}` : ""
-  ].filter(Boolean).join("\\n");
+  ].filter(Boolean).join("\n");
   try {
     const response = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: "POST",
