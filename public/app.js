@@ -825,3 +825,54 @@ function setLanguage(language) {
 languageButton?.addEventListener("click", () => setLanguage(currentLanguage === "bn" ? "en" : "bn"));
 setLanguage("bn");
 document.querySelector("#search-button")?.addEventListener("click", () => searchInput?.focus());
+
+
+/* ===== CUSTOMER ORDER LOOKUP ===== */
+(() => {
+  const section=document.querySelector("#my-orders");
+  const link=document.querySelector(".header-my-orders");
+  const form=document.querySelector("#my-orders-form");
+  const message=document.querySelector("#my-orders-message");
+  const results=document.querySelector("#my-orders-results");
+  const button=document.querySelector("#lookup-orders-button");
+  if(!section||!form) return;
+  function showSection() {
+    section.hidden=false;
+    document.querySelectorAll(".products-section,.cart-page").forEach(el=>el.hidden=true);
+    document.querySelector("#order")?.setAttribute("hidden","");
+    document.querySelector("#order-success")?.setAttribute("hidden","");
+    section.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  function statusLabel(status) {
+    return ({new:"নতুন অর্ডার",confirmed:"অর্ডার নিশ্চিত হয়েছে",shipped:"ডেলিভারির জন্য পাঠানো হয়েছে",delivered:"ডেলিভারি সম্পন্ন",cancelled:"অর্ডার বাতিল"})[status]||"প্রক্রিয়াধীন";
+  }
+  link?.addEventListener("click",event=>{event.preventDefault();showSection();history.pushState({view:"my-orders"},"","#my-orders");});
+  form.addEventListener("submit",async event=>{
+    event.preventDefault();
+    const phone=document.querySelector("#lookup-phone").value.trim();
+    const district=document.querySelector("#lookup-district").value.trim();
+    if(!phone||!district) return;
+    button.disabled=true;button.textContent="খোঁজা হচ্ছে…";
+    message.textContent="আপনার অর্ডার খোঁজা হচ্ছে…";results.innerHTML="";
+    try {
+      const query=new URLSearchParams({phone,district});
+      const response=await fetch("/api/orders/lookup?"+query.toString(),{headers:{"accept":"application/json"}});
+      const data=await response.json();
+      if(!response.ok) throw new Error(data.error||"অর্ডার খুঁজে পাওয়া যায়নি।");
+      if(!data.data?.length) {
+        message.textContent="এই মোবাইল নম্বর ও জেলার সঙ্গে কোনো অর্ডার পাওয়া যায়নি। নম্বর ও জেলার বানান যাচাই করুন।";
+        return;
+      }
+      message.textContent="আপনার "+data.data.length+"টি অর্ডার পাওয়া গেছে।";
+      results.innerHTML=data.data.map(order=>{
+        const date=order.createdAt?new Date(order.createdAt.replace(" ","T")+"Z").toLocaleString("bn-BD",{dateStyle:"medium",timeStyle:"short"}):"তারিখ পাওয়া যায়নি";
+        const itemText=order.items?.length?order.items.map(item=>escapeHtml(item.name)+" × "+item.quantity).join(", "):escapeHtml(order.productName);
+        return '<article class="my-order-card"><div class="my-order-card-top"><span>অর্ডার নম্বর</span><b>'+escapeHtml(order.orderId)+'</b></div><p class="my-order-product">'+itemText+'</p><div class="my-order-card-bottom"><span>'+escapeHtml(date)+'</span><strong>'+escapeHtml(statusLabel(order.status))+'</strong></div></article>';
+      }).join("");
+    } catch(error) {
+      message.textContent=error.message||"এই মুহূর্তে অর্ডার দেখা যাচ্ছে না। পরে চেষ্টা করুন।";
+    } finally {
+      button.disabled=false;button.textContent="অর্ডার দেখুন";
+    }
+  });
+})();
