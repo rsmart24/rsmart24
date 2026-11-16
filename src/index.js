@@ -446,6 +446,12 @@ async function adminOrders(env) {
   return json({ data: result.results || [] });
 }
 
+async function deleteOrder(env, orderId) {
+  await ensureOrderSchema(env);
+  const result = await env.DB.prepare("DELETE FROM orders WHERE id = ?").bind(orderId).run();
+  if (!result.meta?.changes) return json({ error: "অর্ডার পাওয়া যায়নি।" }, 404);
+  return json({ success: true, deleted: true });
+}
 async function updateOrderStatus(request, env, orderId) {
   let body;
   try {
@@ -549,6 +555,9 @@ export default {
           return await updateOrderStatus(
             request, env, decodeURIComponent(orderMatch[1])
           );
+        }
+        if (orderMatch && method === "DELETE") {
+          return await deleteOrder(env, decodeURIComponent(orderMatch[1]));
         }
 
         return json({ error: "Admin API route not found." }, 404);
