@@ -2769,3 +2769,49 @@ body.order-modal-open {
     object-position: center;
   }
 }
+
+
+/* FINAL FIX: desktop product image and product information must occupy separate columns.
+   The earlier vertical-layout rule used flex-direction:column and overrode the grid. */
+@media (min-width: 761px) {
+  .order-section:not([hidden]) .product-detail-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) !important;
+    grid-auto-flow: row;
+    align-items: start;
+    gap: 28px;
+  }
+  .order-section:not([hidden]) .product-detail-image {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: 1 / 1;
+    margin: 0;
+    overflow: hidden;
+    padding: 10px;
+    background: #f7f8fa;
+  }
+  .order-section:not([hidden]) .product-detail-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    padding: 0;
+    object-fit: contain;
+    object-position: center;
+  }
+  .order-section:not([hidden]) .product-detail-info {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+  }
+}
+@media (max-width: 760px) {
+  .order-section:not([hidden]) .product-detail-layout {
+    display: block !important;
+  }
+}
