@@ -275,7 +275,7 @@ function startCartCheckout() {
   orderSection.classList.add("cart-checkout-mode");
   const summary=document.querySelector("#cart-checkout-summary");
   summary.hidden=false;
-  summary.innerHTML="<h3>আপনার নির্বাচিত পণ্য ("+items.length+"টি)</h3>"+items.map((x,i)=>{const vars=Array.isArray(x.product.variants)?x.product.variants:[];const colors=[...new Set(vars.map(v=>v.color).filter(Boolean))];const sizes=[...new Set(vars.map(v=>v.size).filter(Boolean))];const field=(type,values,label)=>values.length?'<label class="cart-variant-field">'+label+'<select data-checkout-variant="'+type+'" data-checkout-index="'+i+'"><option value="">'+label+' নির্বাচন করুন</option>'+values.map(v=>'<option value="'+escapeHtml(v)+'" '+(String(x[type]||"")===String(v)?"selected":"")+'>'+escapeHtml(v)+'</option>').join("")+'</select></label>':"";return "<div class=\"checkout-cart-line\"><span>"+escapeHtml(x.product.name)+" × "+x.quantity+"<span class=\"checkout-cart-variants\">"+field("color",colors,"রং")+field("size",sizes,"সাইজ")+"</span></span><b>"+money(x.price*x.quantity)+"</b></div>";}).join("");
+  summary.innerHTML="<h3>আপনার নির্বাচিত পণ্য ("+items.length+"টি)</h3>"+items.map((x,i)=>{const vars=Array.isArray(x.product.variants)?x.product.variants:[];const colors=[...new Set(vars.map(v=>v.color).filter(Boolean))];const sizes=[...new Set(vars.map(v=>v.size).filter(Boolean))];const field=(type,values,label)=>values.length?'<label class="cart-variant-field">'+label+'<select required data-checkout-variant="'+type+'" data-checkout-index="'+i+'"><option value="">'+label+' নির্বাচন করুন</option>'+values.map(v=>'<option value="'+escapeHtml(v)+'" '+(String(x[type]||"")===String(v)?"selected":"")+'>'+escapeHtml(v)+'</option>').join("")+'</select></label>':"";return "<div class=\"checkout-cart-line\"><span>"+escapeHtml(x.product.name)+" × "+x.quantity+"<span class=\"checkout-cart-variants\">"+field("color",colors,"রং")+field("size",sizes,"সাইজ")+"</span></span><b>"+money(x.price*x.quantity)+"</b></div>";}).join("");
   document.querySelector("#productId").value=chosenProduct.id;
   document.querySelector("#selected-product").textContent="একাধিক পণ্যের অর্ডার";
   document.querySelector("#order-quantity").closest("label").hidden=true;
@@ -383,6 +383,23 @@ document.querySelector("#order-form")?.addEventListener("change", updateOrderSum
 document.querySelector("#copy-bkash-number")?.addEventListener("click", async () => {
   try { await navigator.clipboard.writeText("01716862470"); showNotice("বিকাশ নম্বর কপি হয়েছে।"); }
   catch (_) { showNotice("বিকাশ নম্বর: 01716862470"); }
+});
+const customerPhoneInput = document.querySelector("#customer-phone");
+customerPhoneInput?.addEventListener("input", event => {
+  const input = event.target;
+  input.value = input.value
+    .replace(/[০-৯]/g, digit => "০১২৩৪৫৬৭৮৯".indexOf(digit))
+    .replace(/[^0-9+]/g, "");
+  const value = input.value;
+  const valid = /^(?:01[3-9][0-9]{8}|\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})$/.test(value);
+  input.setCustomValidity(value && !valid ? "সঠিক বাংলাদেশি মোবাইল নম্বর লিখুন (যেমন 017XXXXXXXX)।" : "");
+  const icon = document.querySelector("#phone-valid-icon");
+  const hint = document.querySelector("#phone-validation-hint");
+  if (icon) icon.hidden = !valid;
+  if (hint) {
+    hint.textContent = valid ? "✓ মোবাইল নম্বর সঠিক।" : "১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।";
+    hint.classList.toggle("is-valid", valid);
+  }
 });
 document.querySelector("#transaction-id")?.addEventListener("input", event => {
   const value = event.target.value.trim().toUpperCase();
@@ -500,7 +517,7 @@ function chooseProduct(id, pushHistory = true) {
   variantBox.innerHTML = variantHTML || '<p class="no-variants-note">এই পণ্যে কালার বা সাইজ নির্বাচন করার প্রয়োজন নেই।</p>';
   if (cartCheckoutMode) {
     const summary=document.querySelector("#cart-checkout-summary");
-    summary.innerHTML="<h3>আপনার নির্বাচিত পণ্য ("+chosenCartItems.length+"টি)</h3>"+chosenCartItems.map((x,i)=>{const p=products.find(v=>String(v.id)===String(x.id));const vars=Array.isArray(p?.variants)?p.variants:[];const colors=[...new Set(vars.map(v=>v.color).filter(Boolean))];const sizes=[...new Set(vars.map(v=>v.size).filter(Boolean))];const field=(type,values,label)=>values.length?'<label class="cart-variant-field">'+label+'<select data-checkout-variant="'+type+'" data-checkout-index="'+i+'"><option value="">'+label+' নির্বাচন করুন</option>'+values.map(v=>'<option value="'+escapeHtml(v)+'" '+(String(x[type]||"")===String(v)?"selected":"")+'>'+escapeHtml(v)+'</option>').join("")+'</select></label>':"";return '<div class="checkout-cart-line"><span>'+escapeHtml(p?.name||"পণ্য")+' × '+x.quantity+'<span class="checkout-cart-variants">'+field("color",colors,"রং")+field("size",sizes,"সাইজ")+(i===chosenCartItems.length-1?'<small>সর্বশেষ নির্বাচিত পণ্য</small>':"")+'</span></span><b>'+money(Number(p?.sellingPrice||0)*x.quantity)+'</b></div>';}).join("");
+    summary.innerHTML="<h3>আপনার নির্বাচিত পণ্য ("+chosenCartItems.length+"টি)</h3>"+chosenCartItems.map((x,i)=>{const p=products.find(v=>String(v.id)===String(x.id));const vars=Array.isArray(p?.variants)?p.variants:[];const colors=[...new Set(vars.map(v=>v.color).filter(Boolean))];const sizes=[...new Set(vars.map(v=>v.size).filter(Boolean))];const field=(type,values,label)=>values.length?'<label class="cart-variant-field">'+label+'<select required data-checkout-variant="'+type+'" data-checkout-index="'+i+'"><option value="">'+label+' নির্বাচন করুন</option>'+values.map(v=>'<option value="'+escapeHtml(v)+'" '+(String(x[type]||"")===String(v)?"selected":"")+'>'+escapeHtml(v)+'</option>').join("")+'</select></label>':"";return '<div class="checkout-cart-line"><span>'+escapeHtml(p?.name||"পণ্য")+' × '+x.quantity+'<span class="checkout-cart-variants">'+field("color",colors,"রং")+field("size",sizes,"সাইজ")+(i===chosenCartItems.length-1?'<small>সর্বশেষ নির্বাচিত পণ্য</small>':"")+'</span></span><b>'+money(Number(p?.sellingPrice||0)*x.quantity)+'</b></div>';}).join("");
     document.querySelector("#selected-product").textContent="একাধিক পণ্যের অর্ডার";
   }
 
@@ -562,6 +579,7 @@ async function loadProducts() {
 form.addEventListener("submit", async event => {
   event.preventDefault();
 
+  if (!form.reportValidity()) return;
   if (!chosenProduct) return;
 
   if (chosenProduct.sellingPrice === null || chosenProduct.sellingPrice === undefined) {

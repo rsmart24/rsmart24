@@ -359,6 +359,12 @@ async function createOrder(request, env) {
   for (const key of required) {
     if (body[key] === undefined || String(body[key]).trim() === "") return json({ error: "অনুগ্রহ করে " + key + " পূরণ করুন।" }, 400);
   }
+  const customerPhone = String(body.customerPhone).trim()
+    .replace(/[০-৯]/g, digit => "০১২৩৪৫৬৭৮৯".indexOf(digit))
+    .replace(/[\s-]/g, "");
+  if (!/^(?:01[3-9][0-9]{8}|\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})$/.test(customerPhone)) {
+    return json({ error: "সঠিক বাংলাদেশি মোবাইল নম্বর দিন (যেমন 017XXXXXXXX)।" }, 400);
+  }
   const requestedItems = Array.isArray(body.items) && body.items.length ? body.items : [{ id: body.productId, quantity: body.quantity || 1, color: body.color || "", size: body.size || "" }];
   if (requestedItems.length > 20) return json({error:"এক অর্ডারে সর্বোচ্চ ২০ ধরনের পণ্য যোগ করতে পারবেন।"},400);
   const catalog = await getCatalog(env);
@@ -406,7 +412,7 @@ async function createOrder(request, env) {
     "INSERT INTO orders (id,product_id,product_name,customer_name,customer_phone,customer_division,customer_district,customer_area,customer_address,color,size,quantity,unit_price,delivery_charge,total_amount,note,payment_method,discount_percent,discount_amount,advance_payment_amount,transaction_id,transaction_id_format_valid,payment_verification_status,order_items_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
   ).bind(
     orderId,String(first.id),productName,
-    String(body.customerName).trim().slice(0,100),String(body.customerPhone).trim().slice(0,20),
+    String(body.customerName).trim().slice(0,100),customerPhone.slice(0,20),
     String(body.customerDivision).trim().slice(0,100),String(body.customerDistrict).trim().slice(0,100),
     String(body.customerArea).trim().slice(0,150),String(body.customerAddress).trim().slice(0,500),
     orderItems.length===1?first.color:"",orderItems.length===1?first.size:"",
@@ -419,7 +425,7 @@ async function createOrder(request, env) {
     id: orderId,
     items: orderItems,
     name: String(body.customerName).trim().slice(0,100),
-    phone: String(body.customerPhone).trim().slice(0,20),
+    phone: customerPhone.slice(0,20),
     division: String(body.customerDivision).trim().slice(0,100),
     district: String(body.customerDistrict).trim().slice(0,100),
     area: String(body.customerArea).trim().slice(0,150),
