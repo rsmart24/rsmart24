@@ -442,6 +442,8 @@ async function sendOrderToBusinessKoro(env, orderId) {
     deliveryChargePaidByCustomer:order.payment_method !== "advance",
     customerNote:String(order.note||"").trim()
   };
+  if (item.color) payload.color=String(item.color);
+  if (item.size) payload.size=String(item.size);
   if (order.payment_method === "advance") payload.deliveryChargeCollectionMode="CUSTOMER_PAID_RESELLER_UPFRONT";
   const claim=await env.DB.prepare("UPDATE orders SET business_koro_status='sending', business_koro_response=NULL WHERE id=? AND business_koro_status IN ('not_sent','failed')").bind(orderId).run();
   if (!claim.meta?.changes) return json({error:"অর্ডারটি ইতিমধ্যে পাঠানো হচ্ছে বা পাঠানো হয়েছে।"},409);
