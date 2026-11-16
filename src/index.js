@@ -242,6 +242,45 @@ async function adminLogout() {
   );
 }
 
+
+function normalizeBangladeshPhone(value) {
+  let phone=String(value||"").trim().replace(/[০-৯]/g,d=>"০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/[\s()-]/g,"");
+  if(phone.startsWith("+880")) phone="0"+phone.slice(4);
+  else if(phone.startsWith("880")) phone="0"+phone.slice(3);
+  return phone;
+}
+
+async function lookupCustomerOrders(request, env) {
+  await ensureOrderSchema(env);
+  const url=new URL(request.url);
+  const phone=normalizeBangladeshPhone(url.searchParams.get("phone"));
+  const district=String(url.searchParams.get("district")||"").trim().slice(0,100);
+  if(!/^01[3-9][0-9]{8}$/.test(phone) || !district) {
+    return json({error:"সঠিক মোবাইল নম্বর ও জেলা দিন।"},400);
+  }
+  const result=await env.DB.prepare(
+    "SELECT id, product_name, order_items_json, created_at, status FROM orders WHERE customer_phone = ? AND LOWER(TRIM(customer_district)) = LOWER(?) ORDER BY created_at DESC LIMIT 50"
+  ).bind(phone,district).all();
+  const orders=(result.results||[]).map(order=>{
+    let items=[];
+    try {
+      const parsed=JSON.parse(order.order_items_json||"[]");
+      if(Array.isArray(parsed)) items=parsed.slice(0,20).map(item=>({
+        name:String(item.name||"পণ্য").slice(0,150),
+        quantity:Math.max(1,Number(item.quantity||1))
+      }));
+    } catch {}
+    return {
+      orderId:String(order.id),
+      productName:String(order.product_name||"অর্ডার").slice(0,200),
+      items,
+      createdAt:order.created_at||null,
+      status:String(order.status||"new")
+    };
+  });
+  return json({success:true,data:orders});
+}
+
 async function publicProducts(env) {
   const catalog = await getCatalog(env);
   const settings = await getSettings(env);
@@ -317,9 +356,15 @@ function escapeTelegramHtml(value) {
 async function sendTelegramOrderAlert(env, order) {
   if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_GROUP_ID) return;
   const code=value=>`<code>${escapeTelegramHtml(value)}</code>`;
-  const itemsText=order.items.map((item,i)=>{const v=[item.color?"রং: "+escapeTelegramHtml(item.color):"",item.size?"সাইজ: "+escapeTelegramHtml(item.size):""].filter(Boolean).join(" · ");return `<b>${i+1}. ${escapeTelegramHtml(item.name)}</b>\n   ${item.quantity} টি × ${code("৳"+item.unitPrice)} = <b>${code("৳"+item.subtotal)}</b>${v?"\n   "+v:""}`;}).join("\n\n");
+  const itemsText=order.items.map((item,i)=>{const v=[item.color?"রং: "+escapeTelegramHtml(item.color):"",item.size?"সাইজ: "+escapeTelegramHtml(item.size):""].filter(Boolean).join(" · ");return `<b>${i+1}. ${escapeTelegramHtml(item.name)}</b>
+   ${item.quantity} টি × ${code("৳"+item.unitPrice)} = <b>${code("৳"+item.subtotal)}</b>${v?"
+   "+v:""}`;}).join("
+
+");
   const address=[order.area,order.district,order.division,order.address].filter(Boolean).join(", ");
-  const message=["🛍️ <b>RS MART | নতুন অর্ডার</b>","━━━━━━━━━━━━━━━━━━","<b>📦 অর্ডারের তথ্য</b>","অর্ডার ID: "+code(order.id),"","<b>🛒 পণ্যের তালিকা</b>",itemsText,"","━━━━━━━━━━━━━━━━━━","<b>👤 ক্রেতার তথ্য</b>","নাম: <b>"+escapeTelegramHtml(order.name)+"</b>","মোবাইল: "+code(order.phone),"ঠিকানা: "+escapeTelegramHtml(address),"","━━━━━━━━━━━━━━━━━━","<b>💳 পেমেন্ট ও হিসাব</b>","পেমেন্ট পদ্ধতি: "+(order.paymentMethod==="advance"?"অগ্রিম পেমেন্ট":"ক্যাশ অন ডেলিভারি"),"ডেলিভারি চার্জ: "+code("৳"+order.deliveryCharge),"<b>সর্বমোট: "+code("৳"+order.totalAmount)+"</b>",order.note?"<b>📝 ক্রেতার নোট</b>\n"+escapeTelegramHtml(order.note):null,"","⚡ অর্ডারটি Admin Panel থেকে নিশ্চিত করুন."].filter(x=>x!==null).join("\n");
+  const message=["🛍️ <b>RS MART | নতুন অর্ডার</b>","━━━━━━━━━━━━━━━━━━","<b>📦 অর্ডারের তথ্য</b>","অর্ডার ID: "+code(order.id),"","<b>🛒 পণ্যের তালিকা</b>",itemsText,"","━━━━━━━━━━━━━━━━━━","<b>👤 ক্রেতার তথ্য</b>","নাম: <b>"+escapeTelegramHtml(order.name)+"</b>","মোবাইল: "+code(order.phone),"ঠিকানা: "+escapeTelegramHtml(address),"","━━━━━━━━━━━━━━━━━━","<b>💳 পেমেন্ট ও হিসাব</b>","পেমেন্ট পদ্ধতি: "+(order.paymentMethod==="advance"?"অগ্রিম পেমেন্ট":"ক্যাশ অন ডেলিভারি"),"ডেলিভারি চার্জ: "+code("৳"+order.deliveryCharge),"<b>সর্বমোট: "+code("৳"+order.totalAmount)+"</b>",order.note?"<b>📝 ক্রেতার নোট</b>
+"+escapeTelegramHtml(order.note):null,"","⚡ অর্ডারটি Admin Panel থেকে নিশ্চিত করুন."].filter(x=>x!==null).join("
+");
   try{const response=await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:env.TELEGRAM_GROUP_ID,text:message.slice(0,4000),parse_mode:"HTML",disable_web_page_preview:true})});if(!response.ok)console.error("Telegram order alert failed with HTTP status:",response.status);}catch(error){console.error("Telegram order alert request failed:",error?.message||"Unknown error");}
 }
 
@@ -556,7 +601,9 @@ export default {
               headers: { "content-type": "application/json" },
               body: JSON.stringify({
                 chat_id: env.TELEGRAM_GROUP_ID,
-                text: "✅ RS Mart Telegram Test\n\nআপনার Telegram Order Alert সংযোগ কাজ করছে। এটি শুধু পরীক্ষামূলক বার্তা—কোনো অর্ডার তৈরি হয়নি।"
+                text: "✅ RS Mart Telegram Test
+
+আপনার Telegram Order Alert সংযোগ কাজ করছে। এটি শুধু পরীক্ষামূলক বার্তা—কোনো অর্ডার তৈরি হয়নি।"
               })
             });
             const telegramResult = await telegramResponse.json().catch(() => ({}));
@@ -608,6 +655,11 @@ export default {
 
       if (path === "/api/products" && method === "GET") {
         return await publicProducts(env);
+      }
+
+      if (path === "/api/orders/lookup" && method === "GET") {
+        requireDB(env);
+        return await lookupCustomerOrders(request, env);
       }
 
       if (path === "/api/orders" && method === "POST") {
