@@ -2815,3 +2815,25 @@ body.order-modal-open {
     display: block !important;
   }
 }
+
+
+/* Highlight only the product media button; leave all other actions unchanged. */
+.order-section .detail-media-button:not([hidden]) {
+  background: linear-gradient(135deg, #ff8a1f 0%, #f04b16 100%);
+  color: #fff;
+  border: 1px solid #ed5b16;
+  border-radius: 12px;
+  font-weight: 800;
+  box-shadow: 0 5px 16px rgba(240, 91, 22, .28);
+  text-shadow: 0 1px 1px rgba(120, 45, 0, .18);
+}
+.order-section .detail-media-button:not([hidden]):hover {
+  background: linear-gradient(135deg, #ff9d35 0%, #e83c0c 100%);
+  border-color: #d9430e;
+  box-shadow: 0 7px 20px rgba(240, 91, 22, .38);
+  transform: translateY(-2px);
+}
+.order-section .detail-media-button:not([hidden]):focus-visible {
+  outline: 3px solid rgba(255, 138, 31, .35);
+  outline-offset: 3px;
+}
