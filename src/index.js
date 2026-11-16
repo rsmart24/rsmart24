@@ -274,7 +274,10 @@ async function lookupCustomerOrders(request, env) {
     "SELECT id, product_name, order_items_json, created_at, status, total_amount, payment_method, payment_verification_status, business_koro_order_id, business_koro_live_status, business_koro_status_checked_at, courier_tracking_code, courier_live_status, courier_status_checked_at FROM orders WHERE customer_phone = ? AND LOWER(TRIM(customer_district)) = LOWER(?) ORDER BY created_at DESC LIMIT 50"
   ).bind(phone,district).all();
   await refreshExternalOrderStatuses(env,(result.results||[]).slice(0,10));
-  const orders=(result.results||[]).map(order=>{
+  const refreshed=await env.DB.prepare(
+    "SELECT id, product_name, order_items_json, created_at, status, total_amount, payment_method, payment_verification_status, business_koro_live_status, courier_tracking_code, courier_live_status FROM orders WHERE customer_phone = ? AND LOWER(TRIM(customer_district)) = LOWER(?) ORDER BY created_at DESC LIMIT 50"
+  ).bind(phone,district).all();
+  const orders=(refreshed.results||[]).map(order=>{
     let items=[];
     try {
       const parsed=JSON.parse(order.order_items_json||"[]");
@@ -546,7 +549,9 @@ async function adminOrders(env) {
   const result = await env.DB.prepare(
     "SELECT * FROM orders ORDER BY created_at DESC LIMIT 200"
   ).all();
-  return json({ data: result.results || [] });
+  await refreshExternalOrderStatuses(env,(result.results||[]).slice(0,10));
+  const refreshed=await env.DB.prepare("SELECT * FROM orders ORDER BY created_at DESC LIMIT 200").all();
+  return json({ data: refreshed.results || [] });
 }
 
 async function deleteOrder(env, orderId) {
