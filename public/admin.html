@@ -226,6 +226,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
     .detail-action-card .order-actions{margin-top:0;gap:7px}.detail-action-card .delete-order{margin-top:8px}
     .back-orders{background:#e8f4ec;color:#166534;border:1px solid #cce5d2;box-shadow:none;min-height:36px;padding:7px 11px}
     @media(max-width:650px){.detail-compact-grid{grid-template-columns:1fr}.order-detail-screen{padding:10px}.detail-customer-card{padding:12px}.detail-phone-line strong{font-size:20px}.order-detail-top h2{font-size:16px}}
+    .featured-admin-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}.featured-admin-controls label{font-size:12px;color:#315c40}.featured-admin-controls input[type=number]{margin-top:5px}.featured-admin-check{display:flex!important;align-items:center;gap:8px;padding:10px;border:1px solid #d8e9dc;border-radius:9px;background:#f7fcf8;font-weight:700!important}.featured-admin-check input{width:18px;height:18px;min-height:18px;margin:0;flex:0 0 auto}.featured-admin-product{grid-template-columns:76px minmax(0,1fr)}@media(max-width:650px){.featured-admin-controls{grid-template-columns:1fr}.featured-admin-check{min-height:42px}}
     .business-koro-card{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px;margin:10px 0;border:1px solid #cfe7d5;border-radius:12px;background:linear-gradient(120deg,#f0faf3,#fff)}
     .business-koro-card>div{display:grid;gap:3px}.business-koro-card b{font-size:14px;color:#14532d}.business-koro-card small{font-size:11px;color:#64748b}.business-koro-card button{background:linear-gradient(110deg,#166534,#15803d);color:#fff;min-height:38px}.business-koro-card button:disabled{opacity:.65;cursor:not-allowed}
     .business-koro-delivery{display:grid;gap:5px;min-width:min(100%,260px);flex:1}
@@ -277,7 +278,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
         <article class="stat-card"><span>স্টক আউট</span><strong id="stat-out-stock">০</strong></article>
         <p class="muted stat-note">*বাতিল অর্ডার বাদে অর্ডারের মোট মূল্য; এটি লাভের হিসাব নয়।</p>
       </section>
-      <nav class="admin-nav" aria-label="Admin sections"><button type="button" data-tab="products" aria-selected="true">পণ্য ব্যবস্থাপনা</button><button type="button" data-tab="orders" aria-selected="false">অর্ডার ব্যবস্থাপনা</button></nav>
+      <nav class="admin-nav" aria-label="Admin sections"><button type="button" data-tab="products" aria-selected="true">পণ্য ব্যবস্থাপনা</button><button type="button" data-tab="featured" aria-selected="false">Special Offer / Trending</button><button type="button" data-tab="orders" aria-selected="false">অর্ডার ব্যবস্থাপনা</button></nav>
       <div class="panel" id="products-panel">
         <h2>পণ্য ব্যবস্থাপনা</h2>
         <p class="muted">বিক্রয়মূল্য, ক্যাটাগরি, মিডিয়া লিংক এবং পণ্যের দৃশ্যমানতা নিয়ন্ত্রণ করুন।</p>        <div class="admin-toolbar">
@@ -286,6 +287,13 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
           <button type="button" class="secondary" id="refresh-products">পণ্য রিফ্রেশ</button>
         </div>
         <div id="products">পণ্য লোড হচ্ছে...</div>
+      </div>
+
+      <div class="panel hidden" id="featured-panel">
+        <h2>Special Offer ও Trending Product</h2>
+        <p class="muted">যে পণ্য Special Offer-এ দেখাতে চান সেটি চালু করে ছাড়ের হার লিখুন। Trending Product-এর জন্য আলাদা টিক দিন। সব পরিবর্তন আলাদাভাবে সংরক্ষণ করতে পারবেন।</p>
+        <div class="admin-toolbar"><input id="featured-search" type="search" placeholder="পণ্যের নাম দিয়ে খুঁজুন..." aria-label="Featured পণ্য খুঁজুন"><button type="button" class="secondary" id="refresh-featured">তালিকা রিফ্রেশ</button></div>
+        <div id="featured-products">পণ্য লোড হচ্ছে...</div>
       </div>
 
       <div class="panel hidden" id="orders-panel">
@@ -426,10 +434,37 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       logoutButton.classList.add("hidden");
     }
 
+    function renderFeaturedAdmin() {
+      const box = document.querySelector("#featured-products");
+      if (!box) return;
+      const query = (document.querySelector("#featured-search")?.value || "").trim().toLowerCase();
+      const items = adminProducts.filter(p => String(p.name || "").toLowerCase().includes(query));
+      if (!items.length) { box.textContent = "কোনো পণ্য পাওয়া যায়নি।"; return; }
+      box.innerHTML = items.map(p => `<article class="product featured-admin-product"><div>${p.images?.[0] ? `<img src="${escapeHTML(p.images[0])}" alt="">` : "<div>RS Mart</div>"}</div><div><h3>${escapeHTML(p.name)}</h3><p class="muted">বিক্রয়মূল্য: ${money(p.sellingPrice)}</p><div class="featured-admin-controls"><label class="featured-admin-check"><input type="checkbox" id="offer-enabled-${escapeHTML(p.id)}" ${p.specialOfferEnabled ? "checked" : ""}> Special Offer চালু</label><label>ছাড় (%)<input type="number" id="offer-percent-${escapeHTML(p.id)}" min="1" max="90" step="1" value="${p.specialOfferPercent || ""}" placeholder="যেমন ১০ বা ২০"></label><label class="featured-admin-check"><input type="checkbox" id="trending-${escapeHTML(p.id)}" ${p.isTrending ? "checked" : ""}> Trending Product-এ দেখান</label></div><button type="button" data-feature-save="${escapeHTML(p.id)}">এই পণ্যের Featured সেটিংস সংরক্ষণ</button></div></article>`).join("");
+      box.querySelectorAll("[data-feature-save]").forEach(button => button.addEventListener("click", async () => {
+        const id = button.dataset.featureSave;
+        const p = adminProducts.find(item => String(item.id) === String(id));
+        if (!p) return;
+        const enabled = document.querySelector(`#offer-enabled-${CSS.escape(id)}`).checked;
+        const percentRaw = document.querySelector(`#offer-percent-${CSS.escape(id)}`).value.trim();
+        const percent = percentRaw === "" ? 0 : Number(percentRaw);
+        if (enabled && (!Number.isInteger(percent) || percent < 1 || percent > 90)) { alert("Special Offer-এর ছাড় ১ থেকে ৯০ শতাংশের মধ্যে দিন।"); return; }
+        if (!enabled && percentRaw !== "" && (!Number.isInteger(percent) || percent < 0 || percent > 90)) { alert("ছাড় ০ থেকে ৯০ শতাংশের মধ্যে দিন।"); return; }
+        button.disabled = true;
+        try {
+          await api(`/api/admin/products/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ sellingPrice: Number(p.sellingPrice ?? 0), originalPrice: p.originalPrice, discountPercent: Number(p.discountPercent || 0), category: p.category || "", isVisible: p.isVisible !== false, mediaUrl: p.mediaUrl || "", mediaEnabled: p.mediaEnabled !== false, specialOfferEnabled: enabled, specialOfferPercent: percent, isTrending: document.querySelector(`#trending-${CSS.escape(id)}`).checked }) });
+          p.specialOfferEnabled = enabled; p.specialOfferPercent = percent; p.isTrending = document.querySelector(`#trending-${CSS.escape(id)}`).checked;
+          alert("Featured সেটিংস সংরক্ষণ হয়েছে।");
+        } catch (error) { alert(error.message); }
+        finally { button.disabled = false; }
+      }));
+    }
+
     async function loadProducts() {
       const result = await api("/api/admin/products");
       adminProducts = Array.isArray(result.data) ? result.data : [];
       updateAdminStats();
+      renderFeaturedAdmin();
 
       if (!result.data.length) {
         productsBox.textContent = "কোনো পণ্য পাওয়া যায়নি।";
@@ -790,14 +825,16 @@ orderDetailView.addEventListener("click",async e=>{
 
     document.querySelectorAll("[data-tab]").forEach(button => {
       button.addEventListener("click", () => {
-        const productsActive = button.dataset.tab === "products";
-        document.querySelector("#products-panel").classList.toggle("hidden", !productsActive);
-        document.querySelector("#orders-panel").classList.toggle("hidden", productsActive);
-        document.querySelectorAll("[data-tab]").forEach(tab => {
-          tab.setAttribute("aria-selected", String(tab === button));
-        });
+        const tabName = button.dataset.tab;
+        document.querySelector("#products-panel").classList.toggle("hidden", tabName !== "products");
+        document.querySelector("#featured-panel").classList.toggle("hidden", tabName !== "featured");
+        document.querySelector("#orders-panel").classList.toggle("hidden", tabName !== "orders");
+        document.querySelectorAll("[data-tab]").forEach(tab => tab.setAttribute("aria-selected", String(tab === button)));
+        if (tabName === "featured") renderFeaturedAdmin();
       });
     });
+    document.querySelector("#featured-search").addEventListener("input", renderFeaturedAdmin);
+    document.querySelector("#refresh-featured").addEventListener("click", async event => { event.currentTarget.disabled = true; try { await loadProducts(); } catch (error) { alert(error.message); } finally { event.currentTarget.disabled = false; } });
 
     async function copyText(text, button) {
       try {

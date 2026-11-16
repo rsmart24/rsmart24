@@ -79,7 +79,36 @@ function productImage(product) {
     : `<span class="image-placeholder">ছবি পাওয়া যায়নি</span>`;
 }
 
+function renderFeaturedSections() {
+  const offers = products.filter(p => p.isVisible !== false && !isOutOfStock(p) && p.specialOfferEnabled && Number(p.specialOfferPercent) > 0 && Number(p.sellingPrice) >= 0);
+  const trending = products.filter(p => p.isVisible !== false && !isOutOfStock(p) && p.isTrending);
+  const renderRail = (items, sectionId, stripId, type) => {
+    const section = document.querySelector("#" + sectionId);
+    const strip = document.querySelector("#" + stripId);
+    if (!section || !strip) return;
+    section.hidden = !items.length;
+    strip.innerHTML = items.map(p => {
+      const percent = Number(p.specialOfferPercent || 0);
+      const price = money(p.sellingPrice);
+      const oldPrice = type === "offer" && p.originalPrice != null && Number(p.originalPrice) > Number(p.sellingPrice)
+        ? `<del>${money(p.originalPrice)}</del>` : "";
+      return `<article class="featured-product-card" data-featured-product="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
+        <div class="featured-product-image">${productImage(p)}${type === "offer" ? `<span class="featured-discount-badge">${percent}% ছাড়</span>` : `<span class="featured-trending-badge">TRENDING</span>`}</div>
+        <div class="featured-product-info"><h3>${escapeHtml(p.name || "পণ্য")}</h3><div class="featured-product-price">${oldPrice}<strong>${price}</strong></div></div>
+      </article>`;
+    }).join("");
+    strip.querySelectorAll("[data-featured-product]").forEach(card => {
+      const open = () => chooseProduct(card.dataset.featuredProduct);
+      card.addEventListener("click", open);
+      card.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); } });
+    });
+  };
+  renderRail(offers, "special-offer-section", "special-offer-products", "offer");
+  renderRail(trending, "trending-section", "trending-products", "trending");
+}
+
 function renderProducts() {
+  renderFeaturedSections();
   const query = (searchInput?.value || "").trim().toLowerCase();
 
   const filteredProducts = products.filter(p => {
@@ -105,7 +134,7 @@ function renderProducts() {
 
     return `
       <article class="product-card ${outOfStock ? "is-out-of-stock" : ""}" data-product-card="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
-        <div class="product-image">${productImage(p)}${outOfStock ? '<span class="stock-out-overlay">স্টক আউট</span>' : ""}</div>
+        <div class="product-image">${productImage(p)}${p.specialOfferEnabled && Number(p.specialOfferPercent) > 0 ? `<span class="product-special-offer-badge">${Number(p.specialOfferPercent)}% ছাড়</span>` : ""}${outOfStock ? '<span class="stock-out-overlay">স্টক আউট</span>' : ""}</div>
         <div class="product-info">
           <h3>${escapeHtml(p.name)}</h3>
           <div class="product-bottom">
@@ -485,6 +514,7 @@ function chooseProduct(id, pushHistory = true) {
   oldPrice.hidden = !hasDiscount;
   oldPrice.textContent = hasDiscount ? money(chosenProduct.originalPrice) : "";
   document.querySelector("#detail-offer").hidden = !hasDiscount;
+  document.querySelector("#detail-offer").textContent = chosenProduct.specialOfferEnabled && Number(chosenProduct.specialOfferPercent) > 0 ? `Special Offer — ${Number(chosenProduct.specialOfferPercent)}% ছাড়` : "Limited Time Offer";
 
   const category = String(chosenProduct.category || "অন্যান্য").replace(/[-_]/g, " ").replace(/\b\w/g, letter => letter.toUpperCase());
   document.querySelector("#detail-category").textContent = "📁 " + category;
