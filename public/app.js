@@ -79,7 +79,36 @@ function productImage(product) {
     : `<span class="image-placeholder">ছবি পাওয়া যায়নি</span>`;
 }
 
+function renderFeaturedSections() {
+  const offers = products.filter(p => p.isVisible !== false && p.specialOfferEnabled && Number(p.specialOfferPercent) > 0 && Number(p.sellingPrice) >= 0);
+  const trending = products.filter(p => p.isVisible !== false && p.isTrending);
+  const renderRail = (items, sectionId, stripId, type) => {
+    const section = document.querySelector("#" + sectionId);
+    const strip = document.querySelector("#" + stripId);
+    if (!section || !strip) return;
+    section.hidden = !items.length;
+    strip.innerHTML = items.map(p => {
+      const percent = Number(p.specialOfferPercent || 0);
+      const price = money(p.sellingPrice);
+      const oldPrice = type === "offer" && p.originalPrice != null && Number(p.originalPrice) > Number(p.sellingPrice)
+        ? `<del>${money(p.originalPrice)}</del>` : "";
+      return `<article class="featured-product-card" data-featured-product="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
+        <div class="featured-product-image">${productImage(p)}${type === "offer" ? `<span class="featured-discount-badge">${percent}% ছাড়</span>` : `<span class="featured-trending-badge">TRENDING</span>`}</div>
+        <div class="featured-product-info"><h3>${escapeHtml(p.name || "পণ্য")}</h3><div class="featured-product-price">${oldPrice}<strong>${price}</strong></div></div>
+      </article>`;
+    }).join("");
+    strip.querySelectorAll("[data-featured-product]").forEach(card => {
+      const open = () => chooseProduct(card.dataset.featuredProduct);
+      card.addEventListener("click", open);
+      card.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); } });
+    });
+  };
+  renderRail(offers, "special-offer-section", "special-offer-products", "offer");
+  renderRail(trending, "trending-section", "trending-products", "trending");
+}
+
 function renderProducts() {
+  renderFeaturedSections();
   const query = (searchInput?.value || "").trim().toLowerCase();
 
   const filteredProducts = products.filter(p => {
