@@ -99,7 +99,7 @@ async function ensureOrderSchema(env) {
     }
   }
 
-  for (const [name, definition] of [["media_url", "TEXT"], ["media_enabled", "INTEGER NOT NULL DEFAULT 1"]]) {
+  for (const [name, definition] of [["media_url", "TEXT"], ["media_enabled", "INTEGER NOT NULL DEFAULT 1"], ["special_offer_enabled", "INTEGER NOT NULL DEFAULT 0"], ["special_offer_percent", "INTEGER NOT NULL DEFAULT 0"], ["is_trending", "INTEGER NOT NULL DEFAULT 0"]]) {
     if (!productNames.has(name)) {
       try { await env.DB.prepare(`ALTER TABLE product_settings ADD COLUMN ${name} ${definition}`).run(); }
       catch (error) { if (!/duplicate column/i.test(String(error?.message || error))) throw error; }
@@ -140,7 +140,7 @@ async function ensureOrderSchema(env) {
 async function getSettings(env) {
   await ensureOrderSchema(env);
   const result = await env.DB.prepare(
-    "SELECT product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled FROM product_settings"
+    "SELECT product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, special_offer_enabled, special_offer_percent, is_trending FROM product_settings"
   ).all();
   return new Map((result.results || []).map(row => [String(row.product_id), row]));
 }
@@ -167,7 +167,10 @@ function publicProduct(p, setting) {
     isVisible: setting ? Number(setting.is_visible) === 1 : true,
     discountPercent: Number(setting?.discount_percent || 0),
     mediaUrl: setting?.media_url || "",
-    mediaEnabled: setting ? Number(setting.media_enabled) === 1 : true
+    mediaEnabled: setting ? Number(setting.media_enabled) === 1 : true,
+    specialOfferEnabled: Number(setting?.special_offer_enabled || 0) === 1,
+    specialOfferPercent: Number(setting?.special_offer_percent || 0),
+    isTrending: Number(setting?.is_trending || 0) === 1
   };
 }
 
@@ -318,7 +321,15 @@ async function publicProducts(env) {
   const settings = await getSettings(env);
 
   const products = catalog.products
-    .map(p => publicProduct(p, settings.get(String(p.id))))
+    .map(p => {
+      const product = publicProduct(p, settings.get(String(p.id)));
+      if (product.specialOfferEnabled && product.specialOfferPercent > 0 && product.sellingPrice !== null) {
+        const regularPrice = Number(product.sellingPrice);
+        product.originalPrice = product.originalPrice ?? regularPrice;
+        product.sellingPrice = Math.max(0, Math.round(regularPrice * (100 - product.specialOfferPercent) / 100));
+      }
+      return product;
+    })
     .filter(p => p.isVisible);
 
   return json({ data: products, deliveryCharges: catalog.deliveryCharges });
@@ -368,15 +379,23 @@ async function saveProductSettings(request, env, productId) {
     catch { return json({ error: "Google Drive-এর সঠিক লিংক দিন।" }, 400); }
   }
   const mediaEnabled = body.mediaEnabled === false ? 0 : 1;
+  const specialOfferEnabled = body.specialOfferEnabled === true ? 1 : 0;
+  const specialOfferPercent = Number(body.specialOfferPercent ?? 0);
+  if (!Number.isInteger(specialOfferPercent) || specialOfferPercent < 0 || specialOfferPercent > 90 || (specialOfferEnabled && specialOfferPercent < 1)) {
+    return json({ error: "স্পেশাল অফারের ছাড় ১ থেকে ৯০ শতাংশের মধ্যে দিন।" }, 400);
+  }
+  const isTrending = body.isTrending === true ? 1 : 0;
   await env.DB.prepare(`
-    INSERT INTO product_settings (product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    INSERT INTO product_settings (product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, special_offer_enabled, special_offer_percent, is_trending, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(product_id) DO UPDATE SET
       selling_price = excluded.selling_price, original_price = excluded.original_price,
       category = excluded.category, is_visible = excluded.is_visible,
       discount_percent = excluded.discount_percent, media_url = excluded.media_url,
-      media_enabled = excluded.media_enabled, updated_at = CURRENT_TIMESTAMP
-  `).bind(String(productId), price, originalPrice, category, isVisible, discountPercent, mediaUrl || null, mediaEnabled).run();
+      media_enabled = excluded.media_enabled, special_offer_enabled = excluded.special_offer_enabled,
+      special_offer_percent = excluded.special_offer_percent, is_trending = excluded.is_trending,
+      updated_at = CURRENT_TIMESTAMP
+  `).bind(String(productId), price, originalPrice, category, isVisible, discountPercent, mediaUrl || null, mediaEnabled, specialOfferEnabled, specialOfferPercent, isTrending).run();
 
   return json({ success: true, message: "পণ্যের সেটিংস সংরক্ষণ হয়েছে।" });
 }
@@ -426,7 +445,7 @@ async function createOrder(request, env) {
     if (!productId || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) return json({error:"প্রতিটি পণ্যের পরিমাণ ১ থেকে ২০-এর মধ্যে হতে হবে।"},400);
     const product = catalog.products.find(p => String(p.id) === String(productId));
     if (!product || isOutOfStock(product)) return json({error:"কার্টের একটি পণ্য পাওয়া যাচ্ছে না বা স্টকে নেই।"},409);
-    const settings = await env.DB.prepare("SELECT selling_price,is_visible,discount_percent FROM product_settings WHERE product_id = ?").bind(String(product.id)).first();
+    const settings = await env.DB.prepare("SELECT selling_price,is_visible,discount_percent,special_offer_enabled,special_offer_percent FROM product_settings WHERE product_id = ?").bind(String(product.id)).first();
     if (!settings || Number(settings.is_visible) !== 1) return json({error:"পণ্যটি বর্তমানে অর্ডার করা যাচ্ছে না: " + product.name},400);
     const variants = Array.isArray(product.variants) ? product.variants : [];
     const color = String(item.color || "").trim(), size = String(item.size || "").trim();
@@ -436,8 +455,10 @@ async function createOrder(request, env) {
       const selected = variants.find(v => (!v.color || String(v.color) === color) && (!v.size || String(v.size) === size));
       if (!selected || isOutOfStock(selected)) return json({error:product.name + ": নির্বাচিত ভ্যারিয়েন্ট স্টকে নেই।"},409);
     }
-    const unitPrice = Number(settings.selling_price);
-    if (!Number.isSafeInteger(unitPrice) || unitPrice < 0) return json({error:"একটি পণ্যের দাম সঠিক নয়।"},400);
+    const baseUnitPrice = Number(settings.selling_price);
+    if (!Number.isSafeInteger(baseUnitPrice) || baseUnitPrice < 0) return json({error:"একটি পণ্যের দাম সঠিক নয়।"},400);
+    const offerPercent = Number(settings.special_offer_enabled || 0) === 1 ? Number(settings.special_offer_percent || 0) : 0;
+    const unitPrice = offerPercent > 0 ? Math.max(0, Math.round(baseUnitPrice * (100 - offerPercent) / 100)) : baseUnitPrice;
     const lineSubtotal = unitPrice * quantity;
     const discountPercent = body.paymentMethod === "advance" ? Number(settings.discount_percent || 0) : 0;
     const discountAmount = Math.round(lineSubtotal * discountPercent / 100);
