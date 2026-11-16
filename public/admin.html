@@ -480,6 +480,9 @@ if (
       const result = await api("/api/admin/orders");
       const incomingOrders = Array.isArray(result.data) ? result.data : [];
       const incomingIds = new Set(incomingOrders.map(order => String(order.id)));
+      const previousSnapshot = adminOrders.map(order => [order.id, order.status, order.payment_verification_status].join(":")).join("|");
+      const nextSnapshot = incomingOrders.map(order => [order.id, order.status, order.payment_verification_status].join(":")).join("|");
+      const shouldRenderOrders = knownOrderIds === null || previousSnapshot !== nextSnapshot;
       if (knownOrderIds !== null && notifyNew) {
         const newOrders = incomingOrders.filter(order => !knownOrderIds.has(String(order.id)));
         showNewOrderAlert(newOrders);
@@ -487,6 +490,7 @@ if (
       knownOrderIds = incomingIds;
       adminOrders = incomingOrders;
       updateAdminStats();
+      if (!shouldRenderOrders) return;
       const labels = {
         new: "নতুন",
         confirmed: "নিশ্চিত",
