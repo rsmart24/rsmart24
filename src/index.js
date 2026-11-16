@@ -432,8 +432,13 @@ async function sendOrderToBusinessKoro(request, env, orderId) {
   const deliveryChargeMode=String(requestBody.deliveryChargeMode || "customer_delivery");
   const allowedDeliveryModes=["customer_delivery","customer_upfront","reseller_bears"];
   if (!allowedDeliveryModes.includes(deliveryChargeMode)) return json({error:"ডেলিভারি চার্জের অপশন সঠিক নয়।"},400);
-  const sellingPrice=Number(item.unitPrice ?? order.unit_price);
-  if (!Number.isSafeInteger(sellingPrice) || sellingPrice <= 0) return json({error:"বিক্রয়মূল্য সঠিক নয়।"},400);
+  // Send the actual per-unit price after every order discount has been applied.
+  // Order items store discountAmount as a line total, so divide by quantity.
+  const baseUnitPrice=Number(item.unitPrice ?? order.unit_price);
+  const itemQuantity=Math.max(1,Number(item.quantity||1));
+  const lineDiscount=Number(item.discountAmount||0);
+  const sellingPrice=Math.round(baseUnitPrice - lineDiscount / itemQuantity);
+  if (!Number.isSafeInteger(sellingPrice) || sellingPrice <= 0) return json({error:"ছাড় বাদ দেওয়ার পর বিক্রয়মূল্য সঠিক নয়।"},400);
   const address=[order.customer_address,order.customer_area,order.customer_district,order.customer_division].filter(Boolean).join(", ");
   const payload={
     productId:String(item.id || order.product_id),
