@@ -450,7 +450,16 @@ function chooseProduct(id, pushHistory = true) {
   document.querySelector("#cart-checkout-summary").hidden=!cartCheckoutMode;
   document.querySelector("#order-quantity").closest("label").hidden=cartCheckoutMode;
   document.querySelector("#productId").value = chosenProduct.id;
-  document.querySelector("#detail-image").innerHTML = productImage(chosenProduct);
+  const detailImage = document.querySelector("#detail-image");
+  detailImage.innerHTML = productImage(chosenProduct);
+  const detailImg = detailImage.querySelector("img");
+  const cardImg = document.querySelector('[data-product-card="' + CSS.escape(String(chosenProduct.id)) + '"] .product-image img');
+  if (detailImg && cardImg) {
+    detailImg.addEventListener("error", () => {
+      if (cardImg.src && detailImg.src !== cardImg.src) detailImg.src = cardImg.src;
+      else detailImage.innerHTML = '<span class="image-placeholder">ছবি পাওয়া যায়নি</span>';
+    }, { once: true });
+  }
   document.querySelector("#selected-product").textContent = chosenProduct.name || "পণ্যের নাম";
   document.querySelector("#item-price").textContent = money(chosenProduct.sellingPrice);
 
@@ -468,7 +477,13 @@ function chooseProduct(id, pushHistory = true) {
     chosenProduct.description || "এই পণ্যের বিস্তারিত তথ্য পাওয়া যায়নি।";
   const mediaButton = document.querySelector("#detail-media-button");
   const showMediaButton = chosenProduct.mediaEnabled !== false && Boolean(chosenProduct.mediaUrl);
-  if (mediaButton) { mediaButton.hidden = !showMediaButton; if (showMediaButton) mediaButton.href = chosenProduct.mediaUrl; else mediaButton.removeAttribute("href"); }
+  if (mediaButton) {
+    mediaButton.hidden = !showMediaButton;
+    if (showMediaButton) mediaButton.href = chosenProduct.mediaUrl;
+    else mediaButton.removeAttribute("href");
+    const title = document.querySelector("#selected-product");
+    if (title && title.parentElement === mediaButton.parentElement) title.insertAdjacentElement("afterend", mediaButton);
+  }
 
   const variants = Array.isArray(chosenProduct.variants) ? chosenProduct.variants : [];
   const variantBox = document.querySelector("#detail-variants");
