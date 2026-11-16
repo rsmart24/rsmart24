@@ -2742,3 +2742,30 @@ body.order-modal-open {
 .order-section .detail-media-button{display:inline-flex;width:auto;min-width:210px;margin:4px 0 12px;vertical-align:top}
 .order-section .detail-media-button[hidden]{display:none!important}
 @media(max-width:760px){.order-section:not([hidden]) .product-detail-layout{display:block}.order-section:not([hidden]) .product-detail-image{width:100%;height:min(78vw,360px);min-height:220px;margin:0 auto 14px}.order-section .detail-media-button{width:100%}}
+
+
+/* Desktop product detail: show the entire product photo without cropping. */
+@media (min-width: 761px) {
+  .order-section:not([hidden]) .product-detail-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 36px;
+  }
+  .order-section:not([hidden]) .product-detail-image {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: 1 / 1;
+    overflow: visible;
+    padding: 12px;
+    background: #fff;
+  }
+  .order-section:not([hidden]) .product-detail-image img {
+    width: 100%;
+    height: auto;
+    max-height: 620px;
+    object-fit: contain;
+    object-position: center;
+  }
+}
