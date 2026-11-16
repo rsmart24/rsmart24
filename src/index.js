@@ -119,7 +119,12 @@ async function ensureOrderSchema(env) {
     ["business_koro_status", "TEXT NOT NULL DEFAULT 'not_sent'"],
     ["business_koro_order_id", "TEXT"],
     ["business_koro_response", "TEXT"],
-    ["business_koro_sent_at", "TEXT"]
+    ["business_koro_sent_at", "TEXT"],
+    ["business_koro_live_status", "TEXT"],
+    ["business_koro_status_checked_at", "TEXT"],
+    ["courier_tracking_code", "TEXT"],
+    ["courier_live_status", "TEXT"],
+    ["courier_status_checked_at", "TEXT"]
   ];
   for (const [name, definition] of additions) {
     if (!orderNames.has(name)) {
@@ -250,6 +255,13 @@ function normalizeBangladeshPhone(value) {
   return phone;
 }
 
+
+function findExternalStatus(v,d=0){if(!v||typeof v!=="object"||d>5)return "";for(const k of ["status","order_status","delivery_status","current_status","state"]){if(typeof v[k]==="string"&&v[k].trim())return v[k].trim()}for(const k of ["data","order","result","consignment","courier"]){const z=findExternalStatus(v[k],d+1);if(z)return z}return ""}
+async function refreshExternalOrderStatuses(env,orders){const now=Date.now();await Promise.all((orders||[]).map(async o=>{
+const bt=Date.parse(o.business_koro_status_checked_at||"");if(o.business_koro_order_id&&env.BUSINESS_KORO_API_KEY&&(!Number.isFinite(bt)||now-bt>120000)){try{const r=await fetch(`${API_BASE}/orders/${encodeURIComponent(o.business_koro_order_id)}`,{headers:apiHeaders(env)});let d={};try{d=await r.json()}catch{}if(r.ok){const s=findExternalStatus(d);await env.DB.prepare(s?"UPDATE orders SET business_koro_live_status=?,business_koro_status_checked_at=CURRENT_TIMESTAMP WHERE id=?":"UPDATE orders SET business_koro_status_checked_at=CURRENT_TIMESTAMP WHERE id=?").bind(...(s?[s.slice(0,100),o.id]:[o.id])).run()}}catch{}}
+const st=Date.parse(o.courier_status_checked_at||"");if(o.courier_tracking_code&&env.STEADFAST_API_KEY&&env.STEADFAST_SECRET_KEY&&(!Number.isFinite(st)||now-st>120000)){try{const r=await fetch(`https://portal.packzy.com/api/v1/status_by_trackingcode/${encodeURIComponent(o.courier_tracking_code)}`,{headers:{"Api-Key":env.STEADFAST_API_KEY,"Secret-Key":env.STEADFAST_SECRET_KEY,"Accept":"application/json"}});let d={};try{d=await r.json()}catch{}if(r.ok){const s=findExternalStatus(d);await env.DB.prepare(s?"UPDATE orders SET courier_live_status=?,courier_status_checked_at=CURRENT_TIMESTAMP WHERE id=?":"UPDATE orders SET courier_status_checked_at=CURRENT_TIMESTAMP WHERE id=?").bind(...(s?[s.slice(0,100),o.id]:[o.id])).run()}}catch{}}
+}))}
+
 async function lookupCustomerOrders(request, env) {
   await ensureOrderSchema(env);
   const url=new URL(request.url);
@@ -259,9 +271,13 @@ async function lookupCustomerOrders(request, env) {
     return json({error:"সঠিক মোবাইল নম্বর ও জেলা দিন।"},400);
   }
   const result=await env.DB.prepare(
-    "SELECT id, product_name, order_items_json, created_at, status, total_amount, payment_method, payment_verification_status FROM orders WHERE customer_phone = ? AND LOWER(TRIM(customer_district)) = LOWER(?) ORDER BY created_at DESC LIMIT 50"
+    "SELECT id, product_name, order_items_json, created_at, status, total_amount, payment_method, payment_verification_status, business_koro_order_id, business_koro_live_status, business_koro_status_checked_at, courier_tracking_code, courier_live_status, courier_status_checked_at FROM orders WHERE customer_phone = ? AND LOWER(TRIM(customer_district)) = LOWER(?) ORDER BY created_at DESC LIMIT 50"
   ).bind(phone,district).all();
-  const orders=(result.results||[]).map(order=>{
+  await refreshExternalOrderStatuses(env,(result.results||[]).slice(0,10));
+  const refreshed=await env.DB.prepare(
+    "SELECT id, product_name, order_items_json, created_at, status, total_amount, payment_method, payment_verification_status, business_koro_live_status, courier_tracking_code, courier_live_status FROM orders WHERE customer_phone = ? AND LOWER(TRIM(customer_district)) = LOWER(?) ORDER BY created_at DESC LIMIT 50"
+  ).bind(phone,district).all();
+  const orders=(refreshed.results||[]).map(order=>{
     let items=[];
     try {
       const parsed=JSON.parse(order.order_items_json||"[]");
@@ -278,7 +294,10 @@ async function lookupCustomerOrders(request, env) {
       status:String(order.status||"new"),
       totalAmount:Number(order.total_amount||0),
       paymentMethod:String(order.payment_method||"cod"),
-      paymentVerificationStatus:String(order.payment_verification_status||"not_required")
+      paymentVerificationStatus:String(order.payment_verification_status||"not_required"),
+      businessKoroStatus:String(order.business_koro_live_status||""),
+      courierTrackingCode:String(order.courier_tracking_code||""),
+      courierStatus:String(order.courier_live_status||"")
     };
   });
   return json({success:true,data:orders});
@@ -530,7 +549,9 @@ async function adminOrders(env) {
   const result = await env.DB.prepare(
     "SELECT * FROM orders ORDER BY created_at DESC LIMIT 200"
   ).all();
-  return json({ data: result.results || [] });
+  await refreshExternalOrderStatuses(env,(result.results||[]).slice(0,10));
+  const refreshed=await env.DB.prepare("SELECT * FROM orders ORDER BY created_at DESC LIMIT 200").all();
+  return json({ data: refreshed.results || [] });
 }
 
 async function deleteOrder(env, orderId) {
@@ -539,38 +560,7 @@ async function deleteOrder(env, orderId) {
   if (!result.meta?.changes) return json({ error: "অর্ডার পাওয়া যায়নি।" }, 404);
   return json({ success: true, deleted: true });
 }
-async function updateOrderStatus(request, env, orderId) {
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "সঠিক তথ্য পাঠান।" }, 400);
-  }
-
-  const allowed = ["new", "confirmed", "shipped", "delivered", "cancelled"];
-  const paymentAllowed = ["pending_manual", "verified", "rejected"];
-  if (body.status !== undefined && !allowed.includes(body.status)) {
-    return json({ error: "অর্ডারের অবস্থা সঠিক নয়।" }, 400);
-  }
-  if (body.paymentVerificationStatus !== undefined && !paymentAllowed.includes(body.paymentVerificationStatus)) {
-    return json({ error: "পেমেন্ট যাচাইয়ের অবস্থা সঠিক নয়।" }, 400);
-  }
-  if (body.status === undefined && body.paymentVerificationStatus === undefined) {
-    return json({ error: "কোনো পরিবর্তন পাওয়া যায়নি।" }, 400);
-  }
-
-  const result = body.paymentVerificationStatus !== undefined
-    ? await env.DB.prepare("UPDATE orders SET payment_verification_status = ? WHERE id = ?")
-        .bind(body.paymentVerificationStatus, orderId).run()
-    : await env.DB.prepare("UPDATE orders SET status = ? WHERE id = ?")
-        .bind(body.status, orderId).run();
-
-  if (!result.meta?.changes) {
-    return json({ error: "অর্ডার পাওয়া যায়নি।" }, 404);
-  }
-
-  return json({ success: true });
-}
+async function updateOrderStatus(request,env,orderId){await ensureOrderSchema(env);let b;try{b=await request.json()}catch{return json({error:"সঠিক তথ্য পাঠান।"},400)}const allowed=["new","confirmed","shipped","delivered","cancelled"],pay=["pending_manual","verified","rejected"],sets=[],vals=[];if(b.status!==undefined){if(!allowed.includes(b.status))return json({error:"অর্ডারের অবস্থা সঠিক নয়।"},400);sets.push("status=?");vals.push(b.status)}if(b.paymentVerificationStatus!==undefined){if(!pay.includes(b.paymentVerificationStatus))return json({error:"পেমেন্ট যাচাইয়ের অবস্থা সঠিক নয়।"},400);sets.push("payment_verification_status=?");vals.push(b.paymentVerificationStatus)}if(b.courierTrackingCode!==undefined){const t=String(b.courierTrackingCode||"").trim();if(t.length>100||(t&&!/^[A-Za-z0-9-]+$/.test(t)))return json({error:"কুরিয়ার Tracking ID সঠিক নয়।"},400);sets.push("courier_tracking_code=?");vals.push(t||null);sets.push("courier_live_status=NULL","courier_status_checked_at=NULL")}if(!sets.length)return json({error:"কোনো পরিবর্তন পাওয়া যায়নি।"},400);vals.push(orderId);const r=await env.DB.prepare("UPDATE orders SET "+sets.join(", ")+" WHERE id=?").bind(...vals).run();if(!r.meta?.changes)return json({error:"অর্ডার পাওয়া যায়নি।"},404);return json({success:true})}
 
 export default {
   async fetch(request, env) {

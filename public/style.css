@@ -2937,3 +2937,5 @@ body.order-modal-open {
 
 /* Customer order progress and summary */
 .my-order-progress{display:flex;gap:5px;margin:14px 0 10px;align-items:center}.my-order-step{position:relative;flex:1;text-align:center;padding:8px 3px 7px;border-radius:7px;background:#f1f3f5;color:#8a929e;font-size:11px;font-weight:700}.my-order-step.is-done{background:#e4f5e9;color:#147a3d}.my-order-cancelled{width:100%;padding:9px 12px;border-radius:8px;background:#fff0f0;color:#b42318;font-size:13px;font-weight:700;text-align:center}.my-order-extra{display:flex;flex-wrap:wrap;gap:8px 16px;padding-top:10px;border-top:1px solid #edf0f3;color:#667085;font-size:12px}.my-order-extra b{color:#172033}@media(max-width:500px){.my-order-step{font-size:9px;padding:7px 1px}.my-order-extra{display:grid;gap:5px}}
+
+[data-courier-tracking]{display:block;width:100%;margin:6px 0 10px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;font-size:13px}.detail-action-card .muted{font-size:11px;color:#64748b;margin:8px 0}
