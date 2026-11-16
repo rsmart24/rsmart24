@@ -2914,6 +2914,8 @@ body.order-modal-open {
 .header-my-orders{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:1px solid #e5e7eb;border-radius:10px;color:#242424;text-decoration:none;font-weight:700;font-size:14px;white-space:nowrap;background:#fff}
 .header-my-orders:hover{border-color:#c90018;color:#c90018}
 .my-orders-section{max-width:1120px;margin:24px auto 40px;padding:clamp(18px,3vw,32px);background:#fff;border:1px solid #ececec;border-radius:18px;box-shadow:0 8px 30px rgba(0,0,0,.045)}
+.my-orders-heading{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.my-orders-back{border:1px solid #ddd;background:#fff;border-radius:10px;padding:10px 15px;font:inherit;font-weight:700;cursor:pointer}
 .my-orders-heading h2{margin:5px 0;font-size:clamp(24px,4vw,32px)}
 .my-orders-heading p{margin:0;color:#6b7280}
 .my-orders-form{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin-top:24px}
