@@ -22,7 +22,7 @@ document.querySelector("#year").textContent = new Date().getFullYear();
 
 function isOutOfStock(item) {
   if (!item || typeof item !== "object") return false;
-  const normalize = value => String(value ?? "").trim().toLowerCase().replace(/[\\s-]+/g, "_");
+  const normalize = value => String(value ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
   const status = normalize(item.stockStatus ?? item.stock_status ?? item.availability ?? item.status);
   const stock = item.inStock ?? item.in_stock ?? item.available;
   const stockText = normalize(stock);
