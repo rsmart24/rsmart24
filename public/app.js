@@ -39,6 +39,13 @@ function money(value) {
   return Number.isFinite(n) ? `৳${n.toLocaleString("en-BD")}` : "দাম পাওয়া যায়নি";
 }
 
+function advanceDiscountPrice(product) {
+  const price = Number(product?.sellingPrice);
+  const percent = Number(product?.discountPercent || 0);
+  if (!Number.isFinite(price)) return null;
+  return percent > 0 ? Math.max(0, Math.round(price * (100 - percent) / 100)) : price;
+}
+
 function showNotice(message) {
   if (!notice) return;
   notice.textContent = message;
@@ -89,11 +96,13 @@ function renderFeaturedSections() {
     section.hidden = !items.length;
     strip.innerHTML = items.map(p => {
       const percent = Number(p.specialOfferPercent || 0);
-      const price = money(p.sellingPrice);
-      const oldPrice = type === "offer" && p.originalPrice != null && Number(p.originalPrice) > Number(p.sellingPrice)
-        ? `<del>${money(p.originalPrice)}</del>` : "";
+      const advancePercent = Number(p.discountPercent || 0);
+      const price = money(advanceDiscountPrice(p));
+      const oldValue = advancePercent > 0 ? p.sellingPrice : (type === "offer" ? p.originalPrice : null);
+      const oldPrice = oldValue != null && Number(oldValue) > Number(advanceDiscountPrice(p)) ? `<del>${money(oldValue)}</del>` : "";
+      const badge = advancePercent > 0 ? `<span class="featured-discount-badge">অগ্রিমে ${advancePercent}% ছাড়</span>` : (type === "offer" ? `<span class="featured-discount-badge">${percent}% ছাড়</span>` : `<span class="featured-trending-badge">TRENDING</span>`);
       return `<article class="featured-product-card" data-featured-product="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
-        <div class="featured-product-image">${productImage(p)}${type === "offer" ? `<span class="featured-discount-badge">${percent}% ছাড়</span>` : `<span class="featured-trending-badge">TRENDING</span>`}</div>
+        <div class="featured-product-image">${productImage(p)}${badge}</div>
         <div class="featured-product-info"><h3>${escapeHtml(p.name || "পণ্য")}</h3><div class="featured-product-price">${oldPrice}<strong>${price}</strong></div></div>
       </article>`;
     }).join("");
@@ -134,15 +143,15 @@ function renderProducts() {
 
     return `
       <article class="product-card ${outOfStock ? "is-out-of-stock" : ""}" data-product-card="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
-        <div class="product-image">${productImage(p)}${p.specialOfferEnabled && Number(p.specialOfferPercent) > 0 ? `<span class="product-special-offer-badge">${Number(p.specialOfferPercent)}% ছাড়</span>` : ""}${outOfStock ? '<span class="stock-out-overlay">স্টক আউট</span>' : ""}</div>
+        <div class="product-image">${productImage(p)}${Number(p.discountPercent) > 0 ? `<span class="product-special-offer-badge">অগ্রিমে ${Number(p.discountPercent)}% ছাড়</span>` : (p.specialOfferEnabled && Number(p.specialOfferPercent) > 0 ? `<span class="product-special-offer-badge">${Number(p.specialOfferPercent)}% ছাড়</span>` : "")}${outOfStock ? '<span class="stock-out-overlay">স্টক আউট</span>' : ""}</div>
         <div class="product-info">
           <h3>${escapeHtml(p.name)}</h3>
           <div class="product-bottom">
             <span class="price">
-              ${p.originalPrice !== null && p.originalPrice !== undefined && p.originalPrice > p.sellingPrice
-                ? `<del class="old-price">${money(p.originalPrice)}</del>`
-                : ""}
-              <strong>${money(p.sellingPrice)}</strong>
+              ${Number(p.discountPercent) > 0
+                ? `<del class="old-price">${money(p.sellingPrice)}</del>`
+                : (p.originalPrice !== null && p.originalPrice !== undefined && p.originalPrice > p.sellingPrice ? `<del class="old-price">${money(p.originalPrice)}</del>` : "")}
+              <strong>${money(advanceDiscountPrice(p))}</strong>
             </span>
           </div>
           <div class="product-card-actions">
@@ -507,14 +516,22 @@ function chooseProduct(id, pushHistory = true) {
     }, { once: true });
   }
   document.querySelector("#selected-product").textContent = chosenProduct.name || "পণ্যের নাম";
-  document.querySelector("#item-price").textContent = money(chosenProduct.sellingPrice);
+  const advancePercent = Number(chosenProduct.discountPercent || 0);
+  const hasAdvanceDiscount = advancePercent > 0;
+  document.querySelector("#item-price").textContent = money(advanceDiscountPrice(chosenProduct));
 
   const oldPrice = document.querySelector("#item-old-price");
-  const hasDiscount = Number(chosenProduct.originalPrice) > Number(chosenProduct.sellingPrice);
+  const oldValue = hasAdvanceDiscount ? chosenProduct.sellingPrice : chosenProduct.originalPrice;
+  const hasDiscount = Number(oldValue) > Number(advanceDiscountPrice(chosenProduct));
   oldPrice.hidden = !hasDiscount;
-  oldPrice.textContent = hasDiscount ? money(chosenProduct.originalPrice) : "";
-  document.querySelector("#detail-offer").hidden = !hasDiscount;
+  oldPrice.textContent = hasDiscount ? money(oldValue) : "";
+  document.querySelector("#detail-offer").hidden = hasAdvanceDiscount || !hasDiscount;
   document.querySelector("#detail-offer").textContent = chosenProduct.specialOfferEnabled && Number(chosenProduct.specialOfferPercent) > 0 ? `Special Offer — ${Number(chosenProduct.specialOfferPercent)}% ছাড়` : "Limited Time Offer";
+  const paymentDiscountNote = document.querySelector("#detail-payment-discount-note");
+  if (paymentDiscountNote) {
+    paymentDiscountNote.hidden = !hasAdvanceDiscount;
+    paymentDiscountNote.textContent = hasAdvanceDiscount ? `এই ${advancePercent}% ছাড় শুধু অগ্রিম পেমেন্টে প্রযোজ্য। ক্যাশ অন ডেলিভারিতে পণ্যের দাম ${money(chosenProduct.sellingPrice)}।` : "";
+  }
 
   const category = String(chosenProduct.category || "অন্যান্য").replace(/[-_]/g, " ").replace(/\b\w/g, letter => letter.toUpperCase());
   document.querySelector("#detail-category").textContent = "📁 " + category;
