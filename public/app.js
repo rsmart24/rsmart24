@@ -385,7 +385,7 @@ function updateOrderSummary() {
   if(!chosenProduct)return;
   const quantity=Math.max(1,Math.min(20,Number(document.querySelector("#order-quantity")?.value||1)));
   const division=document.querySelector("#customerDivision")?.value||"";
-  const method=document.querySelector('input[name="paymentMethod"]:checked')?.value||"cod";
+  const method=document.querySelector('input[name="paymentMethod"]:checked')?.value||"advance";
   const isDhaka=division==="ঢাকা"||division.toLowerCase()==="dhaka";
   const delivery=division?Number(isDhaka?deliveryCharges.insideDhaka||0:deliveryCharges.outsideDhaka||0):null;
   const lines=cartCheckoutMode&&chosenCartItems?.length?chosenCartItems.map(item=>{const p=products.find(x=>String(x.id)===String(item.id));if(!p)return null;const unitPrice=Number(p.sellingPrice||0);const percent=Number(p.discountPercent||0);const discountedUnitPrice=method==="advance"&&percent>0?Math.max(0,Math.round(unitPrice*(100-percent)/100)):unitPrice;return {subtotal:unitPrice*item.quantity,quantity:item.quantity,percent,discountedUnitPrice,discountAmount:(unitPrice-discountedUnitPrice)*item.quantity};}).filter(Boolean):(()=>{const unitPrice=Number(chosenProduct.sellingPrice||0);const percent=Number(chosenProduct.discountPercent||0);const discountedUnitPrice=method==="advance"&&percent>0?Math.max(0,Math.round(unitPrice*(100-percent)/100)):unitPrice;return [{subtotal:unitPrice*quantity,quantity,percent,discountedUnitPrice,discountAmount:(unitPrice-discountedUnitPrice)*quantity}];})();
@@ -405,6 +405,29 @@ function updateOrderSummary() {
   document.querySelector("#advance-discount-amount").textContent=money(discount);
   document.querySelector("#advance-delivery").textContent=dText;
   document.querySelector("#advance-total").textContent=tText;
+  // Keep the product detail price synchronized with the selected payment method.
+  if (!cartCheckoutMode && chosenProduct) {
+    const productPrice = Number(chosenProduct.sellingPrice || 0);
+    const advancePercent = Number(chosenProduct.discountPercent || 0);
+    const advancePrice = advanceDiscountPrice(chosenProduct);
+    const showAdvance = method === "advance" && advancePercent > 0;
+    const displayPrice = method === "advance" ? advancePrice : productPrice;
+    const crossedPrice = advancePercent > 0 ? (showAdvance ? productPrice : advancePrice) : chosenProduct.originalPrice;
+    document.querySelector("#item-price").textContent = money(displayPrice);
+    const oldPrice = document.querySelector("#item-old-price");
+    const hasCrossedPrice = Number(crossedPrice) > Number(displayPrice);
+    oldPrice.hidden = !hasCrossedPrice;
+    oldPrice.textContent = hasCrossedPrice ? money(crossedPrice) : "";
+    const paymentDiscountNote = document.querySelector("#detail-payment-discount-note");
+    if (paymentDiscountNote) {
+      paymentDiscountNote.hidden = advancePercent <= 0;
+      paymentDiscountNote.textContent = advancePercent > 0
+        ? (showAdvance
+          ? `অগ্রিম ডেলিভারি চার্জ দিলে পণ্যের দামে ${advancePercent}% ছাড় প্রযোজ্য। ক্যাশ অন ডেলিভারিতে দাম ${money(productPrice)}।`
+          : `এই ${advancePercent}% ছাড় শুধু অগ্রিম ডেলিভারি চার্জ দিলে প্রযোজ্য। অগ্রিম দিলে দাম ${money(advancePrice)}।`)
+        : "";
+    }
+  }
   const percent=cartCheckoutMode?Math.round(lines.reduce((n,x)=>n+x.subtotal*x.percent,0)/Math.max(1,subtotal)):Number(chosenProduct.discountPercent||0);
   const badge=document.querySelector("#advance-discount-badge");
   if(badge)badge.textContent=percent>0?(cartCheckoutMode?"পণ্যভেদে ছাড়":percent+"% ছাড়"):"ছাড় নেই";
@@ -572,6 +595,7 @@ function chooseProduct(id, pushHistory = true) {
     `ঢাকার ভিতরে ${money(deliveryCharges.insideDhaka)} / ঢাকার বাইরে ${money(deliveryCharges.outsideDhaka)}`;
 
   document.querySelector("#order-form")?.reset();
+  document.querySelector("#payment-advance").checked = true;
   document.querySelector("#order-quantity").value = "1";
   if (cartCheckoutMode) { document.querySelector("#order-quantity").closest("label").hidden=true; document.querySelector("#selected-product").textContent="একাধিক পণ্যের অর্ডার"; }
   document.querySelector("#bkash-payment-box").hidden = true;
