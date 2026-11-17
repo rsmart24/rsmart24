@@ -379,9 +379,9 @@ function updateOrderSummary() {
   const method=document.querySelector('input[name="paymentMethod"]:checked')?.value||"cod";
   const isDhaka=division==="ঢাকা"||division.toLowerCase()==="dhaka";
   const delivery=division?Number(isDhaka?deliveryCharges.insideDhaka||0:deliveryCharges.outsideDhaka||0):null;
-  const lines=cartCheckoutMode&&chosenCartItems?.length?chosenCartItems.map(item=>{const p=products.find(x=>String(x.id)===String(item.id));return p?{subtotal:Number(p.sellingPrice||0)*item.quantity,percent:Number(p.discountPercent||0)}:null;}).filter(Boolean):[{subtotal:Number(chosenProduct.sellingPrice||0)*quantity,percent:Number(chosenProduct.discountPercent||0)}];
+  const lines=cartCheckoutMode&&chosenCartItems?.length?chosenCartItems.map(item=>{const p=products.find(x=>String(x.id)===String(item.id));if(!p)return null;const unitPrice=Number(p.sellingPrice||0);const percent=Number(p.discountPercent||0);const discountedUnitPrice=method==="advance"&&percent>0?Math.max(0,Math.round(unitPrice*(100-percent)/100)):unitPrice;return {subtotal:unitPrice*item.quantity,quantity:item.quantity,percent,discountedUnitPrice,discountAmount:(unitPrice-discountedUnitPrice)*item.quantity};}).filter(Boolean):(()=>{const unitPrice=Number(chosenProduct.sellingPrice||0);const percent=Number(chosenProduct.discountPercent||0);const discountedUnitPrice=method==="advance"&&percent>0?Math.max(0,Math.round(unitPrice*(100-percent)/100)):unitPrice;return [{subtotal:unitPrice*quantity,quantity,percent,discountedUnitPrice,discountAmount:(unitPrice-discountedUnitPrice)*quantity}];})();
   const subtotal=lines.reduce((n,x)=>n+x.subtotal,0);
-  const discount=method==="advance"?lines.reduce((n,x)=>n+Math.round(x.subtotal*x.percent/100),0):0;
+  const discount=method==="advance"?lines.reduce((n,x)=>n+x.discountAmount,0):0;
   const total=delivery===null?null:subtotal+delivery-discount;
   const dText=delivery===null?"ঠিকানা নির্বাচন করুন":money(delivery),tText=total===null?"ঠিকানা নির্বাচন করুন":money(total);
   document.querySelector("#subtotal-value").textContent=money(subtotal);
