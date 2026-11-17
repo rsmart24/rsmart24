@@ -227,6 +227,11 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
     .back-orders{background:#e8f4ec;color:#166534;border:1px solid #cce5d2;box-shadow:none;min-height:36px;padding:7px 11px}
     @media(max-width:650px){.detail-compact-grid{grid-template-columns:1fr}.order-detail-screen{padding:10px}.detail-customer-card{padding:12px}.detail-phone-line strong{font-size:20px}.order-detail-top h2{font-size:16px}}
     .featured-admin-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}.featured-admin-controls label{font-size:12px;color:#315c40}.featured-admin-controls input[type=number]{margin-top:5px}.featured-admin-check{display:flex!important;align-items:center;gap:8px;padding:10px;border:1px solid #d8e9dc;border-radius:9px;background:#f7fcf8;font-weight:700!important}.featured-admin-check input{width:18px;height:18px;min-height:18px;margin:0;flex:0 0 auto}.featured-admin-product{grid-template-columns:76px minmax(0,1fr)}@media(max-width:650px){.featured-admin-controls{grid-template-columns:1fr}.featured-admin-check{min-height:42px}}
+    .product-action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .product-action-row button{flex:1;min-width:130px}
+    .product-action-row .secondary{background:#edf7ef;color:#166534;border:1px solid #cfe5d4}
+    .product-info{max-height:240px;overflow:auto}
+    @media(max-width:420px){.product-action-row{display:grid;grid-template-columns:1fr}.product-action-row button{width:100%}}
     .business-koro-card{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px;margin:10px 0;border:1px solid #cfe7d5;border-radius:12px;background:linear-gradient(120deg,#f0faf3,#fff)}
     .business-koro-card>div{display:grid;gap:3px}.business-koro-card b{font-size:14px;color:#14532d}.business-koro-card small{font-size:11px;color:#64748b}.business-koro-card button{background:linear-gradient(110deg,#166534,#15803d);color:#fff;min-height:38px}.business-koro-card button:disabled{opacity:.65;cursor:not-allowed}
     .business-koro-delivery{display:grid;gap:5px;min-width:min(100%,260px);flex:1}
@@ -285,9 +290,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
           <input id="product-search" type="search" placeholder="পণ্যের নাম দিয়ে খুঁজুন..." aria-label="পণ্য খুঁজুন">
           <select id="product-stock-filter" aria-label="স্টক অনুযায়ী পণ্য"><option value="all">সব পণ্য</option><option value="in">শুধু স্টকে আছে</option><option value="out">শুধু স্টক আউট</option></select>
           <button type="button" class="secondary" id="refresh-products">পণ্য রিফ্রেশ</button>
-          <button type="button" class="secondary" id="make-price-proposals">সব পণ্যের দাম প্রস্তাব করুন</button>
-          <button type="button" id="save-price-proposals" disabled>প্রস্তাবিত দামগুলো সংরক্ষণ</button>
-          <p class="muted" id="price-planner-status" style="flex-basis:100%">দাম প্রস্তাব তৈরি করলে এখানে ফলাফল দেখাবে।</p>
+          <p class="muted" style="grid-column:1/-1;margin:0">প্রতিটি পণ্যের পাশে “দাম প্রস্তাব” চাপলে ওই পণ্যের দাম ও ছাড়ের ঘর পূরণ হবে। দেখে নিয়ে সংরক্ষণ করুন।</p>
         </div>
         <div id="products">পণ্য লোড হচ্ছে...</div>
       </div>
@@ -495,70 +498,6 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       updateAdminStats();
       renderFeaturedAdmin();
 
-      const makeProposalsButton = document.querySelector("#make-price-proposals");
-      const saveProposalsButton = document.querySelector("#save-price-proposals");
-      const plannerStatus = document.querySelector("#price-planner-status");
-      if (makeProposalsButton) makeProposalsButton.onclick = () => {
-        let prepared = 0, skipped = 0, protectedCount = 0;
-        adminProducts.forEach(p => {
-          if (p.inStock === false || (p.specialOfferEnabled && Number(p.specialOfferPercent) > 0)) { skipped++; return; }
-          const proposal = buildPriceProposal(p);
-          if (!proposal) { skipped++; return; }
-          const id = String(p.id);
-          const priceInput = document.querySelector(`#price-${CSS.escape(id)}`);
-          const discountInput = document.querySelector(`#discount-${CSS.escape(id)}`);
-          if (!priceInput || !discountInput) return;
-          priceInput.value = proposal.sellingPrice;
-          priceInput.dataset.proposed = "yes";
-          discountInput.value = proposal.discountPercent;
-          const summary = document.querySelector(`#price-proposal-${CSS.escape(id)}`);
-          if (summary) summary.textContent = "প্রস্তাব: সাধারণ ৳" + proposal.sellingPrice.toLocaleString("en-BD") + " · অগ্রিম ছাড়ের পর ৳" + proposal.advancePrice.toLocaleString("en-BD") + " · ন্যূনতম সীমা ৳" + proposal.floor.toLocaleString("en-BD");
-          prepared++;
-          if (proposal.sellingPrice > proposal.suggested) protectedCount++;
-        });
-        if (saveProposalsButton) saveProposalsButton.disabled = prepared === 0;
-        if (plannerStatus) plannerStatus.textContent = prepared
-          ? prepared + "টি পণ্যের প্রস্তাব তৈরি হয়েছে। " + skipped + "টি পণ্য বাদ (স্টক আউট বা ক্রয়মূল্য/ন্যূনতম দাম অনুপস্থিত)। " + protectedCount + "টিতে ন্যূনতম লাভ/দাম রক্ষায় Suggested Price-এর চেয়ে বেশি দাম রাখা হয়েছে।"
-          : "নির্ভরযোগ্য ক্রয়মূল্য/ন্যূনতম বিক্রয়মূল্য ও Suggested Price না থাকায় কোনো প্রস্তাব তৈরি হয়নি।";
-      };
-      if (saveProposalsButton) saveProposalsButton.onclick = async () => {
-        const pending = adminProducts.filter(p => {
-          const input = document.querySelector(`#price-${CSS.escape(String(p.id))}`);
-          return input?.dataset.proposed === "yes";
-        });
-        if (!pending.length) { alert("আগে দাম প্রস্তাব তৈরি করুন।"); return; }
-        if (!confirm(pending.length + "টি পণ্যের প্রস্তাবিত দাম ও অগ্রিম ছাড় সংরক্ষণ করবেন?")) return;
-        saveProposalsButton.disabled = true;
-        let saved = 0;
-        const failed = [];
-        for (const p of pending) {
-          const id = String(p.id);
-          try {
-            const price = Number(document.querySelector(`#price-${CSS.escape(id)}`).value);
-            const discountPercent = Number(document.querySelector(`#discount-${CSS.escape(id)}`).value);
-            await api(`/api/admin/products/${encodeURIComponent(id)}`, {
-              method: "PUT",
-              body: JSON.stringify({
-                sellingPrice: price,
-                originalPrice: p.originalPrice ?? null,
-                discountPercent,
-                category: p.category || "",
-                isVisible: p.isVisible !== false,
-                mediaUrl: p.mediaUrl || "",
-                mediaEnabled: p.mediaEnabled !== false
-              })
-            });
-            p.sellingPrice = price;
-            p.discountPercent = discountPercent;
-            document.querySelector(`#price-${CSS.escape(id)}`).dataset.proposed = "";
-            saved++;
-          } catch (error) { failed.push(p.name + ": " + error.message); }
-        }
-        if (plannerStatus) plannerStatus.textContent = saved + "টি পণ্যের দাম সংরক্ষিত হয়েছে।" + (failed.length ? " ব্যর্থ: " + failed.join(" | ") : "");
-        alert(saved + "টি পণ্যের দাম সংরক্ষণ হয়েছে।" + (failed.length ? "\nব্যর্থ: " + failed.length + "টি। বিস্তারিত উপরে দেখুন।" : ""));
-        saveProposalsButton.disabled = failed.length === 0;
-      };
-
       if (!result.data.length) {
         productsBox.textContent = "কোনো পণ্য পাওয়া যায়নি।";
         return;
@@ -614,12 +553,42 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
               </label>
             </div>
             <p class="muted" id="price-proposal-${escapeHTML(p.id)}"></p>
-            <button data-save="${escapeHTML(p.id)}">পরিবর্তন সংরক্ষণ</button>
+            <div class="product-action-row">
+              <button type="button" class="secondary" data-propose-price="${escapeHTML(p.id)}">দাম প্রস্তাব</button>
+              <button type="button" data-save="${escapeHTML(p.id)}">পরিবর্তন সংরক্ষণ</button>
+            </div>
           </div>
         </article>
       `).join("");
 
       applyProductFilters();
+      productsBox.querySelectorAll("[data-propose-price]").forEach(button => {
+        button.addEventListener("click", () => {
+          const id = button.dataset.proposePrice;
+          const product = adminProducts.find(item => String(item.id) === String(id));
+          if (!product) return;
+          if (product.inStock === false) {
+            alert("এই পণ্যটি স্টক আউট। স্টকে আসার পর দাম প্রস্তাব তৈরি করুন।");
+            return;
+          }
+          const proposal = buildPriceProposal(product);
+          if (!proposal) {
+            alert("এই পণ্যের নির্ভরযোগ্য Suggested Price অথবা ক্রয়মূল্য/ন্যূনতম বিক্রয়মূল্য নেই। তাই নিরাপদ দাম প্রস্তাব করা যাচ্ছে না।");
+            return;
+          }
+          const priceInput = document.querySelector(`#price-${CSS.escape(id)}`);
+          const discountInput = document.querySelector(`#discount-${CSS.escape(id)}`);
+          const summary = document.querySelector(`#price-proposal-${CSS.escape(id)}`);
+          if (!priceInput || !discountInput) return;
+          priceInput.value = proposal.sellingPrice;
+          discountInput.value = proposal.discountPercent;
+          if (summary) summary.textContent =
+            "প্রস্তাবিত বিক্রয়মূল্য ৳" + proposal.sellingPrice.toLocaleString("en-BD") +
+            " · অগ্রিম ছাড়ের পর ৳" + proposal.advancePrice.toLocaleString("en-BD") +
+            " · ন্যূনতম নিরাপদ দাম ৳" + proposal.floor.toLocaleString("en-BD") +
+            " — সংরক্ষণ না করা পর্যন্ত ওয়েবসাইটে পরিবর্তন হবে না।";
+        });
+      });
       productsBox.querySelectorAll("[data-save]").forEach(button => {
         button.addEventListener("click", async () => {
           const id = button.dataset.save;
@@ -790,7 +759,7 @@ function renderOrderDetail(o){
  <div class="detail-action-card"><h3 class="detail-section-title">অর্ডার পরিচালনা</h3><div class="order-actions"><label>অর্ডারের অবস্থা<select data-status="${escapeHTML(o.id)}">${Object.entries(labels).map(([v,l])=>`<option value="${v}" ${s===v?"selected":""}>${l}</option>`).join("")}</select></label><button type="button" data-order="${escapeHTML(o.id)}">অবস্থা সংরক্ষণ</button></div>
  ${o.payment_method==="advance"?`<div class="order-actions" style="margin-top:12px"><label>অগ্রিম পেমেন্ট যাচাই<select data-payment-status="${escapeHTML(o.id)}"><option value="pending_manual" ${p==="pending_manual"?"selected":""}>যাচাই বাকি</option><option value="verified" ${p==="verified"?"selected":""}>পেমেন্ট পেয়েছি / যাচাই হয়েছে</option><option value="rejected" ${p==="rejected"?"selected":""}>পেমেন্ট মেলেনি</option></select></label><button type="button" data-payment-save="${escapeHTML(o.id)}">পেমেন্ট যাচাই সংরক্ষণ</button></div>`:""}
 \n <div class="business-koro-card"><div><b>Business Koro</b><small>${o.business_koro_status==="sent"?"পাঠানো হয়েছে":o.business_koro_status==="failed"?"পাঠাতে সমস্যা হয়েছে":o.business_koro_status==="sending"?"পাঠানো হচ্ছে...":"এখনো পাঠানো হয়নি"}</small>${o.business_koro_order_id?`<small>Business Koro ID: ${escapeHTML(o.business_koro_order_id)}</small>`:""}</div><div class="business-koro-delivery"><label for="bk-delivery-${escapeHTML(o.id)}">ডেলিভারি চার্জ কে দেবে?</label><select id="bk-delivery-${escapeHTML(o.id)}" data-business-koro-delivery>${[["customer_delivery","কাস্টমার ডেলিভারির সময় দেবে"],["customer_upfront","কাস্টমার আগে থেকেই দিয়েছে"],["reseller_bears","RS Mart ডেলিভারি চার্জ বহন করবে"]].map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div><button type="button" data-business-koro-send="${escapeHTML(o.id)}" ${o.business_koro_status==="sent"||o.business_koro_status==="sending"?"disabled":""}>${o.business_koro_status==="sent"?"✓ পাঠানো হয়েছে":o.business_koro_status==="sending"?"পাঠানো হচ্ছে...":o.business_koro_status==="failed"?"আবার চেষ্টা করুন":"Business Koro-তে পাঠান"}</button></div>
- <div class="detail-action-card"><h3 class="detail-section-title">কুরিয়ার ট্র্যাকিং</h3><label>Steadfast Tracking ID<input type="text" maxlength="100" data-courier-tracking value="${escapeHTML(o.courier_tracking_code||"")}" placeholder="যেমন: SFR261111ST51D7CDABD"></label><button type="button" data-courier-save="${escapeHTML(o.id)}">Tracking ID সংরক্ষণ</button><p class="muted">Tracking ID সংরক্ষণের পর গ্রাহক অর্ডার খুঁজলে কুরিয়ার স্ট্যাটাস আপডেট হবে।</p>${o.courier_live_status?`<small>সর্বশেষ কুরিয়ার অবস্থা: ${escapeHTML(o.courier_live_status)}</small>`:""}</div>
+
  <button type="button" class="delete-order" data-delete-order="${escapeHTML(o.id)}">এই অর্ডার স্থায়ীভাবে ডিলিট করুন</button></div></div>`;
 }
 ordersBox.addEventListener("click",e=>{const c=e.target.closest("[data-open-order]");if(c&&!e.target.closest("button"))openOrderDetails(c.dataset.openOrder);});
