@@ -87,9 +87,44 @@ function requireDB(env) {
   if (!env.DB) throw new Error("D1 database binding DB is missing.");
 }
 
+async function enforcePublicOrderRateLimit(request, env) {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("rs-mart-public-order:" + ip));
+  const ipHash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+  const now = Date.now();
+  const state = await env.DB.prepare(`
+    INSERT INTO public_order_rate_limits (ip_hash, request_count, window_started_at, blocked_until)
+    VALUES (?, 1, ?, 0)
+    ON CONFLICT(ip_hash) DO UPDATE SET
+      request_count = CASE
+        WHEN public_order_rate_limits.blocked_until > excluded.window_started_at THEN public_order_rate_limits.request_count
+        WHEN excluded.window_started_at - public_order_rate_limits.window_started_at >= 600000 THEN 1
+        ELSE public_order_rate_limits.request_count + 1
+      END,
+      window_started_at = CASE
+        WHEN public_order_rate_limits.blocked_until > excluded.window_started_at THEN public_order_rate_limits.window_started_at
+        WHEN excluded.window_started_at - public_order_rate_limits.window_started_at >= 600000 THEN excluded.window_started_at
+        ELSE public_order_rate_limits.window_started_at
+      END
+    RETURNING request_count, blocked_until
+  `).bind(ipHash, now).first();
+  const blockedUntil = Number(state?.blocked_until || 0);
+  if (blockedUntil > now) {
+    const retrySeconds = Math.max(1, Math.ceil((blockedUntil - now) / 1000));
+    return json({ error: "অল্প সময়ে অনেকগুলো অর্ডার পাঠানো হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।" }, 429, { "Retry-After": String(retrySeconds) });
+  }
+  if (Number(state?.request_count || 0) >= 8) {
+    const retrySeconds = 15 * 60;
+    await env.DB.prepare("UPDATE public_order_rate_limits SET blocked_until = ? WHERE ip_hash = ?").bind(now + retrySeconds * 1000, ipHash).run();
+    return json({ error: "নিরাপত্তার জন্য অল্প সময়ের মধ্যে অর্ডার পাঠানো সাময়িকভাবে বন্ধ করা হয়েছে। ১৫ মিনিট পর আবার চেষ্টা করুন।" }, 429, { "Retry-After": String(retrySeconds) });
+  }
+  return null;
+}
+
 async function ensureOrderSchema(env) {
   requireDB(env);
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS admin_login_attempts (ip_hash TEXT PRIMARY KEY, attempts INTEGER NOT NULL DEFAULT 0, window_started_at INTEGER NOT NULL, blocked_until INTEGER NOT NULL DEFAULT 0)").run();
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS public_order_rate_limits (ip_hash TEXT PRIMARY KEY, request_count INTEGER NOT NULL DEFAULT 0, window_started_at INTEGER NOT NULL, blocked_until INTEGER NOT NULL DEFAULT 0)").run();
   const productColumns = await env.DB.prepare("PRAGMA table_info(product_settings)").all();
   const productNames = new Set((productColumns.results || []).map(row => row.name));
   if (!productNames.has("discount_percent")) {
@@ -393,6 +428,8 @@ async function sendTelegramOrderAlert(env, order) {
 
 async function createOrder(request, env) {
   await ensureOrderSchema(env);
+  const rateLimitResponse = await enforcePublicOrderRateLimit(request, env);
+  if (rateLimitResponse) return rateLimitResponse;
   let body;
   try { body = await request.json(); }
   catch { return json({ error: "অর্ডারের তথ্য সঠিকভাবে পাওয়া যায়নি।" }, 400); }
@@ -585,14 +622,52 @@ async function refreshExternalOrderStatuses(env, orders) {
   }));
 }
 
-async function adminOrders(env) {
+async function adminOrders(env, url) {
   await ensureOrderSchema(env);
-  const result = await env.DB.prepare(
-    "SELECT * FROM orders ORDER BY created_at DESC LIMIT 200"
-  ).all();
-  await refreshExternalOrderStatuses(env,(result.results||[]).slice(0,10));
-  const refreshed=await env.DB.prepare("SELECT * FROM orders ORDER BY created_at DESC LIMIT 200").all();
-  return json({ data: refreshed.results || [] });
+  const requestedPage = Math.max(1, Math.min(100000, Number.parseInt(url.searchParams.get("page") || "1", 10) || 1));
+  const limit = Math.max(10, Math.min(100, Number.parseInt(url.searchParams.get("limit") || "50", 10) || 50));
+  const query = String(url.searchParams.get("q") || "").trim().slice(0, 100);
+  const requestedStatus = String(url.searchParams.get("status") || "all");
+  const allowedStatuses = ["new", "confirmed", "shipped", "delivered", "cancelled"];
+  const status = allowedStatuses.includes(requestedStatus) ? requestedStatus : "all";
+  const conditions = [];
+  const filterValues = [];
+  if (query) {
+    conditions.push("(CAST(id AS TEXT) LIKE ? OR customer_name LIKE ? OR customer_phone LIKE ? OR product_name LIKE ?)");
+    const pattern = "%" + query + "%";
+    filterValues.push(pattern, pattern, pattern, pattern);
+  }
+  if (status !== "all") {
+    conditions.push("status = ?");
+    filterValues.push(status);
+  }
+  const where = conditions.length ? " WHERE " + conditions.join(" AND ") : "";
+  const summary = await env.DB.prepare(`
+    SELECT COUNT(*) AS total_orders,
+      SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) AS new_orders,
+      SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) AS delivered_orders,
+      SUM(CASE WHEN status != 'cancelled' THEN total_amount ELSE 0 END) AS total_sales
+    FROM orders
+  `).first();
+  const countResult = await env.DB.prepare("SELECT COUNT(*) AS total FROM orders" + where).bind(...filterValues).first();
+  const total = Number(countResult?.total || 0);
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const page = Math.min(requestedPage, totalPages);
+  const offset = (page - 1) * limit;
+  const selectPage = async () => env.DB.prepare("SELECT * FROM orders" + where + " ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?").bind(...filterValues, limit, offset).all();
+  const result = await selectPage();
+  await refreshExternalOrderStatuses(env, (result.results || []).slice(0, 10));
+  const refreshed = await selectPage();
+  return json({
+    data: refreshed.results || [],
+    page, limit, total, totalPages,
+    summary: {
+      total_orders: Number(summary?.total_orders || 0),
+      new_orders: Number(summary?.new_orders || 0),
+      delivered_orders: Number(summary?.delivered_orders || 0),
+      total_sales: Number(summary?.total_sales || 0)
+    }
+  });
 }
 
 async function deleteOrder(env, orderId) {
@@ -657,7 +732,7 @@ export default {
         }
 
         if (path === "/api/admin/orders" && method === "GET") {
-          return await adminOrders(env);
+          return await adminOrders(env, url);
         }
 
         const productMatch = path.match(/^\/api\/admin\/products\/([^/]+)$/);
