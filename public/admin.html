@@ -541,20 +541,15 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
             <p class="muted">বিক্রয়মূল্য: ৳${escapeHTML(p.sellingPrice ?? "—")} · প্রস্তাবিত: ৳${escapeHTML(p.suggestedPrice ?? "—")}</p>
             <details><summary>পণ্যের সম্পূর্ণ তথ্য দেখুন</summary><div class="product-info"><b>বিবরণ:</b> ${escapeHTML(p.description || "বিবরণ নেই")}<br><b>স্টক:</b> ${p.inStock === false ? "স্টক নেই" : "স্টকে আছে"}<br><b>পুরোনো দাম:</b> ৳${escapeHTML(p.originalPrice ?? "—")}<br><b>ভ্যারিয়েন্ট:</b> ${escapeHTML((p.variants || []).map(v => [v.color, v.size, v.inStock === false ? "স্টক নেই" : "স্টকে আছে"].filter(Boolean).join(" / ")).join(", ") || "নেই")}<br><b>ছবি:</b> ${escapeHTML((p.images || []).length)}টি</div>${(p.images || []).map(src => `<img src="${escapeHTML(src)}" alt="" loading="lazy" style="width:54px;height:54px;margin:3px;object-fit:cover">`).join("")}</details>
             <div class="fields">
-            <label>বিক্রয় মূল্য (৳)
-  <input type="number" min="0" step="1"
+            <label>Price (ওয়েবসাইটে বড় করে দেখাবে — ৳)
+  <input type="number" min="1" step="1"
     id="price-${escapeHTML(p.id)}"
-    value="${p.sellingPrice ?? ""}" placeholder="বিক্রয় মূল্য" required>
+    value="${p.sellingPrice != null ? Math.round(Number(p.sellingPrice) * (100 - Number(p.discountPercent || 0)) / 100) : ""}" placeholder="ডিসকাউন্টের পরের দাম" required>
 </label>
-              <label>পুরোনো দাম / কাটা দাম (৳)
-  <input type="number" min="0" step="1"
-    id="original-price-${escapeHTML(p.id)}"
-    value="${p.originalPrice ?? ""}" placeholder="পুরোনো দাম">
-</label>
-              <label>অগ্রিম পেমেন্ট ছাড় (%)
-                <input type="number" min="0" max="90" step="1"
+              <label>Discount (%)
+                <input type="number" min="10" max="20" step="1"
                   id="discount-${escapeHTML(p.id)}"
-                  value="${p.discountPercent ?? 0}" placeholder="যেমন 10 বা 20">
+                  value="${Number(p.discountPercent) >= 10 && Number(p.discountPercent) <= 20 ? p.discountPercent : 10}" placeholder="১০ থেকে ২০">
               </label>
               <label>ক্যাটাগরি
                 <select id="category-${escapeHTML(p.id)}">
@@ -603,12 +598,10 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
             return;
           }
           const priceInput = document.querySelector(`#price-${CSS.escape(id)}`);
-          const originalPriceInput = document.querySelector(`#original-price-${CSS.escape(id)}`);
           const discountInput = document.querySelector(`#discount-${CSS.escape(id)}`);
           const summary = document.querySelector(`#price-proposal-${CSS.escape(id)}`);
-          if (!priceInput || !originalPriceInput || !discountInput) return;
-          priceInput.value = proposal.sellingPrice;
-          originalPriceInput.value = proposal.originalPrice;
+          if (!priceInput || !discountInput) return;
+          priceInput.value = proposal.advancePrice;
           discountInput.value = proposal.discountPercent;
           if (summary) summary.textContent =
             "Cash on Delivery / কাটা দাম ৳" + proposal.codPrice.toLocaleString("en-BD") +
@@ -621,25 +614,24 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
         button.addEventListener("click", async () => {
           const id = button.dataset.save;
           const price = document.querySelector(`#price-${CSS.escape(id)}`).value;
-          const originalPrice = document.querySelector(`#original-price-${CSS.escape(id)}`).value;
           const discountPercent = document.querySelector(`#discount-${CSS.escape(id)}`).value;
           const category = document.querySelector(`#category-${CSS.escape(id)}`).value;
           const visible = document.querySelector(`#visible-${CSS.escape(id)}`).value;
           const mediaUrl = document.querySelector(`#media-url-${CSS.escape(id)}`).value.trim();
           const mediaEnabled = document.querySelector(`#media-enabled-${CSS.escape(id)}`).value;
-if (
-  originalPrice.trim() !== "" &&
-  (!Number.isSafeInteger(Number(originalPrice)) || Number(originalPrice) < 0)
-) {
-  alert("সঠিক পুরোনো দাম লিখুন।");
-  return;
-}
-          if (discountPercent.trim() === "" || !Number.isInteger(Number(discountPercent)) || Number(discountPercent) < 0 || Number(discountPercent) > 90) {
-            alert("অগ্রিম পেমেন্ট ছাড় ০ থেকে ৯০ শতাংশের মধ্যে দিন।");
+          if (discountPercent.trim() === "" || !Number.isInteger(Number(discountPercent)) || Number(discountPercent) < 10 || Number(discountPercent) > 20) {
+            alert("Discount ১০ থেকে ২০ শতাংশের মধ্যে দিন।");
             return;
           }
-          if (price.trim() === "" || !Number.isSafeInteger(Number(price)) || Number(price) < 0) {
-            alert("সঠিক বিক্রয়মূল্য লিখুন।");
+          if (price.trim() === "" || !Number.isSafeInteger(Number(price)) || Number(price) <= 0) {
+            alert("সঠিক Price লিখুন।");
+            return;
+          }
+          const discountedPrice = Number(price);
+          const percent = Number(discountPercent);
+          const codPrice = Math.round(discountedPrice * 100 / (100 - percent));
+          if (!Number.isSafeInteger(codPrice) || codPrice <= discountedPrice) {
+            alert("এই Price ও Discount দিয়ে সঠিক Cash on Delivery দাম তৈরি করা যাচ্ছে না।");
             return;
           }
 
@@ -648,9 +640,9 @@ if (
             await api(`/api/admin/products/${encodeURIComponent(id)}`, {
               method: "PUT",
               body: JSON.stringify({
-  sellingPrice: Number(price),
-  originalPrice: originalPrice.trim() === "" ? null : Number(originalPrice),
-  discountPercent: Number(discountPercent),
+  sellingPrice: codPrice,
+  originalPrice: codPrice,
+  discountPercent: percent,
   category,
   isVisible: visible === "yes",
   mediaUrl,
