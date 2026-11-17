@@ -328,16 +328,20 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
     const logoutButton = document.querySelector("#logout");
     let adminProducts = [];
     let adminOrders = [];
+    let adminOrderSummary = null;
+    let orderPage = 1;
+    let orderPageInfo = { page: 1, totalPages: 1, total: 0 };
+    let orderSearchTimer = null;
     let knownOrderIds = null;
     let orderPollTimer = null;
     let orderPollBusy = false;
     const money = value => "৳" + Number(value || 0).toLocaleString("en-BD");
     function updateAdminStats() {
       const set = (id, value) => { const el = document.querySelector(id); if (el) el.textContent = Number(value || 0).toLocaleString("bn-BD"); };
-      set("#stat-total-orders", adminOrders.length);
-      set("#stat-new-orders", adminOrders.filter(o => o.status === "new").length);
-      set("#stat-delivered-orders", adminOrders.filter(o => o.status === "delivered").length);
-      const sales = adminOrders.filter(o => o.status !== "cancelled").reduce((sum,o) => sum + Number(o.total_amount || 0),0);
+      set("#stat-total-orders", adminOrderSummary?.total_orders ?? adminOrders.length);
+      set("#stat-new-orders", adminOrderSummary?.new_orders ?? adminOrders.filter(o => o.status === "new").length);
+      set("#stat-delivered-orders", adminOrderSummary?.delivered_orders ?? adminOrders.filter(o => o.status === "delivered").length);
+      const sales = adminOrderSummary?.total_sales ?? adminOrders.filter(o => o.status !== "cancelled").reduce((sum,o) => sum + Number(o.total_amount || 0),0);
       const salesEl = document.querySelector("#stat-sales"); if (salesEl) salesEl.textContent = money(sales);
       set("#stat-products", adminProducts.length);
       set("#stat-out-stock", adminProducts.filter(p => p.inStock === false || ["out_of_stock","sold_out","unavailable"].includes(String(p.stockStatus || p.stock_status || "").toLowerCase())).length);
@@ -603,7 +607,15 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
     }
 
     async function loadOrders({ notifyNew = true } = {}) {
-      const result = await api("/api/admin/orders");
+      const params = new URLSearchParams({ page: String(orderPage), limit: "50" });
+      const searchQuery = (document.querySelector("#order-search")?.value || "").trim();
+      const searchStatus = document.querySelector("#order-status-filter")?.value || "all";
+      if (searchQuery) params.set("q", searchQuery);
+      if (searchStatus !== "all") params.set("status", searchStatus);
+      const result = await api("/api/admin/orders?" + params.toString());
+      orderPage = Number(result.page || 1);
+      orderPageInfo = { page: orderPage, totalPages: Number(result.totalPages || 1), total: Number(result.total || 0) };
+      adminOrderSummary = result.summary || null;
       const incomingOrders = Array.isArray(result.data) ? result.data : [];
       const incomingIds = new Set(incomingOrders.map(order => String(order.id)));
       const previousSnapshot = adminOrders.map(order => [order.id, order.status, order.payment_verification_status].join(":")).join("|");
@@ -626,7 +638,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       };
 
       if (!result.data.length) {
-        ordersBox.textContent = "এখনো কোনো অর্ডার আসেনি।";
+        ordersBox.innerHTML = (orderPageInfo.total ? "এই পৃষ্ঠায় কোনো অর্ডার নেই।" : "এখনো কোনো অর্ডার আসেনি।") + renderOrderPagination();
         return;
       }
 
@@ -642,7 +654,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
             <div class="order-compact-product">${escapeHTML(orderItemsText(o).replace(/\\n/g," · "))}</div>
           </div><span class="order-status-badge status-${statusClass}">${labels[status]||"নতুন"}</span></div>
         </article>`;
-      }).join("");
+      }).join("") + renderOrderPagination();
 
       applyOrderFilters();
       ordersBox.querySelectorAll("[data-payment-save]").forEach(button => {
@@ -688,6 +700,16 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
     }
 
 
+function renderOrderPagination() {
+  const { page, totalPages, total } = orderPageInfo;
+  return `<div class="admin-toolbar" style="justify-content:space-between;align-items:center;margin-top:16px">
+    <span>মোট ${Number(total).toLocaleString("bn-BD")}টি অর্ডার · পৃষ্ঠা ${Number(page).toLocaleString("bn-BD")} / ${Number(totalPages).toLocaleString("bn-BD")}</span>
+    <div style="display:flex;gap:8px">
+      <button type="button" class="secondary" data-order-page="${page - 1}" ${page <= 1 ? "disabled" : ""}>আগের পৃষ্ঠা</button>
+      <button type="button" data-order-page="${page + 1}" ${page >= totalPages ? "disabled" : ""}>পরের পৃষ্ঠা</button>
+    </div>
+  </div>`;
+}
 function showOrderList(){selectedOrderId=null;orderDetailView.classList.add("hidden");document.querySelector("#orders-panel").classList.remove("hidden");applyOrderFilters();window.scrollTo({top:0,behavior:"smooth"});}
 function openOrderDetails(id){const o=adminOrders.find(x=>String(x.id)===String(id));if(!o)return;selectedOrderId=String(id);document.querySelector("#orders-panel").classList.add("hidden");orderDetailView.classList.remove("hidden");renderOrderDetail(o);window.scrollTo({top:0,behavior:"smooth"});}
 function renderOrderDetail(o){
@@ -701,7 +723,22 @@ function renderOrderDetail(o){
 
  <button type="button" class="delete-order" data-delete-order="${escapeHTML(o.id)}">এই অর্ডার স্থায়ীভাবে ডিলিট করুন</button></div></div>`;
 }
-ordersBox.addEventListener("click",e=>{const c=e.target.closest("[data-open-order]");if(c&&!e.target.closest("button"))openOrderDetails(c.dataset.openOrder);});
+ordersBox.addEventListener("click", async e => {
+  const pageButton = e.target.closest("[data-order-page]");
+  if (pageButton && !pageButton.disabled) {
+    const nextPage = Number(pageButton.dataset.orderPage);
+    if (Number.isInteger(nextPage) && nextPage >= 1 && nextPage <= orderPageInfo.totalPages) {
+      orderPage = nextPage;
+      knownOrderIds = null;
+      pageButton.disabled = true;
+      try { await loadOrders({ notifyNew: false }); }
+      catch (error) { alert(error.message || "অর্ডার লোড করা যায়নি।"); }
+    }
+    return;
+  }
+  const c=e.target.closest("[data-open-order]");
+  if(c&&!e.target.closest("button"))openOrderDetails(c.dataset.openOrder);
+});
 ordersBox.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches("[data-open-order]")){e.preventDefault();openOrderDetails(e.target.dataset.openOrder);}});
 orderDetailView.addEventListener("click",async e=>{
  if(e.target.closest("[data-back-orders]")){showOrderList();return;}
@@ -882,8 +919,14 @@ orderDetailView.addEventListener("click",async e=>{
 
     document.querySelector("#product-search").addEventListener("input", applyProductFilters);
     document.querySelector("#product-stock-filter").addEventListener("change", applyProductFilters);
-    document.querySelector("#order-search").addEventListener("input", applyOrderFilters);
-    document.querySelector("#order-status-filter").addEventListener("change", applyOrderFilters);
+    document.querySelector("#order-search").addEventListener("input", () => {
+      clearTimeout(orderSearchTimer);
+      orderSearchTimer = setTimeout(() => { orderPage = 1; knownOrderIds = null; loadOrders({ notifyNew: false }).catch(error => alert(error.message)); }, 300);
+    });
+    document.querySelector("#order-status-filter").addEventListener("change", () => {
+      orderPage = 1; knownOrderIds = null;
+      loadOrders({ notifyNew: false }).catch(error => alert(error.message));
+    });
     document.querySelector("#refresh-products").addEventListener("click", async e => { e.currentTarget.disabled=true; try { await loadProducts(); } catch(err) { alert(err.message); } finally { e.currentTarget.disabled=false; } });
     document.querySelector("#refresh-orders").addEventListener("click", async e => { e.currentTarget.disabled=true; try { await loadOrders(); } catch(err) { alert(err.message); } finally { e.currentTarget.disabled=false; } });
     document.querySelector("#export-orders").addEventListener("click", downloadOrdersCSV);
