@@ -285,6 +285,9 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
           <input id="product-search" type="search" placeholder="পণ্যের নাম দিয়ে খুঁজুন..." aria-label="পণ্য খুঁজুন">
           <select id="product-stock-filter" aria-label="স্টক অনুযায়ী পণ্য"><option value="all">সব পণ্য</option><option value="in">শুধু স্টকে আছে</option><option value="out">শুধু স্টক আউট</option></select>
           <button type="button" class="secondary" id="refresh-products">পণ্য রিফ্রেশ</button>
+          <button type="button" class="secondary" id="make-price-proposals">সব পণ্যের দাম প্রস্তাব করুন</button>
+          <button type="button" id="save-price-proposals" disabled>প্রস্তাবিত দামগুলো সংরক্ষণ</button>
+          <p class="muted" id="price-planner-status" style="flex-basis:100%">দাম প্রস্তাব তৈরি করলে এখানে ফলাফল দেখাবে।</p>
         </div>
         <div id="products">পণ্য লোড হচ্ছে...</div>
       </div>
@@ -460,11 +463,99 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       }));
     }
 
+    function priceFloorForProduct(product) {
+      const numbers = [];
+      const collect = value => {
+        if (typeof value === "number" && Number.isFinite(value) && value > 0) numbers.push(value);
+        else if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value)) && Number(value) > 0) numbers.push(Number(value));
+        else if (value && typeof value === "object") Object.values(value).forEach(collect);
+      };
+      collect(product.minimumSellingPrice);
+      const minimumFloor = numbers.length ? Math.max(...numbers) : 0;
+      const cost = Number(product.costPrice);
+      const costFloor = Number.isFinite(cost) && cost > 0 ? Math.ceil(cost * 1.15) : 0;
+      return Math.max(minimumFloor, costFloor);
+    }
+
+    function buildPriceProposal(product) {
+      const suggested = Number(product.suggestedPrice);
+      const floor = priceFloorForProduct(product);
+      if (!Number.isFinite(suggested) || suggested <= 0 || floor <= 0) return null;
+      const competitivePrice = Math.round((suggested * 0.97) / 10) * 10;
+      const sellingPrice = Math.max(floor, competitivePrice);
+      const discountPercent = [20, 15, 10].find(percent =>
+        Math.round(sellingPrice * (100 - percent) / 100) >= floor
+      ) || 0;
+      return { sellingPrice, discountPercent, floor, suggested, advancePrice: Math.round(sellingPrice * (100 - discountPercent) / 100) };
+    }
+
     async function loadProducts() {
       const result = await api("/api/admin/products");
       adminProducts = Array.isArray(result.data) ? result.data : [];
       updateAdminStats();
       renderFeaturedAdmin();
+
+      const makeProposalsButton = document.querySelector("#make-price-proposals");
+      const saveProposalsButton = document.querySelector("#save-price-proposals");
+      const plannerStatus = document.querySelector("#price-planner-status");
+      if (makeProposalsButton) makeProposalsButton.onclick = () => {
+        let prepared = 0, skipped = 0, protectedCount = 0;
+        adminProducts.forEach(p => {
+          if (p.inStock === false) { skipped++; return; }
+          const proposal = buildPriceProposal(p);
+          if (!proposal) { skipped++; return; }
+          const id = String(p.id);
+          const priceInput = document.querySelector(`#price-${CSS.escape(id)}`);
+          const discountInput = document.querySelector(`#discount-${CSS.escape(id)}`);
+          if (!priceInput || !discountInput) return;
+          priceInput.value = proposal.sellingPrice;
+          priceInput.dataset.proposed = "yes";
+          discountInput.value = proposal.discountPercent;
+          prepared++;
+          if (proposal.sellingPrice > proposal.suggested) protectedCount++;
+        });
+        if (saveProposalsButton) saveProposalsButton.disabled = prepared === 0;
+        if (plannerStatus) plannerStatus.textContent = prepared
+          ? prepared + "টি পণ্যের প্রস্তাব তৈরি হয়েছে। " + skipped + "টি পণ্য বাদ (স্টক আউট বা ক্রয়মূল্য/ন্যূনতম দাম অনুপস্থিত)। " + protectedCount + "টিতে ন্যূনতম লাভ/দাম রক্ষায় Suggested Price-এর চেয়ে বেশি দাম রাখা হয়েছে।"
+          : "নির্ভরযোগ্য ক্রয়মূল্য/ন্যূনতম বিক্রয়মূল্য ও Suggested Price না থাকায় কোনো প্রস্তাব তৈরি হয়নি।";
+      };
+      if (saveProposalsButton) saveProposalsButton.onclick = async () => {
+        const pending = adminProducts.filter(p => {
+          const input = document.querySelector(`#price-${CSS.escape(String(p.id))}`);
+          return input?.dataset.proposed === "yes";
+        });
+        if (!pending.length) { alert("আগে দাম প্রস্তাব তৈরি করুন।"); return; }
+        if (!confirm(pending.length + "টি পণ্যের প্রস্তাবিত দাম ও অগ্রিম ছাড় সংরক্ষণ করবেন?")) return;
+        saveProposalsButton.disabled = true;
+        let saved = 0;
+        const failed = [];
+        for (const p of pending) {
+          const id = String(p.id);
+          try {
+            const price = Number(document.querySelector(`#price-${CSS.escape(id)}`).value);
+            const discountPercent = Number(document.querySelector(`#discount-${CSS.escape(id)}`).value);
+            await api(`/api/admin/products/${encodeURIComponent(id)}`, {
+              method: "PUT",
+              body: JSON.stringify({
+                sellingPrice: price,
+                originalPrice: p.originalPrice ?? null,
+                discountPercent,
+                category: p.category || "",
+                isVisible: p.isVisible !== false,
+                mediaUrl: p.mediaUrl || "",
+                mediaEnabled: p.mediaEnabled !== false
+              })
+            });
+            p.sellingPrice = price;
+            p.discountPercent = discountPercent;
+            document.querySelector(`#price-${CSS.escape(id)}`).dataset.proposed = "";
+            saved++;
+          } catch (error) { failed.push(p.name + ": " + error.message); }
+        }
+        if (plannerStatus) plannerStatus.textContent = saved + "টি পণ্যের দাম সংরক্ষিত হয়েছে।" + (failed.length ? " ব্যর্থ: " + failed.join(" | ") : "");
+        alert(saved + "টি পণ্যের দাম সংরক্ষণ হয়েছে।" + (failed.length ? "\nব্যর্থ: " + failed.length + "টি। বিস্তারিত উপরে দেখুন।" : ""));
+        saveProposalsButton.disabled = failed.length === 0;
+      };
 
       if (!result.data.length) {
         productsBox.textContent = "কোনো পণ্য পাওয়া যায়নি।";
