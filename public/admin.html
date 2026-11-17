@@ -458,7 +458,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
         if (!enabled && percentRaw !== "" && (!Number.isInteger(percent) || percent < 0 || percent > 90)) { alert("ছাড় ০ থেকে ৯০ শতাংশের মধ্যে দিন।"); return; }
         button.disabled = true;
         try {
-          await api(`/api/admin/products/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ sellingPrice: Number(p.sellingPrice ?? 0), originalPrice: p.originalPrice, discountPercent: Number(p.discountPercent || 0), category: p.category || "", isVisible: p.isVisible !== false, mediaUrl: p.mediaUrl || "", mediaEnabled: p.mediaEnabled !== false, specialOfferEnabled: enabled, specialOfferPercent: percent, isTrending: document.querySelector(`#trending-${CSS.escape(id)}`).checked }) });
+          await api(`/api/admin/products/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ specialOfferEnabled: enabled, specialOfferPercent: percent, isTrending: document.querySelector(`#trending-${CSS.escape(id)}`).checked }) });
           p.specialOfferEnabled = enabled; p.specialOfferPercent = percent; p.isTrending = document.querySelector(`#trending-${CSS.escape(id)}`).checked;
           alert("Featured সেটিংস সংরক্ষণ হয়েছে।");
         } catch (error) { alert(error.message); }
