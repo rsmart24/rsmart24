@@ -3004,3 +3004,105 @@ body.order-modal-open {
 .detail-payment-discount-note{margin:7px 0 12px;padding:9px 12px;border:1px solid #bbf7d0;border-radius:8px;background:#f0fdf4;color:#166534;font-size:13px;font-weight:600;line-height:1.55}
 .product-special-offer-badge{max-width:calc(100% - 18px);font-size:11px}
 .featured-discount-badge{max-width:calc(100% - 12px);font-size:9px}
+
+
+/* ===== PRICE HIGHLIGHT: COLORED CURRENT PRICE + PLAIN CROSSED PRICE ===== */
+.product-info .price {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  white-space: normal;
+}
+.product-info .price strong {
+  order: 1;
+  display: inline-flex;
+  align-items: center;
+  min-height: 31px;
+  padding: 5px 10px;
+  border: 1px solid #ff821b;
+  border-radius: 7px;
+  background: #fff0e4;
+  color: #c65308;
+  font: 800 16px/1.2 Inter, "Hind Siliguri", sans-serif;
+  white-space: nowrap;
+}
+.product-info .price .old-price {
+  order: 2;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #98a2b3;
+  font: 400 12px/1.3 Inter, "Hind Siliguri", sans-serif;
+  text-decoration: line-through;
+  white-space: nowrap;
+}
+.featured-product-price {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.featured-product-price strong {
+  order: 1;
+  display: inline-flex;
+  align-items: center;
+  min-height: 31px;
+  padding: 5px 10px;
+  border: 1px solid #ff821b;
+  border-radius: 7px;
+  background: #fff0e4;
+  color: #c65308;
+  font: 800 16px/1.2 Inter, "Hind Siliguri", sans-serif;
+  white-space: nowrap;
+}
+.featured-product-price del {
+  order: 2;
+  color: #98a2b3;
+  font: 400 12px/1.3 Inter, "Hind Siliguri", sans-serif;
+  text-decoration: line-through;
+  white-space: nowrap;
+}
+.detail-price-row {
+  gap: 10px;
+}
+.order-section .detail-price {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 7px 13px;
+  border: 1px solid #ff821b;
+  border-radius: 8px;
+  background: #fff0e4;
+  color: #c65308;
+  font: 800 25px/1.2 Inter, "Hind Siliguri", sans-serif;
+  white-space: nowrap;
+}
+.detail-old-price {
+  color: #8a929d;
+  font: 400 15px Inter, "Hind Siliguri", sans-serif;
+  text-decoration: line-through;
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .product-info .price strong,
+  .featured-product-price strong {
+    min-height: 28px;
+    padding: 4px 8px;
+    font-size: 13px;
+  }
+  .product-info .price .old-price,
+  .featured-product-price del {
+    font-size: 10px;
+  }
+  .order-section .detail-price {
+    min-height: 38px;
+    padding: 6px 10px;
+    font-size: 21px;
+  }
+  .detail-old-price {
+    font-size: 13px;
+  }
+}
