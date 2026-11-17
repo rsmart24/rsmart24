@@ -437,9 +437,13 @@ async function createOrder(request, env) {
     const unitPrice = offerPercent > 0 ? Math.max(0, Math.round(baseUnitPrice * (100 - offerPercent) / 100)) : baseUnitPrice;
     const lineSubtotal = unitPrice * quantity;
     const discountPercent = body.paymentMethod === "advance" ? Number(settings.discount_percent || 0) : 0;
-    const discountAmount = Math.round(lineSubtotal * discountPercent / 100);
+    // Round the discounted unit price once, then multiply by quantity.
+    const discountedUnitPrice = discountPercent > 0
+      ? Math.max(0, Math.round(unitPrice * (100 - discountPercent) / 100))
+      : unitPrice;
+    const discountAmount = (unitPrice - discountedUnitPrice) * quantity;
     subtotal += lineSubtotal; totalDiscount += discountAmount; totalQuantity += quantity;
-    orderItems.push({id:String(product.id),name:String(product.name || ""),quantity,unitPrice,color,size,subtotal:lineSubtotal,discountPercent,discountAmount});
+    orderItems.push({id:String(product.id),name:String(product.name || ""),quantity,unitPrice,color,size,subtotal:lineSubtotal,discountPercent,discountAmount,discountedUnitPrice});
   }
   const division = String(body.customerDivision).trim().toLowerCase();
   const isDhaka = division === "dhaka" || division === "ঢাকা";
@@ -510,8 +514,11 @@ async function sendOrderToBusinessKoro(request, env, orderId) {
   // Order items store discountAmount as a line total, so divide by quantity.
   const baseUnitPrice=Number(item.unitPrice ?? order.unit_price);
   const itemQuantity=Math.max(1,Number(item.quantity||1));
-  const lineDiscount=Number(item.discountAmount||0);
-  const sellingPrice=Math.round(baseUnitPrice - lineDiscount / itemQuantity);
+  const sellingPrice=Number(item.discountedUnitPrice ?? (
+    Number(item.discountPercent||0) > 0
+      ? Math.max(0, Math.round(baseUnitPrice * (100 - Number(item.discountPercent||0)) / 100))
+      : baseUnitPrice
+  ));
   if (!Number.isSafeInteger(sellingPrice) || sellingPrice <= 0) return json({error:"ছাড় বাদ দেওয়ার পর বিক্রয়মূল্য সঠিক নয়।"},400);
   const address=[order.customer_address,order.customer_area,order.customer_district,order.customer_division].filter(Boolean).join(", ");
   const payload={
