@@ -113,7 +113,7 @@ async function enforcePublicOrderRateLimit(request, env) {
     const retrySeconds = Math.max(1, Math.ceil((blockedUntil - now) / 1000));
     return json({ error: "অল্প সময়ে অনেকগুলো অর্ডার পাঠানো হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।" }, 429, { "Retry-After": String(retrySeconds) });
   }
-  if (Number(state?.request_count || 0) >= 8) {
+  if (Number(state?.request_count || 0) >= 21) {
     const retrySeconds = 15 * 60;
     await env.DB.prepare("UPDATE public_order_rate_limits SET blocked_until = ? WHERE ip_hash = ?").bind(now + retrySeconds * 1000, ipHash).run();
     return json({ error: "নিরাপত্তার জন্য অল্প সময়ের মধ্যে অর্ডার পাঠানো সাময়িকভাবে বন্ধ করা হয়েছে। ১৫ মিনিট পর আবার চেষ্টা করুন।" }, 429, { "Retry-After": String(retrySeconds) });
