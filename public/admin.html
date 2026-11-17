@@ -359,7 +359,8 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       const status = document.querySelector("#order-status-filter")?.value || "all";
       ordersBox.querySelectorAll(".order").forEach(card => {
         const statusSelect = card.querySelector("[data-status]");
-        card.classList.toggle("hidden", !(card.textContent.toLowerCase().includes(q) && (status === "all" || statusSelect?.value === status)));
+        const cardStatus = card.dataset.orderStatus || statusSelect?.value;
+        card.classList.toggle("hidden", !(card.textContent.toLowerCase().includes(q) && (status === "all" || cardStatus === status)));
       });
     }
     function downloadOrdersCSV() {
@@ -645,7 +646,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       ordersBox.innerHTML = result.data.map(o => {
         const status=o.status||"new", statusClass=["new","confirmed","shipped","delivered","cancelled"].includes(status)?status:"new";
         return `
-        <article class="order order-compact" data-open-order="${escapeHTML(o.id)}" tabindex="0" role="button" aria-label="অর্ডার বিস্তারিত দেখুন">
+        <article class="order order-compact" data-open-order="${escapeHTML(o.id)}" data-order-status="${escapeHTML(status)}" tabindex="0" role="button" aria-label="অর্ডার বিস্তারিত দেখুন">
           <div class="order-compact-head"><div class="order-compact-main">
             <h3>${escapeHTML(o.customer_name||"নাম দেওয়া হয়নি")}</h3>
             <div class="order-customer-line"><strong class="order-phone">${escapeHTML(o.customer_phone||"নম্বর নেই")}</strong>
