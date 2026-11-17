@@ -466,58 +466,6 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       }));
     }
 
-    function priceFloorForProduct(product) {
-      const numbers = [];
-      const collect = value => {
-        if (typeof value === "number" && Number.isFinite(value) && value > 0) numbers.push(value);
-        else if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value)) && Number(value) > 0) numbers.push(Number(value));
-        else if (value && typeof value === "object") Object.values(value).forEach(collect);
-      };
-      collect(product.minimumSellingPrice);
-      const minimumFloor = numbers.length ? Math.max(...numbers) : 0;
-      const cost = Number(product.costPrice);
-      const costFloor = Number.isFinite(cost) && cost > 0 ? Math.ceil(cost * 1.15) : 0;
-      return Math.max(minimumFloor, costFloor);
-    }
-
-    function buildPriceProposal(product) {
-      // The suggested amount becomes the customer-facing price after the
-      // advance-payment discount. COD uses the undiscounted customer price.
-      const suggestedPrice = Number(product.suggestedPrice);
-      const discountedPrice = Math.round((suggestedPrice * 0.97) / 10) * 10;
-      const floor = priceFloorForProduct(product);
-      const specialOfferPercent = product.specialOfferEnabled
-        ? Number(product.specialOfferPercent || 0)
-        : 0;
-      if (!Number.isFinite(suggestedPrice) || suggestedPrice <= 0 ||
-          !Number.isFinite(discountedPrice) || discountedPrice <= 0 || floor <= 0 ||
-          !Number.isFinite(specialOfferPercent) || specialOfferPercent < 0 || specialOfferPercent >= 100) return null;
-
-      // Pick the highest advance discount from 20% down to 10% that keeps
-      // both COD and the final advance price above the safe minimum floor.
-      for (let discountPercent = 20; discountPercent >= 10; discountPercent--) {
-        const codTarget = Math.round(discountedPrice / (1 - discountPercent / 100));
-        const sellingPrice = specialOfferPercent > 0
-          ? Math.round(codTarget / (1 - specialOfferPercent / 100))
-          : codTarget;
-        const codPrice = specialOfferPercent > 0
-          ? Math.round(sellingPrice * (100 - specialOfferPercent) / 100)
-          : sellingPrice;
-        const advancePrice = Math.round(codPrice * (100 - discountPercent) / 100);
-        if (codPrice >= floor && advancePrice >= floor && advancePrice > 0) {
-          return {
-            sellingPrice,
-            originalPrice: sellingPrice,
-            codPrice,
-            discountPercent,
-            floor,
-            advancePrice
-          };
-        }
-      }
-      return null;
-    }
-
     async function loadProducts() {
       const result = await api("/api/admin/products");
       adminProducts = Array.isArray(result.data) ? result.data : [];
@@ -573,43 +521,14 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
                 </select>
               </label>
             </div>
-            <p class="muted" id="price-proposal-${escapeHTML(p.id)}"></p>
-            <div class="product-action-row">
-              <button type="button" class="secondary" data-propose-price="${escapeHTML(p.id)}">দাম প্রস্তাব</button>
-              <button type="button" data-save="${escapeHTML(p.id)}">পরিবর্তন সংরক্ষণ</button>
+<div class="product-action-row">
+<button type="button" data-save="${escapeHTML(p.id)}">পরিবর্তন সংরক্ষণ</button>
             </div>
           </div>
         </article>
       `).join("");
 
       applyProductFilters();
-      productsBox.querySelectorAll("[data-propose-price]").forEach(button => {
-        button.addEventListener("click", () => {
-          const id = button.dataset.proposePrice;
-          const product = adminProducts.find(item => String(item.id) === String(id));
-          if (!product) return;
-          if (product.inStock === false) {
-            alert("এই পণ্যটি স্টক আউট। স্টকে আসার পর দাম প্রস্তাব তৈরি করুন।");
-            return;
-          }
-          const proposal = buildPriceProposal(product);
-          if (!proposal) {
-            alert("এই পণ্যের নির্ভরযোগ্য Suggested Price অথবা ক্রয়মূল্য/ন্যূনতম বিক্রয়মূল্য নেই। তাই নিরাপদ দাম প্রস্তাব করা যাচ্ছে না।");
-            return;
-          }
-          const priceInput = document.querySelector(`#price-${CSS.escape(id)}`);
-          const discountInput = document.querySelector(`#discount-${CSS.escape(id)}`);
-          const summary = document.querySelector(`#price-proposal-${CSS.escape(id)}`);
-          if (!priceInput || !discountInput) return;
-          priceInput.value = proposal.advancePrice;
-          discountInput.value = proposal.discountPercent;
-          if (summary) summary.textContent =
-            "Cash on Delivery / কাটা দাম ৳" + proposal.codPrice.toLocaleString("en-BD") +
-            " · অগ্রিমে " + proposal.discountPercent + "% ছাড়ের পর বড় করে দেখাবে ৳" + proposal.advancePrice.toLocaleString("en-BD") +
-            " · ন্যূনতম নিরাপদ দাম ৳" + proposal.floor.toLocaleString("en-BD") +
-            " — সংরক্ষণ না করা পর্যন্ত ওয়েবসাইটে পরিবর্তন হবে না।";
-        });
-      });
       productsBox.querySelectorAll("[data-save]").forEach(button => {
         button.addEventListener("click", async () => {
           const id = button.dataset.save;
