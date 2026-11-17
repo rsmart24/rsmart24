@@ -802,7 +802,7 @@ export default {
           );
         }
         if (orderMatch && method === "DELETE") {
-          return await deleteOrder(env, decodeURIComponent(orderMatch[1]));
+          return await archiveOrder(env, decodeURIComponent(orderMatch[1]), false);
         }
 
         return json({ error: "Admin API route not found." }, 404);
