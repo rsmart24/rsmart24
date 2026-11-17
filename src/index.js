@@ -125,6 +125,7 @@ async function enforcePhoneOrderRateLimit(phone, env) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("rs-mart-order-phone:" + phone));
   const phoneHash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
   const now = Date.now();
+  await env.DB.prepare("DELETE FROM public_order_phone_limits WHERE window_started_at < ? AND blocked_until < ?").bind(now - 86400000, now).run();
   const state = await env.DB.prepare(`
     INSERT INTO public_order_phone_limits (phone_hash, request_count, window_started_at, blocked_until) VALUES (?, 1, ?, 0)
     ON CONFLICT(phone_hash) DO UPDATE SET
