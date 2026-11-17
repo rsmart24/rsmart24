@@ -501,7 +501,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       if (makeProposalsButton) makeProposalsButton.onclick = () => {
         let prepared = 0, skipped = 0, protectedCount = 0;
         adminProducts.forEach(p => {
-          if (p.inStock === false) { skipped++; return; }
+          if (p.inStock === false || (p.specialOfferEnabled && Number(p.specialOfferPercent) > 0)) { skipped++; return; }
           const proposal = buildPriceProposal(p);
           if (!proposal) { skipped++; return; }
           const id = String(p.id);
@@ -511,6 +511,8 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
           priceInput.value = proposal.sellingPrice;
           priceInput.dataset.proposed = "yes";
           discountInput.value = proposal.discountPercent;
+          const summary = document.querySelector(`#price-proposal-${CSS.escape(id)}`);
+          if (summary) summary.textContent = "প্রস্তাব: সাধারণ ৳" + proposal.sellingPrice.toLocaleString("en-BD") + " · অগ্রিম ছাড়ের পর ৳" + proposal.advancePrice.toLocaleString("en-BD") + " · ন্যূনতম সীমা ৳" + proposal.floor.toLocaleString("en-BD");
           prepared++;
           if (proposal.sellingPrice > proposal.suggested) protectedCount++;
         });
@@ -611,6 +613,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
                 </select>
               </label>
             </div>
+            <p class="muted" id="price-proposal-${escapeHTML(p.id)}"></p>
             <button data-save="${escapeHTML(p.id)}">পরিবর্তন সংরক্ষণ</button>
           </div>
         </article>
