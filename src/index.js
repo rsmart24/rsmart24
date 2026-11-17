@@ -278,7 +278,9 @@ async function adminProducts(env) {
 
   const products = catalog.products.map(p => ({
     ...publicProduct(p, settings.get(String(p.id))),
-    suggestedPrice: p.suggestedPrice
+    suggestedPrice: p.suggestedPrice,
+    costPrice: p.costPrice ?? p.cost_price ?? null,
+    minimumSellingPrice: p.minimumSellingPrice ?? p.minimum_selling_price ?? null
   }));
 
   return json({ data: products });
