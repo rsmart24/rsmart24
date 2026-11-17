@@ -544,7 +544,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
             <label>Price (ওয়েবসাইটে বড় করে দেখাবে — ৳)
   <input type="number" min="1" step="1"
     id="price-${escapeHTML(p.id)}"
-    value="${p.sellingPrice != null ? Math.round(Number(p.sellingPrice) * (100 - Number(p.discountPercent || 0)) / 100) : ""}" placeholder="ডিসকাউন্টের পরের দাম" required>
+    value="${p.sellingPrice != null ? Math.round(Number(p.sellingPrice) * (100 - (Number(p.discountPercent) >= 10 && Number(p.discountPercent) <= 20 ? Number(p.discountPercent) : 10)) / 100) : ""}" placeholder="ডিসকাউন্টের পরের দাম" required>
 </label>
               <label>Discount (%)
                 <input type="number" min="10" max="20" step="1"
