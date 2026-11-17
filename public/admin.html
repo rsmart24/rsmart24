@@ -481,24 +481,30 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
     }
 
     function buildPriceProposal(product) {
-      // suggestedPrice is the crossed-out/original price, not the selling price.
-      const originalPrice = Number(product.suggestedPrice);
+      // The suggested amount becomes the customer-facing price after the
+      // advance-payment discount. COD uses the undiscounted sellingPrice.
+      const suggestedPrice = Number(product.suggestedPrice);
+      const discountedPrice = Math.round((suggestedPrice * 0.97) / 10) * 10;
       const floor = priceFloorForProduct(product);
-      if (!Number.isFinite(originalPrice) || originalPrice <= 0 || floor <= 0) return null;
-      const sellingPrice = Math.round((originalPrice * 0.97) / 10) * 10;
-      // Never suggest a sale price below the safe floor, or an original price
-      // that is not higher than the actual selling price.
-      if (sellingPrice < floor || originalPrice <= sellingPrice) return null;
-      const discountPercent = [20, 15, 10].find(percent =>
-        Math.round(sellingPrice * (100 - percent) / 100) >= floor
-      ) || 0;
-      return {
-        originalPrice,
-        sellingPrice,
-        discountPercent,
-        floor,
-        advancePrice: Math.round(sellingPrice * (100 - discountPercent) / 100)
-      };
+      if (!Number.isFinite(suggestedPrice) || suggestedPrice <= 0 ||
+          !Number.isFinite(discountedPrice) || discountedPrice <= 0 || floor <= 0) return null;
+
+      // Pick the highest advance discount from 20% down to 10% that keeps
+      // the discounted amount above the product's safe minimum floor.
+      for (let discountPercent = 20; discountPercent >= 10; discountPercent--) {
+        const sellingPrice = Math.round(discountedPrice / (1 - discountPercent / 100));
+        const advancePrice = Math.round(sellingPrice * (100 - discountPercent) / 100);
+        if (sellingPrice >= floor && advancePrice >= floor && advancePrice > 0) {
+          return {
+            sellingPrice,
+            originalPrice: sellingPrice,
+            discountPercent,
+            floor,
+            advancePrice
+          };
+        }
+      }
+      return null;
     }
 
     async function loadProducts() {
@@ -594,9 +600,8 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
           originalPriceInput.value = proposal.originalPrice;
           discountInput.value = proposal.discountPercent;
           if (summary) summary.textContent =
-            "কাটা দাম ৳" + proposal.originalPrice.toLocaleString("en-BD") +
-            " · বিক্রয়মূল্য ৳" + proposal.sellingPrice.toLocaleString("en-BD") +
-            " · অগ্রিম ছাড়ের পর ৳" + proposal.advancePrice.toLocaleString("en-BD") +
+            "Cash on Delivery / কাটা দাম ৳" + proposal.sellingPrice.toLocaleString("en-BD") +
+            " · অগ্রিমে " + proposal.discountPercent + "% ছাড়ের পর বড় করে দেখাবে ৳" + proposal.advancePrice.toLocaleString("en-BD") +
             " · ন্যূনতম নিরাপদ দাম ৳" + proposal.floor.toLocaleString("en-BD") +
             " — সংরক্ষণ না করা পর্যন্ত ওয়েবসাইটে পরিবর্তন হবে না।";
         });
