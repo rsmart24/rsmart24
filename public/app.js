@@ -700,7 +700,11 @@ form.addEventListener("submit", async event => {
     paymentMethod: data.get("paymentMethod") || "cod",
     transactionId: data.get("transactionId") || ""
   };
-  window.rsMartPendingSubmissionKey = window.rsMartPendingSubmissionKey || crypto.randomUUID();
+  const submissionFingerprint = JSON.stringify(payload);
+  if (!window.rsMartPendingSubmissionKey || window.rsMartPendingSubmissionFingerprint !== submissionFingerprint) {
+    window.rsMartPendingSubmissionKey = crypto.randomUUID();
+    window.rsMartPendingSubmissionFingerprint = submissionFingerprint;
+  }
   payload.submissionKey = window.rsMartPendingSubmissionKey;
 
   try {
@@ -717,6 +721,7 @@ form.addEventListener("submit", async event => {
     }
 
     window.rsMartPendingSubmissionKey = null;
+    window.rsMartPendingSubmissionFingerprint = null;
     form.reset();
     if(cartCheckoutMode){localStorage.removeItem("rsMartCart");updateCartCount();renderCartPage();}
     cartCheckoutMode=false;chosenCartItems=null;multiOrderItems=[];orderOriginView="products";orderSection.classList.remove("cart-checkout-mode");
