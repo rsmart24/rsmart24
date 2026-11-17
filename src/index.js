@@ -122,10 +122,7 @@ async function ensureOrderSchema(env) {
     ["business_koro_response", "TEXT"],
     ["business_koro_sent_at", "TEXT"],
     ["business_koro_live_status", "TEXT"],
-    ["business_koro_status_checked_at", "TEXT"],
-    ["courier_tracking_code", "TEXT"],
-    ["courier_live_status", "TEXT"],
-    ["courier_status_checked_at", "TEXT"]
+    ["business_koro_status_checked_at", "TEXT"]
   ];
   for (const [name, definition] of additions) {
     if (!orderNames.has(name)) {
@@ -587,21 +584,7 @@ async function refreshExternalOrderStatuses(env, orders) {
         }
       } catch (error) { console.error("Business Koro status refresh failed:", error?.message || "Unknown error"); }
     }
-    const courierChecked = Date.parse(order.courier_status_checked_at || "");
-    if (order.courier_tracking_code && env.STEADFAST_API_KEY && env.STEADFAST_SECRET_KEY && (!Number.isFinite(courierChecked) || now - courierChecked > 120000)) {
-      try {
-        const response = await fetch("https://portal.packzy.com/api/v1/status_by_trackingcode/" + encodeURIComponent(order.courier_tracking_code), {
-          headers: { "Api-Key": env.STEADFAST_API_KEY, "Secret-Key": env.STEADFAST_SECRET_KEY, "Accept": "application/json" }
-        });
-        let data = {};
-        try { data = await response.json(); } catch {}
-        if (response.ok) {
-          const status = findExternalStatus(data);
-          if (status) await env.DB.prepare("UPDATE orders SET courier_live_status=?, courier_status_checked_at=CURRENT_TIMESTAMP WHERE id=?").bind(status.slice(0, 100), order.id).run();
-          else await env.DB.prepare("UPDATE orders SET courier_status_checked_at=CURRENT_TIMESTAMP WHERE id=?").bind(order.id).run();
-        }
-      } catch (error) { console.error("Steadfast status refresh failed:", error?.message || "Unknown error"); }
-    }
+
   }));
 }
 
@@ -621,7 +604,7 @@ async function deleteOrder(env, orderId) {
   if (!result.meta?.changes) return json({ error: "অর্ডার পাওয়া যায়নি।" }, 404);
   return json({ success: true, deleted: true });
 }
-async function updateOrderStatus(request,env,orderId){await ensureOrderSchema(env);let b;try{b=await request.json()}catch{return json({error:"সঠিক তথ্য পাঠান।"},400)}const allowed=["new","confirmed","shipped","delivered","cancelled"],pay=["pending_manual","verified","rejected"],sets=[],vals=[];if(b.status!==undefined){if(!allowed.includes(b.status))return json({error:"অর্ডারের অবস্থা সঠিক নয়।"},400);sets.push("status=?");vals.push(b.status)}if(b.paymentVerificationStatus!==undefined){if(!pay.includes(b.paymentVerificationStatus))return json({error:"পেমেন্ট যাচাইয়ের অবস্থা সঠিক নয়।"},400);sets.push("payment_verification_status=?");vals.push(b.paymentVerificationStatus)}if(b.courierTrackingCode!==undefined){const t=String(b.courierTrackingCode||"").trim();if(t.length>100||(t&&!/^[A-Za-z0-9-]+$/.test(t)))return json({error:"কুরিয়ার Tracking ID সঠিক নয়।"},400);sets.push("courier_tracking_code=?");vals.push(t||null);sets.push("courier_live_status=NULL","courier_status_checked_at=NULL")}if(!sets.length)return json({error:"কোনো পরিবর্তন পাওয়া যায়নি।"},400);vals.push(orderId);const r=await env.DB.prepare("UPDATE orders SET "+sets.join(", ")+" WHERE id=?").bind(...vals).run();if(!r.meta?.changes)return json({error:"অর্ডার পাওয়া যায়নি।"},404);return json({success:true})}
+async function updateOrderStatus(request,env,orderId){await ensureOrderSchema(env);let b;try{b=await request.json()}catch{return json({error:"সঠিক তথ্য পাঠান।"},400)}const allowed=["new","confirmed","shipped","delivered","cancelled"],pay=["pending_manual","verified","rejected"],sets=[],vals=[];if(b.status!==undefined){if(!allowed.includes(b.status))return json({error:"অর্ডারের অবস্থা সঠিক নয়।"},400);sets.push("status=?");vals.push(b.status)}if(b.paymentVerificationStatus!==undefined){if(!pay.includes(b.paymentVerificationStatus))return json({error:"পেমেন্ট যাচাইয়ের অবস্থা সঠিক নয়।"},400);sets.push("payment_verification_status=?");vals.push(b.paymentVerificationStatus)}if(!sets.length)return json({error:"কোনো পরিবর্তন পাওয়া যায়নি।"},400);vals.push(orderId);const r=await env.DB.prepare("UPDATE orders SET "+sets.join(", ")+" WHERE id=?").bind(...vals).run();if(!r.meta?.changes)return json({error:"অর্ডার পাওয়া যায়নি।"},404);return json({success:true})}
 
 export default {
   async fetch(request, env) {
