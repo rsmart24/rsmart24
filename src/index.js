@@ -285,44 +285,41 @@ async function adminProducts(env) {
 
 async function saveProductSettings(request, env, productId) {
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "সঠিক তথ্য পাঠান।" }, 400);
-  }
+  try { body = await request.json(); }
+  catch { return json({ error: "সঠিক তথ্য পাঠান।" }, 400); }
+  if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "সঠিক তথ্য পাঠান।" }, 400);
 
   await ensureOrderSchema(env);
-  const price = Number(body.sellingPrice);
-  if (!Number.isSafeInteger(price) || price < 0) {
-    return json({ error: "বিক্রয়মূল্য সঠিকভাবে লিখুন।" }, 400);
-  }
+  // Merge updates with the stored row so omitted fields can never be erased.
+  const existing = await env.DB.prepare("SELECT * FROM product_settings WHERE product_id = ?").bind(String(productId)).first();
+  const has = key => Object.prototype.hasOwnProperty.call(body, key);
 
-  const originalPrice = body.originalPrice == null || body.originalPrice === ""
-    ? null
-    : Number(body.originalPrice);
-  if (originalPrice !== null && (!Number.isSafeInteger(originalPrice) || originalPrice < 0)) {
-    return json({ error: "পুরোনো দাম সঠিকভাবে লিখুন।" }, 400);
-  }
+  const price = has("sellingPrice") ? Number(body.sellingPrice) : Number(existing?.selling_price);
+  if (!Number.isSafeInteger(price) || price < 0) return json({ error: "বিক্রয়মূল্য সঠিকভাবে লিখুন।" }, 400);
 
-  const discountPercent = Number(body.discountPercent ?? 0);
-  if (!Number.isInteger(discountPercent) || discountPercent < 0 || discountPercent > 90) {
-    return json({ error: "অগ্রিম পেমেন্ট ছাড় ০ থেকে ৯০ শতাংশের মধ্যে দিন।" }, 400);
-  }
-  const category = String(body.category || "").trim().slice(0, 100);
-  const isVisible = body.isVisible === false ? 0 : 1;
-  const mediaUrl = String(body.mediaUrl || "").trim().slice(0, 2000);
+  const originalPrice = has("originalPrice")
+    ? (body.originalPrice == null || body.originalPrice === "" ? null : Number(body.originalPrice))
+    : (existing?.original_price == null ? null : Number(existing.original_price));
+  if (originalPrice !== null && (!Number.isSafeInteger(originalPrice) || originalPrice < 0)) return json({ error: "পুরোনো দাম সঠিকভাবে লিখুন।" }, 400);
+
+  const discountPercent = has("discountPercent") ? Number(body.discountPercent) : Number(existing?.discount_percent || 0);
+  if (!Number.isInteger(discountPercent) || discountPercent < 0 || discountPercent > 90) return json({ error: "অগ্রিম পেমেন্ট ছাড় ০ থেকে ৯০ শতাংশের মধ্যে দিন।" }, 400);
+
+  const category = has("category") ? String(body.category ?? "").trim().slice(0, 100) : String(existing?.category || "");
+  const isVisible = has("isVisible") ? (body.isVisible === false ? 0 : 1) : Number(existing?.is_visible ?? 1);
+  const mediaUrl = has("mediaUrl") ? String(body.mediaUrl ?? "").trim().slice(0, 2000) : String(existing?.media_url || "");
   if (mediaUrl) {
-    try { const parsed = new URL(mediaUrl); if (parsed.protocol !== "https:" || !["drive.google.com", "docs.google.com"].includes(parsed.hostname)) return json({ error: "Google Drive-এর HTTPS লিংক দিন।" }, 400); }
-    catch { return json({ error: "Google Drive-এর সঠিক লিংক দিন।" }, 400); }
+    try {
+      const parsed = new URL(mediaUrl);
+      if (parsed.protocol !== "https:" || !["drive.google.com", "docs.google.com"].includes(parsed.hostname)) return json({ error: "Google Drive-এর HTTPS লিংক দিন।" }, 400);
+    } catch { return json({ error: "Google Drive-এর সঠিক লিংক দিন।" }, 400); }
   }
-  const mediaEnabled = body.mediaEnabled === false ? 0 : 1;
-  const existingFeatured = await env.DB.prepare("SELECT special_offer_enabled,special_offer_percent,is_trending FROM product_settings WHERE product_id = ?").bind(String(productId)).first();
-  const specialOfferEnabled = body.specialOfferEnabled === undefined ? Number(existingFeatured?.special_offer_enabled || 0) : (body.specialOfferEnabled === true ? 1 : 0);
-  const specialOfferPercent = Number(body.specialOfferPercent ?? existingFeatured?.special_offer_percent ?? 0);
-  if (!Number.isInteger(specialOfferPercent) || specialOfferPercent < 0 || specialOfferPercent > 90 || (specialOfferEnabled && specialOfferPercent < 1)) {
-    return json({ error: "স্পেশাল অফারের ছাড় ১ থেকে ৯০ শতাংশের মধ্যে দিন।" }, 400);
-  }
-  const isTrending = body.isTrending === undefined ? Number(existingFeatured?.is_trending || 0) : (body.isTrending === true ? 1 : 0);
+  const mediaEnabled = has("mediaEnabled") ? (body.mediaEnabled === false ? 0 : 1) : Number(existing?.media_enabled ?? 1);
+  const specialOfferEnabled = has("specialOfferEnabled") ? (body.specialOfferEnabled === true ? 1 : 0) : Number(existing?.special_offer_enabled || 0);
+  const specialOfferPercent = has("specialOfferPercent") ? Number(body.specialOfferPercent) : Number(existing?.special_offer_percent || 0);
+  if (!Number.isInteger(specialOfferPercent) || specialOfferPercent < 0 || specialOfferPercent > 90 || (specialOfferEnabled && specialOfferPercent < 1)) return json({ error: "স্পেশাল অফারের ছাড় ১ থেকে ৯০ শতাংশের মধ্যে দিন।" }, 400);
+  const isTrending = has("isTrending") ? (body.isTrending === true ? 1 : 0) : Number(existing?.is_trending || 0);
+
   await env.DB.prepare(`
     INSERT INTO product_settings (product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, special_offer_enabled, special_offer_percent, is_trending, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
