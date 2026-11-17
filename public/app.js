@@ -700,6 +700,8 @@ form.addEventListener("submit", async event => {
     paymentMethod: data.get("paymentMethod") || "cod",
     transactionId: data.get("transactionId") || ""
   };
+  window.rsMartPendingSubmissionKey = window.rsMartPendingSubmissionKey || crypto.randomUUID();
+  payload.submissionKey = window.rsMartPendingSubmissionKey;
 
   try {
     const response = await fetch("/api/orders", {
@@ -714,6 +716,7 @@ form.addEventListener("submit", async event => {
       throw new Error(result.error || result.message || "অর্ডার জমা হয়নি।");
     }
 
+    window.rsMartPendingSubmissionKey = null;
     form.reset();
     if(cartCheckoutMode){localStorage.removeItem("rsMartCart");updateCartCount();renderCartPage();}
     cartCheckoutMode=false;chosenCartItems=null;multiOrderItems=[];orderOriginView="products";orderSection.classList.remove("cart-checkout-mode");
