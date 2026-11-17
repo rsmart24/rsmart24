@@ -113,10 +113,31 @@ async function enforcePublicOrderRateLimit(request, env) {
     const retrySeconds = Math.max(1, Math.ceil((blockedUntil - now) / 1000));
     return json({ error: "অল্প সময়ে অনেকগুলো অর্ডার পাঠানো হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।" }, 429, { "Retry-After": String(retrySeconds) });
   }
-  if (Number(state?.request_count || 0) >= 21) {
-    const retrySeconds = 15 * 60;
+  if (Number(state?.request_count || 0) >= 41) {
+    const retrySeconds = 5 * 60;
     await env.DB.prepare("UPDATE public_order_rate_limits SET blocked_until = ? WHERE ip_hash = ?").bind(now + retrySeconds * 1000, ipHash).run();
-    return json({ error: "নিরাপত্তার জন্য অল্প সময়ের মধ্যে অর্ডার পাঠানো সাময়িকভাবে বন্ধ করা হয়েছে। ১৫ মিনিট পর আবার চেষ্টা করুন।" }, 429, { "Retry-After": String(retrySeconds) });
+    return json({ error: "একই নেটওয়ার্ক থেকে অনেকগুলো অর্ডার পাঠানো হয়েছে। ৫ মিনিট পর আবার চেষ্টা করুন।" }, 429, { "Retry-After": String(retrySeconds) });
+  }
+  return null;
+}
+
+async function enforcePhoneOrderRateLimit(phone, env) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("rs-mart-order-phone:" + phone));
+  const phoneHash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+  const now = Date.now();
+  await env.DB.prepare("DELETE FROM public_order_phone_limits WHERE window_started_at < ? AND blocked_until < ?").bind(now - 86400000, now).run();
+  const state = await env.DB.prepare(`
+    INSERT INTO public_order_phone_limits (phone_hash, request_count, window_started_at, blocked_until) VALUES (?, 1, ?, 0)
+    ON CONFLICT(phone_hash) DO UPDATE SET
+      request_count = CASE WHEN public_order_phone_limits.blocked_until > excluded.window_started_at THEN public_order_phone_limits.request_count WHEN excluded.window_started_at - public_order_phone_limits.window_started_at >= 600000 THEN 1 ELSE public_order_phone_limits.request_count + 1 END,
+      window_started_at = CASE WHEN public_order_phone_limits.blocked_until > excluded.window_started_at THEN public_order_phone_limits.window_started_at WHEN excluded.window_started_at - public_order_phone_limits.window_started_at >= 600000 THEN excluded.window_started_at ELSE public_order_phone_limits.window_started_at END
+    RETURNING request_count, blocked_until
+  `).bind(phoneHash, now).first();
+  const blockedUntil = Number(state?.blocked_until || 0);
+  if (blockedUntil > now) return json({ error: "এই মোবাইল নম্বর থেকে অল্প সময়ে অনেকগুলো অর্ডার এসেছে। কিছুক্ষণ পর আবার চেষ্টা করুন।" }, 429, { "Retry-After": String(Math.ceil((blockedUntil-now)/1000)) });
+  if (Number(state?.request_count || 0) >= 5) {
+    await env.DB.prepare("UPDATE public_order_phone_limits SET blocked_until = ? WHERE phone_hash = ?").bind(now + 900000, phoneHash).run();
+    return json({ error: "এই নম্বর দিয়ে ১০ মিনিটে সর্বোচ্চ ৪টি অর্ডার করা যাবে। ১৫ মিনিট পর আবার চেষ্টা করুন।" }, 429, { "Retry-After": "900" });
   }
   return null;
 }
@@ -157,7 +178,9 @@ async function ensureOrderSchema(env) {
     ["business_koro_response", "TEXT"],
     ["business_koro_sent_at", "TEXT"],
     ["business_koro_live_status", "TEXT"],
-    ["business_koro_status_checked_at", "TEXT"]
+    ["business_koro_status_checked_at", "TEXT"],
+    ["submission_key", "TEXT"],
+    ["archived_at", "TEXT"]
   ];
   for (const [name, definition] of additions) {
     if (!orderNames.has(name)) {
@@ -168,6 +191,8 @@ async function ensureOrderSchema(env) {
       }
     }
   }
+  await env.DB.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_submission_key ON orders(submission_key)").run();
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS public_order_phone_limits (phone_hash TEXT PRIMARY KEY, request_count INTEGER NOT NULL DEFAULT 0, window_started_at INTEGER NOT NULL, blocked_until INTEGER NOT NULL DEFAULT 0)").run();
 }
 
 async function getSettings(env) {
@@ -433,6 +458,12 @@ async function createOrder(request, env) {
   let body;
   try { body = await request.json(); }
   catch { return json({ error: "অর্ডারের তথ্য সঠিকভাবে পাওয়া যায়নি।" }, 400); }
+  const submissionKey = String(body.submissionKey || "").trim();
+  if (submissionKey && !/^[0-9a-f-]{36}$/i.test(submissionKey)) return json({ error: "অর্ডার জমার অনুরোধটি সঠিক নয়। পেজ রিফ্রেশ করে আবার চেষ্টা করুন।" }, 400);
+  if (submissionKey) {
+    const previous = await env.DB.prepare("SELECT id FROM orders WHERE submission_key = ?").bind(submissionKey).first();
+    if (previous) return json({ success: true, orderId: previous.id, duplicate: true, message: "এই অর্ডারটি আগেই জমা হয়েছে।" }, 200);
+  }
   const required = ["customerName","customerPhone","customerAddress","customerDivision","customerDistrict","customerArea"];
   for (const key of required) {
     if (body[key] === undefined || String(body[key]).trim() === "") return json({ error: "অনুগ্রহ করে " + key + " পূরণ করুন।" }, 400);
@@ -443,6 +474,8 @@ async function createOrder(request, env) {
   if (!/^(?:01[3-9][0-9]{8}|\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})$/.test(customerPhone)) {
     return json({ error: "সঠিক বাংলাদেশি মোবাইল নম্বর দিন (যেমন 017XXXXXXXX)।" }, 400);
   }
+  const phoneLimitResponse = await enforcePhoneOrderRateLimit(customerPhone, env);
+  if (phoneLimitResponse) return phoneLimitResponse;
   const requestedItems = Array.isArray(body.items) && body.items.length ? body.items : [{ id: body.productId, quantity: body.quantity || 1, color: body.color || "", size: body.size || "" }];
   if (requestedItems.length > 20) return json({error:"এক অর্ডারে সর্বোচ্চ ২০ ধরনের পণ্য যোগ করতে পারবেন।"},400);
   const catalog = await getCatalog(env);
@@ -492,19 +525,17 @@ async function createOrder(request, env) {
   const first = orderItems[0];
   const productName = orderItems.length === 1 ? first.name : "একাধিক পণ্য (" + orderItems.length + " ধরনের)";
   const effectiveDiscountPercent = subtotal ? Math.round(totalDiscount * 100 / subtotal) : 0;
-  await env.DB.prepare(
-    "INSERT INTO orders (id,product_id,product_name,customer_name,customer_phone,customer_division,customer_district,customer_area,customer_address,color,size,quantity,unit_price,delivery_charge,total_amount,note,payment_method,discount_percent,discount_amount,advance_payment_amount,transaction_id,transaction_id_format_valid,payment_verification_status,order_items_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-  ).bind(
-    orderId,String(first.id),productName,
-    String(body.customerName).trim().slice(0,100),customerPhone.slice(0,20),
-    String(body.customerDivision).trim().slice(0,100),String(body.customerDistrict).trim().slice(0,100),
-    String(body.customerArea).trim().slice(0,150),String(body.customerAddress).trim().slice(0,500),
-    orderItems.length===1?first.color:"",orderItems.length===1?first.size:"",
-    totalQuantity,subtotal,deliveryCharge,totalAmount,String(body.customerNote||"").trim().slice(0,500),
-    paymentMethod,effectiveDiscountPercent,totalDiscount,advancePaymentAmount,
-    paymentMethod==="advance"?transactionId:null,transactionIdFormatValid?1:0,
-    paymentMethod==="advance"?"pending_manual":"not_required",JSON.stringify(orderItems)
-  ).run();
+  try {
+    await env.DB.prepare(
+      "INSERT INTO orders (id,product_id,product_name,customer_name,customer_phone,customer_division,customer_district,customer_area,customer_address,color,size,quantity,unit_price,delivery_charge,total_amount,note,payment_method,discount_percent,discount_amount,advance_payment_amount,transaction_id,transaction_id_format_valid,payment_verification_status,order_items_json,submission_key) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    ).bind(orderId,String(first.id),productName,String(body.customerName).trim().slice(0,100),customerPhone.slice(0,20),String(body.customerDivision).trim().slice(0,100),String(body.customerDistrict).trim().slice(0,100),String(body.customerArea).trim().slice(0,150),String(body.customerAddress).trim().slice(0,500),orderItems.length===1?first.color:"",orderItems.length===1?first.size:"",totalQuantity,subtotal,deliveryCharge,totalAmount,String(body.customerNote||"").trim().slice(0,500),paymentMethod,effectiveDiscountPercent,totalDiscount,advancePaymentAmount,paymentMethod==="advance"?transactionId:null,transactionIdFormatValid?1:0,paymentMethod==="advance"?"pending_manual":"not_required",JSON.stringify(orderItems),submissionKey || null).run();
+  } catch (error) {
+    if (submissionKey && /unique|constraint/i.test(String(error?.message || error))) {
+      const previous = await env.DB.prepare("SELECT id FROM orders WHERE submission_key = ?").bind(submissionKey).first();
+      if (previous) return json({ success: true, orderId: previous.id, duplicate: true, message: "এই অর্ডারটি আগেই জমা হয়েছে।" }, 200);
+    }
+    throw error;
+  }
   await sendTelegramOrderAlert(env, {
     id: orderId,
     items: orderItems,
@@ -579,15 +610,16 @@ async function sendOrderToBusinessKoro(request, env, orderId) {
     let data; try { data=JSON.parse(raw); } catch { data={message:raw.slice(0,1000)}; }
     if (!response.ok) {
       const message=String(data?.message || data?.error || "Business Koro অর্ডার গ্রহণ করেনি।").slice(0,1500);
-      await env.DB.prepare("UPDATE orders SET business_koro_status='failed', business_koro_response=? WHERE id=?").bind(JSON.stringify(data).slice(0,5000),orderId).run();
-      return json({error:message,details:data},response.status>=400&&response.status<500?400:502);
+      const outcome = response.status >= 500 ? "unknown" : "failed";
+      await env.DB.prepare("UPDATE orders SET business_koro_status=?, business_koro_response=? WHERE id=?").bind(outcome,JSON.stringify(data).slice(0,5000),orderId).run();
+      return json({error: outcome === "unknown" ? "Business Koro-র উত্তর নিশ্চিত নয়। ডুপ্লিকেট এড়াতে আবার পাঠানো বন্ধ রাখা হয়েছে। Business Koro-তে অর্ডারটি আগে যাচাই করুন।" : message,details:data},response.status>=400&&response.status<500?400:502);
     }
     const externalId=data?.data?.id ?? data?.order?.id ?? data?.orderId ?? data?.id ?? null;
     await env.DB.prepare("UPDATE orders SET business_koro_status='sent', business_koro_order_id=?, business_koro_response=?, business_koro_sent_at=CURRENT_TIMESTAMP WHERE id=?").bind(externalId==null?null:String(externalId),JSON.stringify(data).slice(0,5000),orderId).run();
     return json({success:true,businessKoroOrderId:externalId,message:"Business Koro-তে অর্ডার পাঠানো হয়েছে।",response:data});
   } catch(error) {
-    await env.DB.prepare("UPDATE orders SET business_koro_status='failed', business_koro_response=? WHERE id=?").bind(JSON.stringify({message:String(error?.message||error)}).slice(0,5000),orderId).run();
-    return json({error:"Business Koro সার্ভারে সংযোগ করা যায়নি। "+String(error?.message||"")},502);
+    await env.DB.prepare("UPDATE orders SET business_koro_status='unknown', business_koro_response=? WHERE id=?").bind(JSON.stringify({message:String(error?.message||error),outcome:"unknown"}).slice(0,5000),orderId).run();
+    return json({error:"Business Koro-র কাছে অর্ডার পৌঁছেছে কি না নিশ্চিত হওয়া যায়নি। ডুপ্লিকেট এড়াতে পুনরায় পাঠানো বন্ধ রাখা হয়েছে। Business Koro-তে আগে যাচাই করুন।"},502);
   }
 }
 
@@ -630,7 +662,8 @@ async function adminOrders(env, url) {
   const requestedStatus = String(url.searchParams.get("status") || "all");
   const allowedStatuses = ["new", "confirmed", "shipped", "delivered", "cancelled"];
   const status = allowedStatuses.includes(requestedStatus) ? requestedStatus : "all";
-  const conditions = [];
+  const archivedOnly = url.searchParams.get("archived") === "1";
+  const conditions = [archivedOnly ? "archived_at IS NOT NULL" : "archived_at IS NULL"];
   const filterValues = [];
   if (query) {
     conditions.push("(CAST(id AS TEXT) LIKE ? OR customer_name LIKE ? OR customer_phone LIKE ? OR product_name LIKE ?)");
@@ -647,7 +680,7 @@ async function adminOrders(env, url) {
       SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) AS new_orders,
       SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) AS delivered_orders,
       SUM(CASE WHEN status != 'cancelled' THEN total_amount ELSE 0 END) AS total_sales
-    FROM orders
+    FROM orders WHERE archived_at IS NULL
   `).first();
   const countResult = await env.DB.prepare("SELECT COUNT(*) AS total FROM orders" + where).bind(...filterValues).first();
   const total = Number(countResult?.total || 0);
@@ -670,11 +703,23 @@ async function adminOrders(env, url) {
   });
 }
 
-async function deleteOrder(env, orderId) {
+async function archiveOrder(env, orderId, restore = false) {
   await ensureOrderSchema(env);
-  const result = await env.DB.prepare("DELETE FROM orders WHERE id = ?").bind(orderId).run();
-  if (!result.meta?.changes) return json({ error: "অর্ডার পাওয়া যায়নি।" }, 404);
-  return json({ success: true, deleted: true });
+  const result = restore ? await env.DB.prepare("UPDATE orders SET archived_at = NULL WHERE id = ? AND archived_at IS NOT NULL").bind(orderId).run() : await env.DB.prepare("UPDATE orders SET archived_at = CURRENT_TIMESTAMP WHERE id = ? AND archived_at IS NULL").bind(orderId).run();
+  if (!result.meta?.changes) return json({ error: "অর্ডার পাওয়া যায়নি বা অবস্থা ইতিমধ্যে পরিবর্তিত হয়েছে।" }, 404);
+  return json({ success: true, archived: !restore, restored: restore });
+}
+async function exportOrdersCSV(env, url) {
+  await ensureOrderSchema(env);
+  const archivedOnly = url.searchParams.get("archived") === "1", conditions = [archivedOnly ? "archived_at IS NOT NULL" : "archived_at IS NULL"], values = [];
+  const q = String(url.searchParams.get("q") || "").trim().slice(0,100), status = String(url.searchParams.get("status") || "all");
+  if(q){conditions.push("(CAST(id AS TEXT) LIKE ? OR customer_name LIKE ? OR customer_phone LIKE ? OR product_name LIKE ?)");const p="%"+q+"%";values.push(p,p,p,p);}
+  if(["new","confirmed","shipped","delivered","cancelled"].includes(status)){conditions.push("status = ?");values.push(status);}
+  const result=await env.DB.prepare("SELECT * FROM orders WHERE "+conditions.join(" AND ")+" ORDER BY created_at DESC,id DESC").bind(...values).all();
+  const headers=["Order ID","Date","Customer","Phone","Product","Quantity","Product price","Delivery","Total","Payment","Transaction ID","Payment verification","Order status","Address","Business Koro status","Archived at"];
+  const rows=(result.results||[]).map(o=>[o.id,o.created_at,o.customer_name,o.customer_phone,o.product_name,o.quantity,o.unit_price,o.delivery_charge,o.total_amount,o.payment_method,o.transaction_id,o.payment_verification_status,o.status,[o.customer_division,o.customer_district,o.customer_area,o.customer_address].filter(Boolean).join(", "),o.business_koro_status,o.archived_at]);
+  const csv="\uFEFF"+[headers,...rows].map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
+  return new Response(csv,{headers:{"content-type":"text/csv; charset=utf-8","content-disposition":'attachment; filename="rs-mart-orders.csv"',"cache-control":"no-store"}});
 }
 async function updateOrderStatus(request,env,orderId){await ensureOrderSchema(env);let b;try{b=await request.json()}catch{return json({error:"সঠিক তথ্য পাঠান।"},400)}const allowed=["new","confirmed","shipped","delivered","cancelled"],pay=["pending_manual","verified","rejected"],sets=[],vals=[];if(b.status!==undefined){if(!allowed.includes(b.status))return json({error:"অর্ডারের অবস্থা সঠিক নয়।"},400);sets.push("status=?");vals.push(b.status)}if(b.paymentVerificationStatus!==undefined){if(!pay.includes(b.paymentVerificationStatus))return json({error:"পেমেন্ট যাচাইয়ের অবস্থা সঠিক নয়।"},400);sets.push("payment_verification_status=?");vals.push(b.paymentVerificationStatus)}if(!sets.length)return json({error:"কোনো পরিবর্তন পাওয়া যায়নি।"},400);vals.push(orderId);const r=await env.DB.prepare("UPDATE orders SET "+sets.join(", ")+" WHERE id=?").bind(...vals).run();if(!r.meta?.changes)return json({error:"অর্ডার পাওয়া যায়নি।"},404);return json({success:true})}
 
@@ -731,6 +776,7 @@ export default {
           return await adminProducts(env);
         }
 
+        if (path === "/api/admin/orders/export" && method === "GET") return await exportOrdersCSV(env, url);
         if (path === "/api/admin/orders" && method === "GET") {
           return await adminOrders(env, url);
         }
@@ -747,6 +793,9 @@ export default {
           return await sendOrderToBusinessKoro(request, env, decodeURIComponent(businessKoroMatch[1]));
         }
 
+        const archiveMatch = path.match(/^\/api\/admin\/orders\/([^/]+)\/(archive|restore)$/);
+        if (archiveMatch && method === "POST") return await archiveOrder(env, decodeURIComponent(archiveMatch[1]), archiveMatch[2] === "restore");
+
         const orderMatch = path.match(/^\/api\/admin\/orders\/([^/]+)$/);
         if (orderMatch && method === "PATCH") {
           return await updateOrderStatus(
@@ -754,7 +803,7 @@ export default {
           );
         }
         if (orderMatch && method === "DELETE") {
-          return await deleteOrder(env, decodeURIComponent(orderMatch[1]));
+          return await archiveOrder(env, decodeURIComponent(orderMatch[1]), false);
         }
 
         return json({ error: "Admin API route not found." }, 404);
