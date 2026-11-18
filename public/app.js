@@ -102,25 +102,27 @@ function renderFeaturedSections() {
 
 async function loadDhamaakaHomeSection() {
   const section=document.querySelector("#dhamaaka-home-section");
+  const banner=document.querySelector("#dhamaaka-banner-wrap");
   const strip=document.querySelector("#dhamaaka-home-product");
   if(!section||!strip)return;
   try {
     const response=await fetch("/api/dhamaaka-offer",{cache:"no-store"});
     const result=await response.json();
-    if(!response.ok||!result.active||!result.product){section.hidden=true;return;}
+    if(!response.ok||!result.active||!result.product){section.hidden=true;if(banner)banner.hidden=true;return;}
     const p=result.product;
     const image=(p.images||[])[0]||"";
     const price=Number(p.sellingPrice||0);
     const advance=Number(p.discountPercent||0)>0?Math.round(price*(100-Number(p.discountPercent))/100):price;
     const offerPercent=Number(result.discountPercent||30);
     section.hidden=false;
+    if(banner)banner.hidden=false;
     const note=document.querySelector("#dhamaaka-home-note");
     if(note)note.textContent="BUY 2 GET "+offerPercent+"% OFF";
     strip.innerHTML=`<a class="featured-product-card dhamaaka-featured-card" href="/dhamaaka-offer.html">
       <div class="featured-product-image">${image?`<img src="${escapeHtml(image)}" alt="${escapeHtml(p.name)}" loading="lazy">`:"<span>RS Mart</span>"}<span class="featured-trending-badge dhamaaka-badge">BUY 2 GET ${offerPercent}% OFF</span></div>
       <div class="featured-product-info"><h3>${escapeHtml(p.name||"ধামাকা অফার")}</h3><div class="featured-product-price"><strong>${money(advance)}</strong></div><span class="dhamaaka-card-cta">অফার দেখুন →</span></div>
     </a>`;
-  } catch(error) { section.hidden=true; }
+  } catch(error) { section.hidden=true;if(banner)banner.hidden=true; }
 }
 
 function renderProducts() {
