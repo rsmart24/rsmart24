@@ -98,7 +98,7 @@ function renderFeaturedSections() {
       strip.innerHTML = `<a class="winter-offer-slim-banner" href="/special-offer.html?id=${encodeURIComponent(items[0].id)}"><span>❄️ শীতের স্পেশাল অফার</span><strong>২টি কিনলেই ${Math.max(1, Math.min(90, Number(items[0].specialOfferPercent || 30)))}% ছাড়</strong><b>এখনই অর্ডার করুন ↗</b></a>` + items.map(p => {
         const reference = Number(p.specialOfferReferencePrice || p.sellingPrice || 0);
         const percent = Math.max(1, Math.min(90, Number(p.specialOfferPercent || 30)));
-        const total = Math.round(reference * 2 * (100 - percent) / 100);
+        const total = Math.round(reference * (100 - percent) / 100) * 2;
         return `<article class="featured-product-card" data-special-offer="${escapeHtml(p.id)}" tabindex="0" role="link" aria-label="${escapeHtml(p.name)} শীতের অফার দেখুন"><div class="featured-product-image">${productImage(p)}<span class="featured-discount-badge">${percent}% ছাড় · ২টি</span></div><div class="featured-product-info"><h3>${escapeHtml(p.name || "পণ্য")}</h3><div class="featured-product-price"><del>${money(reference * 2)}</del><strong>${money(total)}</strong></div><small>২টি একসঙ্গে কিনলে</small></div></article>`;
       }).join("");
       strip.querySelectorAll("[data-special-offer]").forEach(card => {
