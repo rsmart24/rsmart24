@@ -128,7 +128,7 @@ async function loadDhamaakaHomeSection() {
     strip.innerHTML=`<a class="featured-product-card dhamaaka-featured-card" href="/dhamaaka-offer.html">
       <div class="featured-product-image">${image?`<img src="${escapeHtml(image)}" alt="${escapeHtml(p.name)}" loading="lazy">`:"<span>RS Mart</span>"}<span class="featured-trending-badge dhamaaka-badge">২টি কিনলে ${offerPercent}% ছাড়</span></div>
       <div class="featured-product-info"><h3>${escapeHtml(p.name||"ধামাকা অফার")}</h3><div class="dhamaaka-savings-callout"><span>একসাথে ২টি কিনলে</span><strong>${offerPercent}% ছাড়!</strong><small>একসাথে কিনুন, বেশি সাশ্রয় করুন</small></div><div class="featured-product-price"><strong>${money(advance)}</strong></div>${advanceDiscountNote(p)}<span class="dhamaaka-card-cta">সম্পূর্ণ অফার দেখতে ক্লিক করুন →</span></div>
-    </a>`;;
+    </a>`;
   } catch(error) { section.hidden=true;if(banner)banner.hidden=true; }
 }
 
