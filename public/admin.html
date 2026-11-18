@@ -461,20 +461,17 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       const query = (document.querySelector("#featured-search")?.value || "").trim().toLowerCase();
       const items = adminProducts.filter(p => String(p.name || "").toLowerCase().includes(query));
       if (!items.length) { box.textContent = "কোনো পণ্য পাওয়া যায়নি।"; return; }
-      box.innerHTML = items.map(p => `<article class="product featured-admin-product"><div>${p.images?.[0] ? `<img src="${escapeHTML(p.images[0])}" alt="">` : "<div>RS Mart</div>"}</div><div><h3>${escapeHTML(p.name)}</h3><p class="muted">বিক্রয়মূল্য: ${money(p.sellingPrice)}</p><div class="featured-admin-controls"><label class="featured-admin-check"><input type="checkbox" id="offer-enabled-${escapeHTML(p.id)}" ${p.specialOfferEnabled ? "checked" : ""}> Special Offer চালু</label><label>ছাড় (%)<input type="number" id="offer-percent-${escapeHTML(p.id)}" min="1" max="90" step="1" value="${p.specialOfferPercent || ""}" placeholder="যেমন ১০ বা ২০"></label><label class="featured-admin-check"><input type="checkbox" id="trending-${escapeHTML(p.id)}" ${p.isTrending ? "checked" : ""}> Trending Product-এ দেখান</label></div><button type="button" data-feature-save="${escapeHTML(p.id)}">এই পণ্যের Featured সেটিংস সংরক্ষণ</button></div></article>`).join("");
+      box.innerHTML = items.map(p => `<article class="product featured-admin-product"><div>${p.images?.[0] ? `<img src="${escapeHTML(p.images[0])}" alt="">` : "<div>RS Mart</div>"}</div><div><h3>${escapeHTML(p.name)}</h3><p class="muted">বিক্রয়মূল্য: ${money(p.sellingPrice)}</p><div class="featured-admin-controls"><label class="featured-admin-check"><input type="checkbox" id="offer-enabled-${escapeHTML(p.id)}" ${p.specialOfferEnabled ? "checked" : ""}> Special Offer চালু</label><label>Special Offer-এর লেখা<input type="text" id="offer-text-${escapeHTML(p.id)}" maxlength="80" value="${escapeHTML(p.specialOfferText || "")}" placeholder="যেমন ৩ দিনের অফার"></label><label class="featured-admin-check"><input type="checkbox" id="trending-${escapeHTML(p.id)}" ${p.isTrending ? "checked" : ""}> Trending Product-এ দেখান</label></div><button type="button" data-feature-save="${escapeHTML(p.id)}">এই পণ্যের Featured সেটিংস সংরক্ষণ</button></div></article>`).join("");
       box.querySelectorAll("[data-feature-save]").forEach(button => button.addEventListener("click", async () => {
         const id = button.dataset.featureSave;
         const p = adminProducts.find(item => String(item.id) === String(id));
         if (!p) return;
         const enabled = document.querySelector(`#offer-enabled-${CSS.escape(id)}`).checked;
-        const percentRaw = document.querySelector(`#offer-percent-${CSS.escape(id)}`).value.trim();
-        const percent = percentRaw === "" ? 0 : Number(percentRaw);
-        if (enabled && (!Number.isInteger(percent) || percent < 1 || percent > 90)) { alert("Special Offer-এর ছাড় ১ থেকে ৯০ শতাংশের মধ্যে দিন।"); return; }
-        if (!enabled && percentRaw !== "" && (!Number.isInteger(percent) || percent < 0 || percent > 90)) { alert("ছাড় ০ থেকে ৯০ শতাংশের মধ্যে দিন।"); return; }
+        const offerText = document.querySelector(`#offer-text-${CSS.escape(id)}`).value.trim();
         button.disabled = true;
         try {
-          await api(`/api/admin/products/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ specialOfferEnabled: enabled, specialOfferPercent: percent, isTrending: document.querySelector(`#trending-${CSS.escape(id)}`).checked }) });
-          p.specialOfferEnabled = enabled; p.specialOfferPercent = percent; p.isTrending = document.querySelector(`#trending-${CSS.escape(id)}`).checked;
+          await api(`/api/admin/products/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ specialOfferEnabled: enabled, specialOfferText: offerText, isTrending: document.querySelector(`#trending-${CSS.escape(id)}`).checked }) });
+          p.specialOfferEnabled = enabled; p.specialOfferText = offerText; p.isTrending = document.querySelector(`#trending-${CSS.escape(id)}`).checked;
           alert("Featured সেটিংস সংরক্ষণ হয়েছে।");
         } catch (error) { alert(error.message); }
         finally { button.disabled = false; }
