@@ -408,7 +408,9 @@ function updateOrderSummary() {
   document.querySelector("#discount-value").textContent=money(discount);
   document.querySelector("#grand-total-value").textContent=tText;
   const grandTotalLabel=document.querySelector("#grand-total-label");
-  if(grandTotalLabel)grandTotalLabel.textContent=delivery===null?"সর্বমোট (ডেলিভারি ছাড়া)":"সর্বমোট";
+  if(grandTotalLabel)grandTotalLabel.textContent=delivery===null?(method==="advance"?"ছাড়ের পর পণ্যের দাম (ডেলিভারি ছাড়া)":"পণ্যের মোট দাম (ডেলিভারি ছাড়া)"):"সর্বমোট (ডেলিভারি চার্জসহ)";
+   const advanceTotalLabel=document.querySelector("#advance-total-label");
+   if(advanceTotalLabel)advanceTotalLabel.textContent=delivery===null?"ছাড়ের পর পণ্যের দাম (ডেলিভারি ছাড়া)":"ছাড়ের পর সর্বমোট (ডেলিভারি চার্জসহ)";
   document.querySelector("#cod-subtotal").textContent=money(subtotal);
   document.querySelector("#cod-delivery").textContent=dText;
   document.querySelector("#cod-total").textContent=money(subtotal+(delivery===null?0:delivery));
