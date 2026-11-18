@@ -56,9 +56,10 @@ async function init(){
   charges=data.deliveryCharges||{};product=(data.data||[]).find(p=>String(p.id)===String(id)&&p.specialOfferEnabled&&p.isVisible!==false);
   if(!product||product.inStock===false)throw new Error("এই পণ্যটি বর্তমানে শীতের Special Offer-এ পাওয়া যাচ্ছে না।");
   const reference=Number(product.specialOfferReferencePrice||product.sellingPrice||0),percent=Math.max(1,Math.min(90,Number(product.specialOfferPercent||30)));
-  total=Math.round(reference*2*(100-percent)/100);unitOffer=Math.round(reference*(100-percent)/100);
+  unitOffer=Math.round(reference*(100-percent)/100);total=unitOffer*2;
   document.querySelector("#photo").innerHTML=product.images?.[0]?'<img src="'+esc(product.images[0])+'" alt="'+esc(product.name)+'">':'<span>RS Mart</span>';
   document.querySelector("#product-name").textContent=product.name||"শীতের স্পেশাল পণ্য";
+  document.querySelector(".winter-banner strong").textContent="❄️ "+(product.specialOfferText||"শীতের স্পেশাল অফার");
   document.querySelector("#description").textContent=product.description||"শীতের বিশেষ অফারে একসঙ্গে ২টি পণ্য নিন।";
   document.querySelector("#discount-badge").textContent=percent+"% OFF";
   document.querySelector("#old-price").textContent="আগের মোট দাম "+money(reference*2);
