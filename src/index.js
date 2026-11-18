@@ -156,7 +156,7 @@ async function ensureOrderSchema(env) {
     }
   }
 
-  for (const [name, definition] of [["media_url", "TEXT"], ["media_enabled", "INTEGER NOT NULL DEFAULT 1"], ["special_offer_enabled", "INTEGER NOT NULL DEFAULT 0"], ["special_offer_percent", "INTEGER NOT NULL DEFAULT 0"], ["special_offer_text", "TEXT NOT NULL DEFAULT ''"], ["is_trending", "INTEGER NOT NULL DEFAULT 0"]]) {
+  for (const [name, definition] of [["media_url", "TEXT"], ["media_enabled", "INTEGER NOT NULL DEFAULT 1"], ["special_offer_enabled", "INTEGER NOT NULL DEFAULT 0"], ["special_offer_percent", "INTEGER NOT NULL DEFAULT 0"], ["special_offer_text", "TEXT NOT NULL DEFAULT ''"], ["special_offer_reference_price", "INTEGER"], ["is_trending", "INTEGER NOT NULL DEFAULT 0"]]) {
     if (!productNames.has(name)) {
       try { await env.DB.prepare(`ALTER TABLE product_settings ADD COLUMN ${name} ${definition}`).run(); }
       catch (error) { if (!/duplicate column/i.test(String(error?.message || error))) throw error; }
@@ -198,7 +198,7 @@ async function ensureOrderSchema(env) {
 async function getSettings(env) {
   await ensureOrderSchema(env);
   const result = await env.DB.prepare(
-    "SELECT product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, special_offer_enabled, special_offer_percent, special_offer_text, is_trending FROM product_settings"
+    "SELECT product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, special_offer_enabled, special_offer_percent, special_offer_text, special_offer_reference_price, is_trending FROM product_settings"
   ).all();
   return new Map((result.results || []).map(row => [String(row.product_id), row]));
 }
@@ -229,6 +229,7 @@ function publicProduct(p, setting) {
     specialOfferEnabled: Number(setting?.special_offer_enabled || 0) === 1,
     specialOfferPercent: Number(setting?.special_offer_percent || 0),
     specialOfferText: setting?.special_offer_text || "",
+    specialOfferReferencePrice: setting?.special_offer_reference_price == null ? null : Number(setting.special_offer_reference_price),
     isTrending: Number(setting?.is_trending || 0) === 1
   };
 }
@@ -369,23 +370,25 @@ async function saveProductSettings(request, env, productId) {
   }
   const mediaEnabled = has("mediaEnabled") ? (body.mediaEnabled === false ? 0 : 1) : Number(existing?.media_enabled ?? 1);
   const specialOfferEnabled = has("specialOfferEnabled") ? (body.specialOfferEnabled === true ? 1 : 0) : Number(existing?.special_offer_enabled || 0);
-  // Legacy percentage data is retained for compatibility but no longer changes Special Offer pricing.
-  const specialOfferPercent = Number(existing?.special_offer_percent || 0);
+  const specialOfferPercent = has("specialOfferPercent") ? Number(body.specialOfferPercent) : Number(existing?.special_offer_percent || 30);
+  if (!Number.isInteger(specialOfferPercent) || specialOfferPercent < 1 || specialOfferPercent > 90) return json({ error: "Special Offer ছাড় ১ থেকে ৯০ শতাংশের মধ্যে দিন।" }, 400);
+  const specialOfferReferencePrice = has("specialOfferReferencePrice") ? (body.specialOfferReferencePrice === "" || body.specialOfferReferencePrice == null ? null : Number(body.specialOfferReferencePrice)) : (existing?.special_offer_reference_price == null ? null : Number(existing.special_offer_reference_price));
+  if (specialOfferReferencePrice !== null && (!Number.isSafeInteger(specialOfferReferencePrice) || specialOfferReferencePrice < 1)) return json({ error: "Special Offer-এর প্রতি পিসের দাম সঠিকভাবে লিখুন।" }, 400);
   const specialOfferText = has("specialOfferText") ? String(body.specialOfferText ?? "").trim().slice(0, 80) : String(existing?.special_offer_text || "");
   const isTrending = has("isTrending") ? (body.isTrending === true ? 1 : 0) : Number(existing?.is_trending || 0);
 
   await env.DB.prepare(`
-    INSERT INTO product_settings (product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, special_offer_enabled, special_offer_percent, special_offer_text, is_trending, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    INSERT INTO product_settings (product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, special_offer_enabled, special_offer_percent, special_offer_text, special_offer_reference_price, is_trending, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(product_id) DO UPDATE SET
       selling_price = excluded.selling_price, original_price = excluded.original_price,
       category = excluded.category, is_visible = excluded.is_visible,
       discount_percent = excluded.discount_percent, media_url = excluded.media_url,
       media_enabled = excluded.media_enabled, special_offer_enabled = excluded.special_offer_enabled,
       special_offer_percent = excluded.special_offer_percent, special_offer_text = excluded.special_offer_text,
-      is_trending = excluded.is_trending,
+      special_offer_reference_price = excluded.special_offer_reference_price, is_trending = excluded.is_trending,
       updated_at = CURRENT_TIMESTAMP
-  `).bind(String(productId), price, originalPrice, category, isVisible, discountPercent, mediaUrl || null, mediaEnabled, specialOfferEnabled, specialOfferPercent, specialOfferText, isTrending).run();
+  `).bind(String(productId), price, originalPrice, category, isVisible, discountPercent, mediaUrl || null, mediaEnabled, specialOfferEnabled, specialOfferPercent, specialOfferText, specialOfferReferencePrice, isTrending).run();
 
   return json({ success: true, message: "পণ্যের সেটিংস সংরক্ষণ হয়েছে।" });
 }
@@ -471,7 +474,10 @@ async function createOrder(request, env) {
   }
   const phoneLimitResponse = await enforcePhoneOrderRateLimit(customerPhone, env);
   if (phoneLimitResponse) return phoneLimitResponse;
+  const isSpecialOfferOrder = body.orderType === "special_offer";
   const requestedItems = Array.isArray(body.items) && body.items.length ? body.items : [{ id: body.productId, quantity: body.quantity || 1, color: body.color || "", size: body.size || "" }];
+  if (isSpecialOfferOrder && (requestedItems.length !== 1 || Number(requestedItems[0]?.quantity) !== 2)) return json({error:"শীতের Special Offer নিতে ঠিক ২টি পণ্য নির্বাচন করতে হবে।"},400);
+  if (!isSpecialOfferOrder && requestedItems.some(item => Number(item.quantity || 1) === 2 && body.orderType === "special_offer")) return json({error:"Special Offer-এর অর্ডার আলাদা পেজ থেকে জমা দিন।"},400);
   if (requestedItems.length > 20) return json({error:"এক অর্ডারে সর্বোচ্চ ২০ ধরনের পণ্য যোগ করতে পারবেন।"},400);
   const catalog = await getCatalog(env);
   const orderItems = [];
@@ -482,7 +488,7 @@ async function createOrder(request, env) {
     if (!productId || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) return json({error:"প্রতিটি পণ্যের পরিমাণ ১ থেকে ২০-এর মধ্যে হতে হবে।"},400);
     const product = catalog.products.find(p => String(p.id) === String(productId));
     if (!product || isOutOfStock(product)) return json({error:"কার্টের একটি পণ্য পাওয়া যাচ্ছে না বা স্টকে নেই।"},409);
-    const settings = await env.DB.prepare("SELECT selling_price,is_visible,discount_percent,special_offer_enabled,special_offer_percent FROM product_settings WHERE product_id = ?").bind(String(product.id)).first();
+    const settings = await env.DB.prepare("SELECT selling_price,is_visible,discount_percent,special_offer_enabled,special_offer_percent,special_offer_reference_price FROM product_settings WHERE product_id = ?").bind(String(product.id)).first();
     if (!settings || Number(settings.is_visible) !== 1) return json({error:"পণ্যটি বর্তমানে অর্ডার করা যাচ্ছে না: " + product.name},400);
     const variants = Array.isArray(product.variants) ? product.variants : [];
     const color = String(item.color || "").trim(), size = String(item.size || "").trim();
@@ -492,19 +498,21 @@ async function createOrder(request, env) {
       const selected = variants.find(v => (!v.color || String(v.color) === color) && (!v.size || String(v.size) === size));
       if (!selected || isOutOfStock(selected)) return json({error:product.name + ": নির্বাচিত ভ্যারিয়েন্ট স্টকে নেই।"},409);
     }
-    const baseUnitPrice = Number(settings.selling_price);
-    if (!Number.isSafeInteger(baseUnitPrice) || baseUnitPrice < 0) return json({error:"একটি পণ্যের দাম সঠিক নয়।"},400);
-    const offerPercent = Number(settings.special_offer_enabled || 0) === 1 ? Number(settings.special_offer_percent || 0) : 0;
-    const unitPrice = offerPercent > 0 ? Math.max(0, Math.round(baseUnitPrice * (100 - offerPercent) / 100)) : baseUnitPrice;
+    if (isSpecialOfferOrder && Number(settings.special_offer_enabled || 0) !== 1) return json({error:"এই পণ্যটি বর্তমানে Special Offer-এ নেই।"},409);
+    const baseUnitPrice = isSpecialOfferOrder ? Number(settings.special_offer_reference_price || settings.selling_price) : Number(settings.selling_price);
+    if (!Number.isSafeInteger(baseUnitPrice) || baseUnitPrice < 1) return json({error:"একটি পণ্যের দাম সঠিক নয়।"},400);
+    const offerPercent = isSpecialOfferOrder ? Number(settings.special_offer_percent || 0) : 0;
+    if (isSpecialOfferOrder && (!Number.isInteger(offerPercent) || offerPercent < 1 || offerPercent > 90)) return json({error:"এই Special Offer-এর ছাড়ের সেটিংস সঠিক নয়।"},409);
+    const unitPrice = isSpecialOfferOrder ? Math.max(0, Math.round(baseUnitPrice * (100 - offerPercent) / 100)) : baseUnitPrice;
     const lineSubtotal = unitPrice * quantity;
-    const discountPercent = body.paymentMethod === "advance" ? Number(settings.discount_percent || 0) : 0;
+    const discountPercent = !isSpecialOfferOrder && body.paymentMethod === "advance" ? Number(settings.discount_percent || 0) : 0;
     // Round the discounted unit price once, then multiply by quantity.
     const discountedUnitPrice = discountPercent > 0
       ? Math.max(0, Math.round(unitPrice * (100 - discountPercent) / 100))
       : unitPrice;
     const discountAmount = (unitPrice - discountedUnitPrice) * quantity;
     subtotal += lineSubtotal; totalDiscount += discountAmount; totalQuantity += quantity;
-    orderItems.push({id:String(product.id),name:String(product.name || ""),quantity,unitPrice,color,size,subtotal:lineSubtotal,discountPercent,discountAmount,discountedUnitPrice});
+    orderItems.push({id:String(product.id),name:String(product.name || ""),quantity,unitPrice,color,size,subtotal:lineSubtotal,discountPercent,discountAmount,discountedUnitPrice,specialOffer:isSpecialOfferOrder});
   }
   const division = String(body.customerDivision).trim().toLowerCase();
   const isDhaka = division === "dhaka" || division === "ঢাকা";
@@ -518,7 +526,7 @@ async function createOrder(request, env) {
   if (!Number.isSafeInteger(totalAmount) || totalAmount < 0) return json({error:"অর্ডারের মোট মূল্য সঠিক নয়।"},400);
   const orderId = crypto.randomUUID();
   const first = orderItems[0];
-  const productName = orderItems.length === 1 ? first.name : "একাধিক পণ্য (" + orderItems.length + " ধরনের)";
+  const productName = isSpecialOfferOrder ? "❄️ শীতের স্পেশাল অফার — " + first.name : (orderItems.length === 1 ? first.name : "একাধিক পণ্য (" + orderItems.length + " ধরনের)");
   const effectiveDiscountPercent = subtotal ? Math.round(totalDiscount * 100 / subtotal) : 0;
   try {
     await env.DB.prepare(
@@ -563,6 +571,7 @@ async function sendOrderToBusinessKoro(request, env, orderId) {
   if (!items.length && order.product_id) items=[{id:order.product_id,name:order.product_name,quantity:Number(order.quantity||1),unitPrice:Number(order.unit_price||0),color:order.color||"",size:order.size||""}];
   if (items.length !== 1) return json({error:"এই অর্ডারে একাধিক পণ্য আছে। Business Koro-র দেওয়া API একবারে একটি পণ্য নেয়। তাই ভুল ডেলিভারি/চার্জ এড়াতে এটি পাঠানো হয়নি।"},400);
   const item=items[0];
+  if (item.specialOffer) return json({error:"শীতের Special Offer অর্ডারটি Business Koro-তে স্বয়ংক্রিয়ভাবে পাঠানো যাবে না। Admin Panel থেকে তথ্য দেখে ম্যানুয়ালি এন্ট্রি করুন।"},400);
   if (Number(item.quantity||1) !== 1) return json({error:"এই API-তে quantity গ্রহণ করা হয় না। একাধিক পিসের অর্ডার আপাতত পাঠানো যাচ্ছে না।"},400);
   let requestBody={};
   try { requestBody=await request.json(); } catch {}
