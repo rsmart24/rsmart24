@@ -99,7 +99,7 @@ function renderFeaturedSections() {
   const strip = document.querySelector("#trending-products");
   if (!section || !strip) return;
   section.hidden = !trending.length;
-  strip.innerHTML = trending.map(p => `<article class="featured-product-card" data-featured-product="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন"><div class="featured-product-image">${productImage(p)}<span class="featured-trending-badge">TRENDING</span></div><div class="featured-product-info"><h3>${escapeHtml(p.name || "পণ্য")}</h3><div class="featured-product-price"><strong>${money(advanceDiscountPrice(p))}</strong></div>${advanceDiscountNote(p)}</div></article>`).join("");
+  strip.innerHTML = trending.map(p => `<article class="featured-product-card" data-featured-product="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন"><div class="featured-product-image">${productImage(p)}<span class="featured-trending-badge">TRENDING</span></div><div class="featured-product-info"><h3>${escapeHtml(p.name || "পণ্য")}</h3><div class="featured-product-price"><strong>${money(advanceDiscountPrice(p))}</strong></div></div></article>`).join("");
   strip.querySelectorAll("[data-featured-product]").forEach(card => {
     const open = () => chooseProduct(card.dataset.featuredProduct);
     card.addEventListener("click", open);
@@ -572,7 +572,7 @@ function chooseProduct(id, pushHistory = true) {
   const paymentDiscountNote = document.querySelector("#detail-payment-discount-note");
   if (paymentDiscountNote) {
     paymentDiscountNote.hidden = !hasAdvanceDiscount;
-    paymentDiscountNote.textContent = hasAdvanceDiscount ? `এই ${advancePercent}% ছাড় শুধু অগ্রিম পেমেন্টে প্রযোজ্য। ক্যাশ অন ডেলিভারিতে পণ্যের দাম ${money(chosenProduct.sellingPrice)}।` : "";
+    paymentDiscountNote.textContent = hasAdvanceDiscount ? `অগ্রিম ডেলিভারি চার্জ দিলে পণ্যের দামে ${advancePercent}% ছাড় প্রযোজ্য। ক্যাশ অন ডেলিভারিতে দাম ${money(chosenProduct.sellingPrice)}।` : "";
   }
 
   const category = String(chosenProduct.category || "অন্যান্য").replace(/[-_]/g, " ").replace(/\b\w/g, letter => letter.toUpperCase());
