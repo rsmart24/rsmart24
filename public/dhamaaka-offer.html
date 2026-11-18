@@ -82,9 +82,9 @@ body{margin:0;background:#f5f6f8;color:var(--ink,#172033);font-family:"Hind Sili
 <main class="wrap">
 <a class="banner" href="#offer-order"><img src="/dhamaaka-offer-banner.webp" alt="RS Mart ধামাকা অফার — BUY 2 GET 30% OFF"></a>
 <div class="layout product-detail-layout" id="offer-content">
-<section class="card product-detail-info" id="product-card"><div id="product-image">পণ্য লোড হচ্ছে…</div><a class="detail-media-button" id="offer-media-button" href="#" target="_blank" rel="noopener noreferrer" hidden>▣ ছবি ও ভিডিও দেখুন ↗</a><h1 class="title" id="product-name">ধামাকা অফার</h1><div class="price"><strong id="unit-price">—</strong><del id="old-price"></del></div><div class="deal"><b id="deal-heading">BUY 2 GET 30% OFF</b><small>একটি কিনলে স্বাভাবিক দাম। দুটি কিনলে অগ্রিম পেমেন্টে অতিরিক্ত অফার ছাড়।</small></div><p class="hint">পণ্যের বর্তমান ওয়েবসাইট মূল্য ও পণ্যের নিজস্ব অগ্রিম ছাড় স্বয়ংক্রিয়ভাবে অনুসরণ করা হবে।</p></section>
+<section class="card product-detail-info" id="product-card"><div id="product-image">পণ্য লোড হচ্ছে…</div><a class="detail-media-button" id="offer-media-button" href="#" target="_blank" rel="noopener noreferrer" hidden>▣ ভিডিও দেখুন ↗</a><h1 class="title" id="product-name">ধামাকা অফার</h1><div class="price"><strong id="unit-price">—</strong><del id="old-price"></del></div><div class="deal"><b id="deal-heading">BUY 2 GET 30% OFF</b><small>একটি কিনলে স্বাভাবিক দাম। দুটি কিনলে অগ্রিম পেমেন্টে অতিরিক্ত অফার ছাড়।</small></div><p class="hint">পণ্যের বর্তমান ওয়েবসাইট মূল্য ও পণ্যের নিজস্ব অগ্রিম ছাড় স্বয়ংক্রিয়ভাবে অনুসরণ করা হবে।</p></section>
 <section class="card" id="offer-order">
-<form id="offer-form">
+<form id="offer-form" class="order-form">
 <div class="checkout-section-heading"><span>01</span><div><b>কেনার অপশন</b><small>একটি অথবা দুটি পিস নির্বাচন করুন</small></div></div>
 <div class="offer-choice"><label><input type="radio" name="buyMode" value="one" checked> একটি কিনুন</label><label><input type="radio" name="buyMode" value="two"> দুটি কিনুন — BUY 2 GET OFFER</label></div>
 <div id="piece-options"></div>
@@ -99,13 +99,14 @@ body{margin:0;background:#f5f6f8;color:var(--ink,#172033);font-family:"Hind Sili
 </div>
 <div class="checkout-section-heading"><span>03</span><div><b>পেমেন্ট পদ্ধতি</b><small>আপনার পছন্দের পেমেন্ট পদ্ধতি নির্বাচন করুন</small></div></div>
 <section class="payment-choice">
+<h3>পেমেন্ট পদ্ধতি নির্বাচন করুন</h3>
 <label class="payment-option payment-option-cod" for="payment-cod"><input id="payment-cod" type="radio" name="paymentMethod" value="cod"><span class="payment-option-content"><b class="payment-option-title">১. ক্যাশ অন ডেলিভারি <em>নিরাপদ ও সহজ</em></b><small>পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন।</small><span class="payment-mini-breakdown"><span>পণ্যের মোট <b id="cod-subtotal">৳—</b></span><span>ডেলিভারি <b id="cod-delivery">ঠিকানা নির্বাচন করুন</b></span><strong>সর্বমোট <b id="cod-total">ঠিকানা নির্বাচন করুন</b></strong></span></span></label>
 <label class="payment-option payment-option-advance" for="payment-advance"><input id="payment-advance" type="radio" name="paymentMethod" value="advance" checked><span class="payment-option-content"><b class="payment-option-title">২. অগ্রিম ডেলিভারি চার্জ <em id="advance-badge">বিশেষ ছাড়</em></b><small>শুধু ডেলিভারি চার্জ অগ্রিম দিন, পণ্যের দামে ছাড় পান।</small><span class="payment-mini-breakdown advance-mini-breakdown"><span>পণ্যের মোট <b id="advance-subtotal">৳—</b></span><span class="advance-discount-line">আপনার ছাড় <b id="advance-discount">৳0</b></span><span>ডেলিভারি <b id="advance-delivery">ঠিকানা নির্বাচন করুন</b></span><strong>ছাড়ের পর সর্বমোট <b id="advance-total">ঠিকানা নির্বাচন করুন</b></strong></span></span></label>
 <div id="bkash-box" class="bkash-payment-box" hidden><h4>বিকাশ Send Money</h4><p>বিকাশ অ্যাপ থেকে নিচের নম্বরে Send Money করুন। পাঠাতে হবে শুধু ডেলিভারি চার্জ: <b id="advance-amount">ঠিকানা নির্বাচন করুন</b></p><div class="bkash-number">01716862470 <button type="button" id="copy-bkash">নম্বর কপি</button></div><ol><li>উপরের নম্বরে Send Money নির্বাচন করুন।</li><li>দেখানো অগ্রিম ডেলিভারি চার্জ পাঠান।</li><li>সফল হলে Transaction ID লিখুন।</li></ol><label>বিকাশ Transaction ID<input name="transactionId" id="transaction-id" maxlength="20" placeholder="যেমন: 8A1B2C3D4E" autocomplete="off"><small id="transaction-hint" class="hint">৮–১২ অক্ষরের Transaction ID লিখুন।</small></label></div>
 </section>
-<div class="summary"><div class="sumrow"><span>পণ্যের মোট দাম</span><b id="subtotal">—</b></div><div class="sumrow"><span>ডেলিভারি চার্জ</span><b id="delivery">ঠিকানা নির্বাচন করুন</b></div><div class="sumrow" id="discount-row" hidden><span>অগ্রিম পেমেন্ট ছাড়</span><b class="discount" id="discount">৳0</b></div><div class="sumrow grand"><span>সর্বমোট</span><b id="total">—</b></div></div>
+<div class="order-total-box"><div><span>পণ্যের মোট দাম</span><b id="subtotal">—</b></div><div><span>ডেলিভারি চার্জ</span><b id="delivery">ঠিকানা নির্বাচন করুন</b></div><div id="discount-row" hidden><span>অগ্রিম পেমেন্ট ছাড়</span><b class="discount" id="discount">৳0</b></div><div class="grand-total"><span>সর্বমোট</span><b id="total">—</b></div></div>
 <label class="offer-field" style="margin-top:12px">অতিরিক্ত নির্দেশনা (ঐচ্ছিক)<textarea name="customerNote" rows="3" maxlength="500" placeholder="কিছু জানাতে চাইলে লিখুন"></textarea></label>
-<p id="message" class="hint" role="status"></p><button class="submit" id="submit" type="submit">অর্ডার কনফার্ম করুন</button>
+<p id="message" class="hint" role="status"></p><button class="submit-button submit" id="submit" type="submit">অর্ডার কনফার্ম করুন</button>
 <p class="hint">আপনার অর্ডার RS Mart-এর Admin Panel ও Telegram-এ যাবে।</p>
 </form>
 <div class="success" id="success"><h2>অর্ডার গ্রহণ করা হয়েছে!</h2><p>অর্ডার নম্বর: <b id="order-id"></b></p><a href="/">হোমপেজে ফিরে যান</a></div>
@@ -141,6 +142,9 @@ function updateSummary(){
  $('bkash-box').hidden=method!=="advance";$('transaction-id').required=method==="advance";$('advance-amount').textContent=dText;
  $('deal-heading').textContent="BUY 2 GET "+percent+"% OFF";
  $('advance-badge').textContent=percent+"% ছাড়";
+ const shownPrice=method==="advance"?base:unit;
+ $('unit-price').textContent=money(shownPrice);
+ $('old-price').textContent=method==="advance"?(unit>base?money(unit):""):(Number(product.originalPrice)>unit?money(product.originalPrice):"");
  document.querySelector('.payment-option-cod').classList.toggle('is-selected',method==="cod");
  document.querySelector('.payment-option-advance').classList.toggle('is-selected',method==="advance");
 }
