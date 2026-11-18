@@ -68,12 +68,15 @@ body{margin:0;background:#f5f6f8;color:var(--ink,#172033);font-family:"Hind Sili
 .error{color:#b42318;font-weight:600}
 .success{display:none;padding:24px;text-align:center}
 .success h2{color:#16803d}
-.detail-media-button{display:inline-flex;margin:10px 0 4px}
+.detail-media-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-width:210px;min-height:46px;margin:4px 0 12px;padding:10px 18px;border:1px solid #ed5b16;border-radius:12px;background:linear-gradient(135deg,#ff8a1f 0%,#f04b16 100%);color:#fff;font-weight:800;text-decoration:none;box-shadow:0 5px 16px rgba(240,91,22,.28);text-shadow:0 1px 1px rgba(120,45,0,.18);transition:background .2s,border-color .2s,transform .2s,box-shadow .2s}
+.detail-media-button:hover{background:linear-gradient(135deg,#ff9d35 0%,#e83c0c 100%);border-color:#d9430e;box-shadow:0 7px 20px rgba(240,91,22,.38);transform:translateY(-2px)}
+.detail-media-button[hidden]{display:none!important}
+.detail-media-button:focus-visible{outline:3px solid rgba(255,138,31,.35);outline-offset:3px}
 @media(max-width:700px){
  .wrap{padding:10px}.top{padding:10px}.layout{grid-template-columns:1fr;gap:12px;margin-top:12px}
  .card{padding:14px}.banner{border-radius:9px}.banner img{width:100%;height:auto;aspect-ratio:auto}
  .title{font-size:21px}.field-grid{grid-template-columns:1fr}.offer-choice label{min-width:0}
- .price strong{font-size:21px}.variants{grid-template-columns:1fr 1fr}
+ .price strong{font-size:21px}.variants{grid-template-columns:1fr 1fr}.detail-media-button{width:100%;min-height:48px}
 }
 </style>
 </head>
@@ -82,7 +85,7 @@ body{margin:0;background:#f5f6f8;color:var(--ink,#172033);font-family:"Hind Sili
 <main class="wrap">
 <a class="banner" href="#offer-order"><img src="/dhamaaka-offer-banner.webp" alt="RS Mart ধামাকা অফার — BUY 2 GET 30% OFF"></a>
 <div class="layout product-detail-layout" id="offer-content">
-<section class="card product-detail-info" id="product-card"><div id="product-image">পণ্য লোড হচ্ছে…</div><a class="detail-media-button" id="offer-media-button" href="#" target="_blank" rel="noopener noreferrer" hidden>▣ ভিডিও দেখুন ↗</a><h1 class="title" id="product-name">ধামাকা অফার</h1><div class="price"><strong id="unit-price">—</strong><del id="old-price"></del></div><div class="deal"><b id="deal-heading">BUY 2 GET 30% OFF</b><small>একটি কিনলে স্বাভাবিক দাম। দুটি কিনলে অগ্রিম পেমেন্টে অতিরিক্ত অফার ছাড়।</small></div><p class="hint">পণ্যের বর্তমান ওয়েবসাইট মূল্য ও পণ্যের নিজস্ব অগ্রিম ছাড় স্বয়ংক্রিয়ভাবে অনুসরণ করা হবে।</p></section>
+<section class="card product-detail-info" id="product-card"><div id="product-image">পণ্য লোড হচ্ছে…</div><a class="detail-media-button" id="offer-media-button" href="#" target="_blank" rel="noopener noreferrer" hidden><span aria-hidden="true">▣</span> ছবি ও ভিডিও দেখুন <span aria-hidden="true">↗</span></a><h1 class="title" id="product-name">ধামাকা অফার</h1><div class="price"><strong id="unit-price">—</strong><del id="old-price"></del></div><div class="deal"><b id="deal-heading">BUY 2 GET 30% OFF</b><small>একটি কিনলে স্বাভাবিক দাম। দুটি কিনলে অগ্রিম পেমেন্টে অতিরিক্ত অফার ছাড়।</small></div><p class="hint">পণ্যের বর্তমান ওয়েবসাইট মূল্য ও পণ্যের নিজস্ব অগ্রিম ছাড় স্বয়ংক্রিয়ভাবে অনুসরণ করা হবে।</p></section>
 <section class="card" id="offer-order">
 <form id="offer-form" class="order-form">
 <div class="checkout-section-heading"><span>01</span><div><b>কেনার অপশন</b><small>একটি অথবা দুটি পিস নির্বাচন করুন</small></div></div>
@@ -101,10 +104,10 @@ body{margin:0;background:#f5f6f8;color:var(--ink,#172033);font-family:"Hind Sili
 <section class="payment-choice">
 <h3>পেমেন্ট পদ্ধতি নির্বাচন করুন</h3>
 <label class="payment-option payment-option-cod" for="payment-cod"><input id="payment-cod" type="radio" name="paymentMethod" value="cod"><span class="payment-option-content"><b class="payment-option-title">১. ক্যাশ অন ডেলিভারি <em>নিরাপদ ও সহজ</em></b><small>পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন।</small><span class="payment-mini-breakdown"><span>পণ্যের মোট <b id="cod-subtotal">৳—</b></span><span>ডেলিভারি <b id="cod-delivery">ঠিকানা নির্বাচন করুন</b></span><strong>সর্বমোট <b id="cod-total">ঠিকানা নির্বাচন করুন</b></strong></span></span></label>
-<label class="payment-option payment-option-advance" for="payment-advance"><input id="payment-advance" type="radio" name="paymentMethod" value="advance" checked><span class="payment-option-content"><b class="payment-option-title">২. অগ্রিম ডেলিভারি চার্জ <em id="advance-badge">বিশেষ ছাড়</em></b><small>শুধু ডেলিভারি চার্জ অগ্রিম দিন, পণ্যের দামে ছাড় পান।</small><span class="payment-mini-breakdown advance-mini-breakdown"><span>পণ্যের মোট <b id="advance-subtotal">৳—</b></span><span class="advance-discount-line">আপনার ছাড় <b id="advance-discount">৳0</b></span><span>ডেলিভারি <b id="advance-delivery">ঠিকানা নির্বাচন করুন</b></span><strong>ছাড়ের পর সর্বমোট <b id="advance-total">ঠিকানা নির্বাচন করুন</b></strong></span></span></label>
+<label class="payment-option payment-option-advance" for="payment-advance"><input id="payment-advance" type="radio" name="paymentMethod" value="advance" checked><span class="payment-option-content"><b class="payment-option-title">২. অগ্রিম ডেলিভারি চার্জ <em id="advance-badge">বিশেষ ছাড়</em></b><small>শুধু ডেলিভারি চার্জ অগ্রিম দিন, পণ্যের দামে ছাড় পান।</small><span class="payment-mini-breakdown advance-mini-breakdown"><span>পণ্যের মোট <b id="advance-subtotal">৳—</b></span><span class="advance-discount-line">আপনার ছাড় <b id="advance-discount">৳0</b></span><span>ডেলিভারি <b id="advance-delivery">ঠিকানা নির্বাচন করুন</b></span><strong><span id="advance-total-label">ছাড়ের পর মোট (ডেলিভারি ছাড়া)</span> <b id="advance-total">ঠিকানা নির্বাচন করুন</b></strong></span></span></label>
 <div id="bkash-box" class="bkash-payment-box" hidden><h4>বিকাশ Send Money</h4><p>বিকাশ অ্যাপ থেকে নিচের নম্বরে Send Money করুন। পাঠাতে হবে শুধু ডেলিভারি চার্জ: <b id="advance-amount">ঠিকানা নির্বাচন করুন</b></p><div class="bkash-number">01716862470 <button type="button" id="copy-bkash">নম্বর কপি</button></div><ol><li>উপরের নম্বরে Send Money নির্বাচন করুন।</li><li>দেখানো অগ্রিম ডেলিভারি চার্জ পাঠান।</li><li>সফল হলে Transaction ID লিখুন।</li></ol><label>বিকাশ Transaction ID<input name="transactionId" id="transaction-id" maxlength="20" placeholder="যেমন: 8A1B2C3D4E" autocomplete="off"><small id="transaction-hint" class="hint">৮–১২ অক্ষরের Transaction ID লিখুন।</small></label></div>
 </section>
-<div class="order-total-box"><div><span>পণ্যের মোট দাম</span><b id="subtotal">—</b></div><div><span>ডেলিভারি চার্জ</span><b id="delivery">ঠিকানা নির্বাচন করুন</b></div><div id="discount-row" hidden><span>অগ্রিম পেমেন্ট ছাড়</span><b class="discount" id="discount">৳0</b></div><div class="grand-total"><span>সর্বমোট</span><b id="total">—</b></div></div>
+<div class="order-total-box"><div><span>পণ্যের মোট দাম</span><b id="subtotal">—</b></div><div><span>ডেলিভারি চার্জ</span><b id="delivery">ঠিকানা নির্বাচন করুন</b></div><div id="discount-row" hidden><span>অগ্রিম পেমেন্ট ছাড়</span><b class="discount" id="discount">৳0</b></div><div class="grand-total"><span id="total-label">সর্বমোট (ডেলিভারি ছাড়া)</span><b id="total">—</b></div></div>
 <label class="offer-field" style="margin-top:12px">অতিরিক্ত নির্দেশনা (ঐচ্ছিক)<textarea name="customerNote" rows="3" maxlength="500" placeholder="কিছু জানাতে চাইলে লিখুন"></textarea></label>
 <p id="message" class="hint" role="status"></p><button class="submit-button submit" id="submit" type="submit">অর্ডার কনফার্ম করুন</button>
 <p class="hint">আপনার অর্ডার RS Mart-এর Admin Panel ও Telegram-এ যাবে।</p>
@@ -134,11 +137,11 @@ function updateSummary(){
  const unit=Number(product.sellingPrice||0),base=unitAdvance(),offerUnit=two?Math.max(0,Math.round(base*(100-percent)/100)):base;
  const subtotal=unit*qty,discount=method==="advance"?(unit*qty-offerUnit*qty):0;
  const division=$('division').value,isDhaka=division==="ঢাকা",delivery=division?(Number(isDhaka?charges.insideDhaka||0:charges.outsideDhaka||0)):null;
- const dText=delivery===null?"ঠিকানা নির্বাচন করুন":money(delivery),total=delivery===null?null:subtotal+delivery-discount,codTotal=delivery===null?null:subtotal+delivery;
+ const dText=delivery===null?"ঠিকানা নির্বাচন করুন":money(delivery),total=subtotal+(delivery===null?0:delivery)-discount,codTotal=subtotal+(delivery===null?0:delivery);
  $('subtotal').textContent=money(subtotal);$('discount').textContent=money(discount);$('discount-row').hidden=method!=="advance"||discount<=0;
- $('delivery').textContent=dText;$('total').textContent=total===null?"—":money(total);
- $('cod-subtotal').textContent=money(subtotal);$('cod-delivery').textContent=dText;$('cod-total').textContent=codTotal===null?dText:money(codTotal);
- $('advance-subtotal').textContent=money(subtotal);$('advance-discount').textContent=money(discount);$('advance-delivery').textContent=dText;$('advance-total').textContent=total===null?dText:money(total);
+ $('delivery').textContent=dText;$('total').textContent=money(total);$('total-label').textContent=delivery===null?'সর্বমোট (ডেলিভারি ছাড়া)':'সর্বমোট';
+ $('cod-subtotal').textContent=money(subtotal);$('cod-delivery').textContent=dText;$('cod-total').textContent=money(codTotal);
+ $('advance-subtotal').textContent=money(subtotal);$('advance-discount').textContent=money(discount);$('advance-delivery').textContent=dText;$('advance-total').textContent=money(total);$('advance-total-label').textContent=delivery===null?'ছাড়ের পর মোট (ডেলিভারি ছাড়া)':'ছাড়ের পর সর্বমোট';
  $('bkash-box').hidden=method!=="advance";$('transaction-id').required=method==="advance";$('advance-amount').textContent=dText;
  $('deal-heading').textContent="BUY 2 GET "+percent+"% OFF";
  $('advance-badge').textContent=percent+"% ছাড়";
