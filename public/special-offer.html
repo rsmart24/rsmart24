@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#12352c">
+<title>শীতের স্পেশাল অফার | RS Mart</title>
+<style>
+:root{color-scheme:light;--green:#12352c;--deep:#0b241d;--gold:#e5b95f;--cream:#fffaf0;--muted:#64746d}
+*{box-sizing:border-box}body{margin:0;background:#f5f7f3;color:#17251f;font-family:system-ui,-apple-system,"Noto Sans Bengali",sans-serif}
+.top{background:linear-gradient(115deg,#0b241d,#1c5745);color:white;padding:12px 18px;display:flex;align-items:center;justify-content:space-between}.brand{font-weight:850;letter-spacing:.4px}.back{color:#fff;text-decoration:none;font-size:14px}
+.wrap{max-width:1040px;margin:22px auto;padding:0 15px}.winter-banner{background:linear-gradient(100deg,#102f27,#235c49);color:#fff;border:1px solid #d8b45b;border-radius:14px;padding:13px 17px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 8px 25px #102f271c}.winter-banner strong{font-size:clamp(16px,3vw,22px)}.winter-banner b{color:#f5d88e;white-space:nowrap}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:18px}.visual,.panel{background:#fff;border:1px solid #e5e9e4;border-radius:18px;overflow:hidden;box-shadow:0 10px 35px #173c2b0b}.visual{padding:14px}.photo{height:390px;border-radius:12px;background:#f3f5f1;display:flex;align-items:center;justify-content:center;overflow:hidden}.photo img{width:100%;height:100%;object-fit:contain}.visual h1{font-size:25px;line-height:1.35;margin:16px 4px 8px}.desc{color:#52635b;line-height:1.75;margin:0 4px}.panel{padding:20px}.eyebrow{color:#9a742b;font-size:12px;font-weight:800;letter-spacing:1.3px}.deal{background:#fff7e5;border:1px solid #f0dba9;border-radius:13px;padding:15px;margin:10px 0 18px}.deal-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.pill{background:#d84a36;color:#fff;padding:5px 10px;border-radius:30px;font-size:12px;font-weight:800}.old{color:#758078;text-decoration:line-through;font-size:15px}.new{font-size:34px;color:#145c40;font-weight:900;line-height:1.2}.per{font-size:13px;color:#5d6c64;margin-top:3px}.form-title{font-size:18px;margin:17px 0 10px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:11px}.field{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:650}.field.full{grid-column:1/-1}.field input,.field select{width:100%;border:1px solid #d9e0da;border-radius:9px;padding:12px;font:inherit;font-weight:400;background:#fff;min-width:0}.field input:focus,.field select:focus{outline:2px solid #a8cfb7;border-color:#377a58}.variant{margin:10px 0 0}.summary{background:#f4f8f4;border-radius:12px;padding:13px;margin:15px 0}.summary div{display:flex;justify-content:space-between;gap:10px;margin:5px 0}.summary .total{border-top:1px solid #dce6de;padding-top:9px;margin-top:9px;font-size:18px;font-weight:850}.submit{width:100%;border:0;border-radius:11px;background:#176344;color:#fff;padding:15px;font-size:17px;font-weight:850;cursor:pointer}.submit:disabled{opacity:.6;cursor:wait}.note{font-size:12px;color:#69776f;line-height:1.6;margin:10px 0 0}.status{padding:12px;border-radius:10px;margin-top:12px;display:none}.status.error{display:block;background:#fff0ee;color:#9c3026}.status.ok{display:block;background:#edf8ef;color:#176344}
+@media(max-width:720px){.grid{grid-template-columns:1fr;gap:13px}.photo{height:300px}.visual h1{font-size:21px}.panel{padding:16px}.wrap{margin:15px auto}.winter-banner{padding:11px 12px;flex-wrap:wrap}.winter-banner b{font-size:12px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand">RS MART</div><a class="back" href="/">← শপিংয়ে ফিরে যান</a></header>
+<main class="wrap">
+<div class="winter-banner"><strong>❄️ শীতের স্পেশাল অফার</strong><b>২টি কিনলেই ৩০% ছাড়</b></div>
+<div id="loading" style="padding:40px;text-align:center">অফারের পণ্য লোড হচ্ছে…</div>
+<div class="grid" id="offer-content" hidden>
+<section class="visual"><div class="photo" id="photo"></div><h1 id="product-name"></h1><p class="desc" id="description"></p></section>
+<section class="panel">
+<div class="eyebrow">LIMITED WINTER DEAL</div>
+<div class="deal"><div class="deal-top"><b>একসঙ্গে ২টি পণ্য নিন</b><span class="pill" id="discount-badge">৩০% OFF</span></div><div class="old" id="old-price"></div><div class="new" id="offer-price"></div><div class="per" id="per-price"></div></div>
+<div id="variant-fields"></div>
+<h2 class="form-title">ডেলিভারির তথ্য দিন</h2>
+<form id="offer-form">
+<div class="fields">
+<label class="field full">আপনার নাম<input name="customerName" required maxlength="100" placeholder="পূর্ণ নাম"></label>
+<label class="field full">মোবাইল নম্বর<input name="customerPhone" type="tel" required inputmode="tel" maxlength="14" pattern="(?:01[3-9][0-9]{8}|\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})" placeholder="01XXXXXXXXX"></label>
+<label class="field">বিভাগ<select name="customerDivision" id="division" required><option value="">বিভাগ বাছুন</option><option>ঢাকা</option><option>চট্টগ্রাম</option><option>রাজশাহী</option><option>খুলনা</option><option>বরিশাল</option><option>সিলেট</option><option>রংপুর</option><option>ময়মনসিংহ</option></select></label>
+<label class="field">জেলা<input name="customerDistrict" required maxlength="100" placeholder="জেলার নাম"></label>
+<label class="field">থানা / উপজেলা<input name="customerArea" required maxlength="150" placeholder="থানা বা উপজেলা"></label>
+<label class="field">সম্পূর্ণ ঠিকানা<input name="customerAddress" required maxlength="500" placeholder="বাসা, রোড, গ্রাম"></label>
+</div>
+<div class="summary"><div><span>২টি পণ্যের দাম</span><b id="subtotal"></b></div><div><span>ডেলিভারি চার্জ</span><b id="delivery">বিভাগ নির্বাচন করুন</b></div><div class="total"><span>সর্বমোট</span><b id="grand-total">বিভাগ নির্বাচন করুন</b></div></div>
+<button class="submit" id="submit" type="submit">❄️ ২টি অর্ডার কনফার্ম করুন</button>
+<p class="note">অফারটি শুধু ঠিক ২টি পণ্যের জন্য। ১টি পণ্য কিনতে চাইলে All Products থেকে স্বাভাবিক দামে অর্ডার করুন। ৩টি বা তার বেশি পণ্যে এই ছাড় প্রযোজ্য নয়। ক্যাশ অন ডেলিভারি। ডেলিভারি চার্জ আলাদা।</p>
+<div class="status" id="status" role="status"></div>
+</form>
+</section>
+</div>
+</main>
+<script>
+const money=n=>"৳"+Number(n||0).toLocaleString("en-BD");
+const esc=s=>String(s??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+let product=null,charges={insideDhaka:0,outsideDhaka:0},total=0,unitOffer=0;
+const id=new URLSearchParams(location.search).get("id");
+const showStatus=(msg,type)=>{const el=document.querySelector("#status");el.textContent=msg;el.className="status "+type;};
+function updateTotal(){const division=document.querySelector("#division").value;const delivery=division?(division==="ঢাকা"?Number(charges.insideDhaka||0):Number(charges.outsideDhaka||0)):null;document.querySelector("#delivery").textContent=delivery===null?"বিভাগ নির্বাচন করুন":money(delivery);document.querySelector("#grand-total").textContent=delivery===null?"বিভাগ নির্বাচন করুন":money(total+delivery);}
+async function init(){
+ if(!id){document.querySelector("#loading").textContent="অফারের পণ্য পাওয়া যায়নি।";return;}
+ try{
+  const response=await fetch("/api/products");const data=await response.json();if(!response.ok)throw new Error(data.error||"পণ্য লোড হয়নি");
+  charges=data.deliveryCharges||{};product=(data.data||[]).find(p=>String(p.id)===String(id)&&p.specialOfferEnabled&&p.isVisible!==false);
+  if(!product||product.inStock===false)throw new Error("এই পণ্যটি বর্তমানে শীতের Special Offer-এ পাওয়া যাচ্ছে না।");
+  const reference=Number(product.specialOfferReferencePrice||product.sellingPrice||0),percent=Math.max(1,Math.min(90,Number(product.specialOfferPercent||30)));
+  total=Math.round(reference*2*(100-percent)/100);unitOffer=Math.round(reference*(100-percent)/100);
+  document.querySelector("#photo").innerHTML=product.images?.[0]?'<img src="'+esc(product.images[0])+'" alt="'+esc(product.name)+'">':'<span>RS Mart</span>';
+  document.querySelector("#product-name").textContent=product.name||"শীতের স্পেশাল পণ্য";
+  document.querySelector("#description").textContent=product.description||"শীতের বিশেষ অফারে একসঙ্গে ২টি পণ্য নিন।";
+  document.querySelector("#discount-badge").textContent=percent+"% OFF";
+  document.querySelector("#old-price").textContent="আগের মোট দাম "+money(reference*2);
+  document.querySelector("#offer-price").textContent=money(total);
+  document.querySelector("#per-price").textContent="প্রতি পিস "+money(unitOffer)+" · ২টি একসঙ্গে";
+  document.querySelector("#subtotal").textContent=money(total);
+  const variants=Array.isArray(product.variants)?product.variants:[];
+  const colors=[...new Set(variants.map(v=>v.color).filter(Boolean))],sizes=[...new Set(variants.map(v=>v.size).filter(Boolean))];
+  const fields=[];
+  if(colors.length)fields.push('<label class="field">২টি পণ্যের রং<select id="color" required><option value="">রং বাছুন</option>'+colors.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join("")+'</select></label>');
+  if(sizes.length)fields.push('<label class="field">২টি পণ্যের সাইজ<select id="size" required><option value="">সাইজ বাছুন</option>'+sizes.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join("")+'</select></label>');
+  if(fields.length)document.querySelector("#variant-fields").innerHTML='<div class="fields variant">'+fields.join("")+'</div>';
+  document.querySelector("#loading").hidden=true;document.querySelector("#offer-content").hidden=false;updateTotal();
+ }catch(error){document.querySelector("#loading").textContent=error.message;}
+}
+document.querySelector("#division").addEventListener("change",updateTotal);
+document.querySelector("#offer-form").addEventListener("submit",async event=>{
+ event.preventDefault();const form=event.currentTarget;if(!form.reportValidity()||!product)return;
+ const color=document.querySelector("#color")?.value||"",size=document.querySelector("#size")?.value||"";
+ const submit=document.querySelector("#submit");submit.disabled=true;submit.textContent="অর্ডার জমা হচ্ছে…";
+ const formData=new FormData(form);const payload={orderType:"special_offer",productId:product.id,items:[{id:product.id,quantity:2,color,size}],quantity:2,color,size,customerName:formData.get("customerName"),customerPhone:formData.get("customerPhone"),customerAddress:formData.get("customerAddress"),customerDivision:formData.get("customerDivision"),customerDistrict:formData.get("customerDistrict"),customerArea:formData.get("customerArea"),paymentMethod:"cod",transactionId:"",submissionKey:crypto.randomUUID()};
+ try{const response=await fetch("/api/orders",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)});const result=await response.json();if(!response.ok)throw new Error(result.error||"অর্ডার জমা হয়নি");showStatus("ধন্যবাদ! আপনার শীতের Special Offer অর্ডার জমা হয়েছে। অর্ডার নম্বর: "+result.orderId+"। আমাদের প্রতিনিধি ফোন করে নিশ্চিত করবেন।","ok");form.reset();updateTotal();submit.textContent="অর্ডার সফল হয়েছে";}
+ catch(error){showStatus(error.message,"error");submit.disabled=false;submit.textContent="❄️ ২টি অর্ডার কনফার্ম করুন";}
+});
+init();
+</script>
+</body>
+</html>
