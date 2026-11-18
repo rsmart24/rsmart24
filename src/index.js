@@ -156,7 +156,7 @@ async function ensureOrderSchema(env) {
     }
   }
 
-  for (const [name, definition] of [["media_url", "TEXT"], ["media_enabled", "INTEGER NOT NULL DEFAULT 1"], ["special_offer_enabled", "INTEGER NOT NULL DEFAULT 0"], ["special_offer_percent", "INTEGER NOT NULL DEFAULT 0"], ["is_trending", "INTEGER NOT NULL DEFAULT 0"]]) {
+  for (const [name, definition] of [["media_url", "TEXT"], ["media_enabled", "INTEGER NOT NULL DEFAULT 1"], ["special_offer_enabled", "INTEGER NOT NULL DEFAULT 0"], ["special_offer_percent", "INTEGER NOT NULL DEFAULT 0"], ["special_offer_text", "TEXT NOT NULL DEFAULT ''"], ["is_trending", "INTEGER NOT NULL DEFAULT 0"]]) {
     if (!productNames.has(name)) {
       try { await env.DB.prepare(`ALTER TABLE product_settings ADD COLUMN ${name} ${definition}`).run(); }
       catch (error) { if (!/duplicate column/i.test(String(error?.message || error))) throw error; }
@@ -198,7 +198,7 @@ async function ensureOrderSchema(env) {
 async function getSettings(env) {
   await ensureOrderSchema(env);
   const result = await env.DB.prepare(
-    "SELECT product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, special_offer_enabled, special_offer_percent, is_trending FROM product_settings"
+    "SELECT product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, special_offer_enabled, special_offer_percent, special_offer_text, is_trending FROM product_settings"
   ).all();
   return new Map((result.results || []).map(row => [String(row.product_id), row]));
 }
@@ -228,6 +228,7 @@ function publicProduct(p, setting) {
     mediaEnabled: setting ? Number(setting.media_enabled) === 1 : true,
     specialOfferEnabled: Number(setting?.special_offer_enabled || 0) === 1,
     specialOfferPercent: Number(setting?.special_offer_percent || 0),
+    specialOfferText: setting?.special_offer_text || "",
     isTrending: Number(setting?.is_trending || 0) === 1
   };
 }
@@ -316,15 +317,7 @@ async function publicProducts(env) {
   const settings = await getSettings(env);
 
   const products = catalog.products
-    .map(p => {
-      const product = publicProduct(p, settings.get(String(p.id)));
-      if (product.specialOfferEnabled && product.specialOfferPercent > 0 && product.sellingPrice !== null) {
-        const regularPrice = Number(product.sellingPrice);
-        product.originalPrice = regularPrice;
-        product.sellingPrice = Math.max(0, Math.round(regularPrice * (100 - product.specialOfferPercent) / 100));
-      }
-      return product;
-    })
+    .map(p => publicProduct(p, settings.get(String(p.id))))
     .filter(p => p.isVisible);
 
   return json({ data: products, deliveryCharges: catalog.deliveryCharges });
@@ -376,21 +369,23 @@ async function saveProductSettings(request, env, productId) {
   }
   const mediaEnabled = has("mediaEnabled") ? (body.mediaEnabled === false ? 0 : 1) : Number(existing?.media_enabled ?? 1);
   const specialOfferEnabled = has("specialOfferEnabled") ? (body.specialOfferEnabled === true ? 1 : 0) : Number(existing?.special_offer_enabled || 0);
-  const specialOfferPercent = has("specialOfferPercent") ? Number(body.specialOfferPercent) : Number(existing?.special_offer_percent || 0);
-  if (!Number.isInteger(specialOfferPercent) || specialOfferPercent < 0 || specialOfferPercent > 90 || (specialOfferEnabled && specialOfferPercent < 1)) return json({ error: "স্পেশাল অফারের ছাড় ১ থেকে ৯০ শতাংশের মধ্যে দিন।" }, 400);
+  // Legacy percentage data is retained for compatibility but no longer changes Special Offer pricing.
+  const specialOfferPercent = Number(existing?.special_offer_percent || 0);
+  const specialOfferText = has("specialOfferText") ? String(body.specialOfferText ?? "").trim().slice(0, 80) : String(existing?.special_offer_text || "");
   const isTrending = has("isTrending") ? (body.isTrending === true ? 1 : 0) : Number(existing?.is_trending || 0);
 
   await env.DB.prepare(`
-    INSERT INTO product_settings (product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, special_offer_enabled, special_offer_percent, is_trending, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    INSERT INTO product_settings (product_id, selling_price, original_price, category, is_visible, discount_percent, media_url, media_enabled, special_offer_enabled, special_offer_percent, special_offer_text, is_trending, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(product_id) DO UPDATE SET
       selling_price = excluded.selling_price, original_price = excluded.original_price,
       category = excluded.category, is_visible = excluded.is_visible,
       discount_percent = excluded.discount_percent, media_url = excluded.media_url,
       media_enabled = excluded.media_enabled, special_offer_enabled = excluded.special_offer_enabled,
-      special_offer_percent = excluded.special_offer_percent, is_trending = excluded.is_trending,
+      special_offer_percent = excluded.special_offer_percent, special_offer_text = excluded.special_offer_text,
+      is_trending = excluded.is_trending,
       updated_at = CURRENT_TIMESTAMP
-  `).bind(String(productId), price, originalPrice, category, isVisible, discountPercent, mediaUrl || null, mediaEnabled, specialOfferEnabled, specialOfferPercent, isTrending).run();
+  `).bind(String(productId), price, originalPrice, category, isVisible, discountPercent, mediaUrl || null, mediaEnabled, specialOfferEnabled, specialOfferPercent, specialOfferText, isTrending).run();
 
   return json({ success: true, message: "পণ্যের সেটিংস সংরক্ষণ হয়েছে।" });
 }
