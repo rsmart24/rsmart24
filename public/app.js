@@ -87,36 +87,17 @@ function productImage(product) {
 }
 
 function renderFeaturedSections() {
-  const offers = products.filter(p => p.isVisible !== false && !isOutOfStock(p) && p.specialOfferEnabled && Number(p.sellingPrice) >= 0);
   const trending = products.filter(p => p.isVisible !== false && !isOutOfStock(p) && p.isTrending);
-  const renderRail = (items, sectionId, stripId, type) => {
-    const section = document.querySelector("#" + sectionId);
-    const strip = document.querySelector("#" + stripId);
-    if (!section || !strip) return;
-    section.hidden = !items.length;
-    if (type === "offer") {
-      strip.innerHTML = `<a class="winter-offer-slim-banner" href="/special-offer.html?id=${encodeURIComponent(items[0].id)}"><span>❄️ শীতের স্পেশাল অফার</span><strong>২টি কিনলেই ${Math.max(1, Math.min(90, Number(items[0].specialOfferPercent || 30)))}% ছাড়</strong><b>এখনই অর্ডার করুন ↗</b></a>` + items.map(p => {
-        const reference = Number(p.specialOfferReferencePrice || p.sellingPrice || 0);
-        const percent = Math.max(1, Math.min(90, Number(p.specialOfferPercent || 30)));
-        const total = Math.round(reference * (100 - percent) / 100) * 2;
-        return `<article class="featured-product-card" data-special-offer="${escapeHtml(p.id)}" tabindex="0" role="link" aria-label="${escapeHtml(p.name)} শীতের অফার দেখুন"><div class="featured-product-image">${productImage(p)}<span class="featured-discount-badge">${percent}% ছাড় · ২টি</span></div><div class="featured-product-info"><h3>${escapeHtml(p.name || "পণ্য")}</h3><div class="featured-product-price"><del>${money(reference * 2)}</del><strong>${money(total)}</strong></div><small>২টি একসঙ্গে কিনলে</small></div></article>`;
-      }).join("");
-      strip.querySelectorAll("[data-special-offer]").forEach(card => {
-        const open = () => { location.href = "/special-offer.html?id=" + encodeURIComponent(card.dataset.specialOffer); };
-        card.addEventListener("click", open);
-        card.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); } });
-      });
-      return;
-    }
-    strip.innerHTML = items.map(p => `<article class="featured-product-card" data-featured-product="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন"><div class="featured-product-image">${productImage(p)}<span class="featured-trending-badge">TRENDING</span></div><div class="featured-product-info"><h3>${escapeHtml(p.name || "পণ্য")}</h3><div class="featured-product-price"><strong>${money(advanceDiscountPrice(p))}</strong></div></div></article>`).join("");
-    strip.querySelectorAll("[data-featured-product]").forEach(card => {
-      const open = () => chooseProduct(card.dataset.featuredProduct);
-      card.addEventListener("click", open);
-      card.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); } });
-    });
-  };
-  renderRail(offers, "special-offer-section", "special-offer-products", "offer");
-  renderRail(trending, "trending-section", "trending-products", "trending");
+  const section = document.querySelector("#trending-section");
+  const strip = document.querySelector("#trending-products");
+  if (!section || !strip) return;
+  section.hidden = !trending.length;
+  strip.innerHTML = trending.map(p => `<article class="featured-product-card" data-featured-product="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন"><div class="featured-product-image">${productImage(p)}<span class="featured-trending-badge">TRENDING</span></div><div class="featured-product-info"><h3>${escapeHtml(p.name || "পণ্য")}</h3><div class="featured-product-price"><strong>${money(advanceDiscountPrice(p))}</strong></div></div></article>`).join("");
+  strip.querySelectorAll("[data-featured-product]").forEach(card => {
+    const open = () => chooseProduct(card.dataset.featuredProduct);
+    card.addEventListener("click", open);
+    card.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); } });
+  });
 }
 
 function renderProducts() {
@@ -146,7 +127,7 @@ function renderProducts() {
 
     return `
       <article class="product-card ${outOfStock ? "is-out-of-stock" : ""}" data-product-card="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
-        <div class="product-image">${productImage(p)}${Number(p.discountPercent) > 0 ? `<span class="product-special-offer-badge">অগ্রিমে ${Number(p.discountPercent)}% ছাড়</span>` : ""}${outOfStock ? '<span class="stock-out-overlay">স্টক আউট</span>' : ""}</div>
+        <div class="product-image">${productImage(p)}${Number(p.discountPercent) > 0 ? `<span class="product-advance-discount-badge">অগ্রিমে ${Number(p.discountPercent)}% ছাড়</span>` : ""}${outOfStock ? '<span class="stock-out-overlay">স্টক আউট</span>' : ""}</div>
         <div class="product-info">
           <h3>${escapeHtml(p.name)}</h3>
           <div class="product-bottom">
@@ -551,8 +532,6 @@ function chooseProduct(id, pushHistory = true) {
   const hasDiscount = Number(oldValue) > Number(advanceDiscountPrice(chosenProduct));
   oldPrice.hidden = !hasDiscount;
   oldPrice.textContent = hasDiscount ? money(oldValue) : "";
-  document.querySelector("#detail-offer").hidden = hasAdvanceDiscount || !hasDiscount;
-  document.querySelector("#detail-offer").textContent = chosenProduct.specialOfferEnabled && Number(chosenProduct.specialOfferPercent) > 0 ? `Special Offer — ${Number(chosenProduct.specialOfferPercent)}% ছাড়` : "Limited Time Offer";
   const paymentDiscountNote = document.querySelector("#detail-payment-discount-note");
   if (paymentDiscountNote) {
     paymentDiscountNote.hidden = !hasAdvanceDiscount;
