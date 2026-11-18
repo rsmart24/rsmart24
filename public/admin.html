@@ -284,7 +284,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
         <article class="stat-card"><span>স্টক আউট</span><strong id="stat-out-stock">০</strong></article>
         <p class="muted stat-note">*বাতিল অর্ডার বাদে অর্ডারের মোট মূল্য; এটি লাভের হিসাব নয়।</p>
       </section>
-      <nav class="admin-nav" aria-label="Admin sections"><button type="button" data-tab="products" aria-selected="true">পণ্য ব্যবস্থাপনা</button><button type="button" data-tab="orders" aria-selected="false">অর্ডার ব্যবস্থাপনা</button></nav>
+      <nav class="admin-nav" aria-label="Admin sections"><button type="button" data-tab="products" aria-selected="true">পণ্য ব্যবস্থাপনা</button><button type="button" data-tab="dhamaaka" aria-selected="false">ধামাকা অফার</button><button type="button" data-tab="orders" aria-selected="false">অর্ডার ব্যবস্থাপনা</button></nav>
       <div class="panel" id="products-panel">
         <h2>পণ্য ব্যবস্থাপনা</h2>
         <p class="muted">বিক্রয়মূল্য, ক্যাটাগরি, মিডিয়া লিংক এবং পণ্যের দৃশ্যমানতা নিয়ন্ত্রণ করুন।</p>        <div class="admin-toolbar">
@@ -294,6 +294,25 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
           <p class="muted" style="grid-column:1/-1;margin:0">প্রতিটি পণ্যের তথ্য পরিবর্তন করে সংরক্ষণ করুন।</p>
         </div>
         <div id="products">পণ্য লোড হচ্ছে...</div>
+      </div>
+
+      <div class="panel hidden" id="dhamaaka-panel">
+        <h2>ধামাকা অফার</h2>
+        <p class="muted">হোমপেজের ধামাকা অফারে একটিমাত্র পণ্য নির্বাচন করুন। পণ্যের বর্তমান মূল্য ও পণ্যের নিজস্ব অগ্রিম ছাড় স্বয়ংক্রিয়ভাবে অনুসরণ হবে; এখানে শুধু অতিরিক্ত অফারের শতাংশ নির্ধারণ করুন।</p>
+        <div class="fields">
+          <label>অফারের পণ্য
+            <select id="dhamaaka-product"><option value="">পণ্য নির্বাচন করুন</option></select>
+          </label>
+          <label>অতিরিক্ত ছাড় (%)
+            <input id="dhamaaka-percent" type="number" min="1" max="90" step="1" value="30">
+          </label>
+          <label>অফার চালু?
+            <select id="dhamaaka-enabled"><option value="yes">চালু</option><option value="no">বন্ধ</option></select>
+          </label>
+        </div>
+        <p class="muted">ক্রেতা একটি পিস কিনলে স্বাভাবিক দাম ও নিয়ম থাকবে। দুটি পিস নিলে Cash on Delivery-তে স্বাভাবিক দুই পিসের দাম এবং Advance Payment-এ প্রথমে পণ্যের বর্তমান অগ্রিম ছাড়, তারপর এখানে নির্ধারিত অতিরিক্ত ছাড় হিসাব হবে।</p>
+        <button type="button" id="save-dhamaaka-offer">ধামাকা অফার সংরক্ষণ</button>
+        <p id="dhamaaka-save-status" class="muted" aria-live="polite"></p>
       </div>
 
       <div class="panel hidden" id="orders-panel">
@@ -562,6 +581,29 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       });
     }
 
+    async function loadDhamaakaOffer() {
+      const [settings] = await Promise.all([api("/api/admin/dhamaaka-offer")]);
+      const select = document.querySelector("#dhamaaka-product");
+      const products = Array.isArray(settings.products) ? settings.products : [];
+      select.innerHTML = '<option value="">পণ্য নির্বাচন করুন</option>' + products.filter(p=>p.isVisible && p.inStock !== false).map(p=>'<option value="'+escapeHTML(p.id)+'">'+escapeHTML(p.name)+' — '+money(p.sellingPrice)+'</option>').join("");
+      const offer = settings.offer || {};
+      select.value = offer.product_id || "";
+      document.querySelector("#dhamaaka-percent").value = Number(offer.discount_percent || 30);
+      document.querySelector("#dhamaaka-enabled").value = Number(offer.enabled) === 1 ? "yes" : "no";
+    }
+    document.querySelector("#save-dhamaaka-offer")?.addEventListener("click", async event => {
+      const button=event.currentTarget, status=document.querySelector("#dhamaaka-save-status");
+      button.disabled=true; status.textContent="সংরক্ষণ হচ্ছে...";
+      try {
+        const productId=document.querySelector("#dhamaaka-product").value;
+        const discountPercent=Number(document.querySelector("#dhamaaka-percent").value);
+        const enabled=document.querySelector("#dhamaaka-enabled").value==="yes";
+        await api("/api/admin/dhamaaka-offer",{method:"PUT",body:JSON.stringify({productId,discountPercent,enabled})});
+        status.textContent="ধামাকা অফারের সেটিংস সংরক্ষণ হয়েছে।";
+      } catch(error) { status.textContent=error.message; }
+      finally { button.disabled=false; }
+    });
+
     function showNewOrderAlert(newOrders) {
       if (!newOrders.length) return;
       const alertBox = document.querySelector("#new-order-alert");
@@ -696,12 +738,13 @@ function showOrderList(){selectedOrderId=null;orderDetailView.classList.add("hid
 function openOrderDetails(id){const o=adminOrders.find(x=>String(x.id)===String(id));if(!o)return;selectedOrderId=String(id);document.querySelector("#orders-panel").classList.add("hidden");orderDetailView.classList.remove("hidden");renderOrderDetail(o);window.scrollTo({top:0,behavior:"smooth"});}
 function renderOrderDetail(o){
  const labels={new:"নতুন",confirmed:"নিশ্চিত",shipped:"পাঠানো হয়েছে",delivered:"ডেলিভারি সম্পন্ন",cancelled:"বাতিল"},s=o.status||"new",cls=["new","confirmed","shipped","delivered","cancelled"].includes(s)?s:"new",p=o.payment_verification_status||"pending_manual";
+ let orderItems=[];try{orderItems=JSON.parse(o.order_items_json||"[]");}catch{} const manualBusinessKoro=orderItems.length>1;
  orderDetailView.innerHTML=`<div class="order-detail-screen"><div class="order-detail-top"><button type="button" class="back-orders" data-back-orders>← ফিরে যান</button><h2>অর্ডারের বিস্তারিত</h2></div>
  <section class="detail-customer-card"><div class="detail-name">${escapeHTML(o.customer_name||"নাম দেওয়া হয়নি")}</div><div class="detail-phone-line"><strong>${escapeHTML(o.customer_phone||"নম্বর নেই")}</strong><button type="button" class="phone-copy copy-one" data-copy-value="${escapeHTML(o.customer_phone||"")}" aria-label="মোবাইল নম্বর কপি">⧉</button></div><div class="detail-meta"><span>অর্ডার ID: ${escapeHTML(o.id)}</span><span class="order-status-badge status-${cls}">${labels[s]||"নতুন"}</span></div></section>
  <h3 class="detail-section-title">অর্ডারের তথ্য</h3>${renderOrderDetails(o)}
  <div class="detail-action-card"><h3 class="detail-section-title">অর্ডার পরিচালনা</h3><div class="order-actions"><label>অর্ডারের অবস্থা<select data-status="${escapeHTML(o.id)}">${Object.entries(labels).map(([v,l])=>`<option value="${v}" ${s===v?"selected":""}>${l}</option>`).join("")}</select></label><button type="button" data-order="${escapeHTML(o.id)}">অবস্থা সংরক্ষণ</button></div>
  ${o.payment_method==="advance"?`<div class="order-actions" style="margin-top:12px"><label>অগ্রিম পেমেন্ট যাচাই<select data-payment-status="${escapeHTML(o.id)}"><option value="pending_manual" ${p==="pending_manual"?"selected":""}>যাচাই বাকি</option><option value="verified" ${p==="verified"?"selected":""}>পেমেন্ট পেয়েছি / যাচাই হয়েছে</option><option value="rejected" ${p==="rejected"?"selected":""}>পেমেন্ট মেলেনি</option></select></label><button type="button" data-payment-save="${escapeHTML(o.id)}">পেমেন্ট যাচাই সংরক্ষণ</button></div>`:""}
-\n <div class="business-koro-card"><div><b>Business Koro</b><small>${o.business_koro_status==="sent"?"পাঠানো হয়েছে":o.business_koro_status==="failed"?"পাঠাতে সমস্যা হয়েছে":o.business_koro_status==="sending"?"পাঠানো হচ্ছে...":o.business_koro_status==="unknown"?"ফলাফল অনিশ্চিত — Business Koro-তে যাচাই করুন":"এখনো পাঠানো হয়নি"}</small>${o.business_koro_order_id?`<small>Business Koro ID: ${escapeHTML(o.business_koro_order_id)}</small>`:""}</div><div class="business-koro-delivery"><label for="bk-delivery-${escapeHTML(o.id)}">ডেলিভারি চার্জ কে দেবে?</label><select id="bk-delivery-${escapeHTML(o.id)}" data-business-koro-delivery>${[["customer_delivery","কাস্টমার ডেলিভারির সময় দেবে"],["customer_upfront","কাস্টমার আগে থেকেই দিয়েছে"],["reseller_bears","RS Mart ডেলিভারি চার্জ বহন করবে"]].map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div><button type="button" data-business-koro-send="${escapeHTML(o.id)}" ${o.business_koro_status==="sent"||o.business_koro_status==="sending"||o.business_koro_status==="unknown"?"disabled":""}>${o.business_koro_status==="sent"?"✓ পাঠানো হয়েছে":o.business_koro_status==="sending"?"পাঠানো হচ্ছে...":o.business_koro_status==="failed"?"আবার চেষ্টা করুন":o.business_koro_status==="unknown"?"ফলাফল অনিশ্চিত — আগে যাচাই করুন":"Business Koro-তে পাঠান"}</button></div>
+\n ${manualBusinessKoro?`<p class="muted">একাধিক পিসের অফার অর্ডার — Business Koro-তে প্রয়োজন হলে ম্যানুয়ালি এন্ট্রি করুন।</p>`:`<div class="business-koro-card"><div><b>Business Koro</b><small>${o.business_koro_status==="sent"?"পাঠানো হয়েছে":o.business_koro_status==="failed"?"পাঠাতে সমস্যা হয়েছে":o.business_koro_status==="sending"?"পাঠানো হচ্ছে...":o.business_koro_status==="unknown"?"ফলাফল অনিশ্চিত — Business Koro-তে যাচাই করুন":"এখনো পাঠানো হয়নি"}</small>${o.business_koro_order_id?`<small>Business Koro ID: ${escapeHTML(o.business_koro_order_id)}</small>`:""}</div><div class="business-koro-delivery"><label for="bk-delivery-${escapeHTML(o.id)}">ডেলিভারি চার্জ কে দেবে?</label><select id="bk-delivery-${escapeHTML(o.id)}" data-business-koro-delivery>${[["customer_delivery","কাস্টমার ডেলিভারির সময় দেবে"],["customer_upfront","কাস্টমার আগে থেকেই দিয়েছে"],["reseller_bears","RS Mart ডেলিভারি চার্জ বহন করবে"]].map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div><button type="button" data-business-koro-send="${escapeHTML(o.id)}" ${o.business_koro_status==="sent"||o.business_koro_status==="sending"||o.business_koro_status==="unknown"?"disabled":""}>${o.business_koro_status==="sent"?"✓ পাঠানো হয়েছে":o.business_koro_status==="sending"?"পাঠানো হচ্ছে...":o.business_koro_status==="failed"?"আবার চেষ্টা করুন":o.business_koro_status==="unknown"?"ফলাফল অনিশ্চিত — আগে যাচাই করুন":"Business Koro-তে পাঠান"}</button></div>`}
 
  <button type="button" class="secondary" data-order-archive="${escapeHTML(o.id)}" data-restore="${o.archived_at ? "1" : "0"}">${o.archived_at ? "আর্কাইভ থেকে ফিরিয়ে আনুন" : "অর্ডার আর্কাইভ করুন"}</button></div></div>`;
 }
@@ -860,7 +903,9 @@ orderDetailView.addEventListener("click",async e=>{
       button.addEventListener("click", () => {
         const tabName = button.dataset.tab;
         document.querySelector("#products-panel").classList.toggle("hidden", tabName !== "products");
+        document.querySelector("#dhamaaka-panel").classList.toggle("hidden", tabName !== "dhamaaka");
         document.querySelector("#orders-panel").classList.toggle("hidden", tabName !== "orders");
+        if(tabName === "dhamaaka") loadDhamaakaOffer().catch(error=>{document.querySelector("#dhamaaka-save-status").textContent=error.message;});
         document.querySelectorAll("[data-tab]").forEach(tab => tab.setAttribute("aria-selected", String(tab === button)));
       });
     });
