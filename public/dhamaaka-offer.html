@@ -85,7 +85,7 @@ body{margin:0;background:#f5f6f8;color:var(--ink,#172033);font-family:"Hind Sili
 <main class="wrap">
 <a class="banner" href="#offer-order"><img src="/dhamaaka-offer-banner.webp" alt="RS Mart ধামাকা অফার — BUY 2 GET 30% OFF"></a>
 <div class="layout product-detail-layout" id="offer-content">
-<section class="card product-detail-info" id="product-card"><div id="product-image">পণ্য লোড হচ্ছে…</div><a class="detail-media-button" id="offer-media-button" href="#" target="_blank" rel="noopener noreferrer" hidden><span aria-hidden="true">▣</span> ছবি ও ভিডিও দেখুন <span aria-hidden="true">↗</span></a><h1 class="title" id="product-name">ধামাকা অফার</h1><div class="price"><strong id="unit-price">—</strong><del id="old-price"></del></div><div class="deal"><b id="deal-heading">BUY 2 GET 30% OFF</b><small>একটি কিনলে স্বাভাবিক দাম। দুটি কিনলে অগ্রিম পেমেন্টে অতিরিক্ত অফার ছাড়।</small></div><p class="hint">পণ্যের বর্তমান ওয়েবসাইট মূল্য ও পণ্যের নিজস্ব অগ্রিম ছাড় স্বয়ংক্রিয়ভাবে অনুসরণ করা হবে।</p></section>
+<section class="card product-detail-info" id="product-card"><div id="product-image">পণ্য লোড হচ্ছে…</div><a class="detail-media-button" id="offer-media-button" href="#" target="_blank" rel="noopener noreferrer" hidden><span aria-hidden="true">▣</span> ছবি ও ভিডিও দেখুন <span aria-hidden="true">↗</span></a><h1 class="title" id="product-name">ধামাকা অফার</h1><div class="price"><strong id="unit-price">—</strong><del id="old-price"></del></div><p class="product-payment-discount-note" id="advance-price-note" hidden></p><div class="deal"><b id="deal-heading">BUY 2 GET 30% OFF</b><small>একটি কিনলে স্বাভাবিক দাম। দুটি কিনলে অগ্রিম পেমেন্টে অতিরিক্ত অফার ছাড়।</small></div><p class="hint">পণ্যের বর্তমান ওয়েবসাইট মূল্য ও পণ্যের নিজস্ব অগ্রিম ছাড় স্বয়ংক্রিয়ভাবে অনুসরণ করা হবে।</p></section>
 <section class="card" id="offer-order">
 <form id="offer-form" class="order-form">
 <div class="checkout-section-heading"><span>01</span><div><b>কেনার অপশন</b><small>একটি অথবা দুটি পিস নির্বাচন করুন</small></div></div>
@@ -176,7 +176,7 @@ async function init(){
  offer=data;product=data.product;charges=data.deliveryCharges||{};percent=Number(data.discountPercent||30);
  const img=(product.images||[])[0];$('product-image').innerHTML=img?'<img class="photo" src="'+escapeHtml(img)+'" alt="'+escapeHtml(product.name)+'">':'<div class="photo"></div>';
  const mediaButton=$('offer-media-button');if(product.mediaEnabled!==false&&product.mediaUrl){mediaButton.href=product.mediaUrl;mediaButton.hidden=false;}else{mediaButton.hidden=true;mediaButton.removeAttribute('href');}
- $('product-name').textContent=product.name;$('unit-price').textContent=money(unitAdvance());$('old-price').textContent=Number(product.discountPercent)>0?money(product.sellingPrice):'';
+ $('product-name').textContent=product.name;$('unit-price').textContent=money(unitAdvance());$('old-price').textContent=Number(product.discountPercent)>0?money(product.sellingPrice):'';const advanceNote=$('advance-price-note');const ownAdvancePercent=Number(product.discountPercent||0);if(advanceNote&&ownAdvancePercent>0){advanceNote.hidden=false;advanceNote.textContent='অগ্রিম ডেলিভারি চার্জ দিলে পণ্যের দামে '+ownAdvancePercent+'% ছাড় প্রযোজ্য। ক্যাশ অন ডেলিভারিতে দাম '+money(product.sellingPrice)+'।';}
  document.querySelectorAll('input[name="buyMode"],input[name="paymentMethod"]').forEach(x=>x.addEventListener('change',()=>{if(x.name==="buyMode")renderPieces();else updateSummary();}));
  $('division').addEventListener('change',updateSummary);
  $('piece-options').addEventListener('change',event=>{
