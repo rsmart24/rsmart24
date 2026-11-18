@@ -95,7 +95,7 @@ function renderFeaturedSections() {
     if (!section || !strip) return;
     section.hidden = !items.length;
     if (type === "offer") {
-      strip.innerHTML = `<a class="winter-offer-slim-banner" href="/special-offer.html"><span>❄️ শীতের স্পেশাল অফার</span><strong>২টি কিনলেই ৩০% ছাড়</strong><b>এখনই অর্ডার করুন ↗</b></a>` + items.map(p => {
+      strip.innerHTML = `<a class="winter-offer-slim-banner" href="/special-offer.html?id=${encodeURIComponent(items[0].id)}"><span>❄️ শীতের স্পেশাল অফার</span><strong>২টি কিনলেই ${Math.max(1, Math.min(90, Number(items[0].specialOfferPercent || 30)))}% ছাড়</strong><b>এখনই অর্ডার করুন ↗</b></a>` + items.map(p => {
         const reference = Number(p.specialOfferReferencePrice || p.sellingPrice || 0);
         const percent = Math.max(1, Math.min(90, Number(p.specialOfferPercent || 30)));
         const total = Math.round(reference * 2 * (100 - percent) / 100);
