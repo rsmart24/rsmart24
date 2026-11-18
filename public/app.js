@@ -46,6 +46,13 @@ function advanceDiscountPrice(product) {
   return percent > 0 ? Math.max(0, Math.round(price * (100 - percent) / 100)) : price;
 }
 
+function advanceDiscountNote(product) {
+  const percent = Number(product?.discountPercent || 0);
+  const codPrice = Number(product?.sellingPrice);
+  if (!(percent > 0) || !Number.isFinite(codPrice)) return "";
+  return `<p class="product-payment-discount-note">অগ্রিম ডেলিভারি চার্জ দিলে পণ্যের দামে ${percent}% ছাড় প্রযোজ্য। ক্যাশ অন ডেলিভারিতে দাম ${money(codPrice)}।</p>`;
+}
+
 function showNotice(message) {
   if (!notice) return;
   notice.textContent = message;
@@ -92,7 +99,7 @@ function renderFeaturedSections() {
   const strip = document.querySelector("#trending-products");
   if (!section || !strip) return;
   section.hidden = !trending.length;
-  strip.innerHTML = trending.map(p => `<article class="featured-product-card" data-featured-product="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন"><div class="featured-product-image">${productImage(p)}<span class="featured-trending-badge">TRENDING</span></div><div class="featured-product-info"><h3>${escapeHtml(p.name || "পণ্য")}</h3><div class="featured-product-price"><strong>${money(advanceDiscountPrice(p))}</strong></div></div></article>`).join("");
+  strip.innerHTML = trending.map(p => `<article class="featured-product-card" data-featured-product="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন"><div class="featured-product-image">${productImage(p)}<span class="featured-trending-badge">TRENDING</span></div><div class="featured-product-info"><h3>${escapeHtml(p.name || "পণ্য")}</h3><div class="featured-product-price"><strong>${money(advanceDiscountPrice(p))}</strong></div>${advanceDiscountNote(p)}</div></article>`).join("");
   strip.querySelectorAll("[data-featured-product]").forEach(card => {
     const open = () => chooseProduct(card.dataset.featuredProduct);
     card.addEventListener("click", open);
@@ -120,7 +127,7 @@ async function loadDhamaakaHomeSection() {
     if(note)note.textContent="BUY 2 GET "+offerPercent+"% OFF";
     strip.innerHTML=`<a class="featured-product-card dhamaaka-featured-card" href="/dhamaaka-offer.html">
       <div class="featured-product-image">${image?`<img src="${escapeHtml(image)}" alt="${escapeHtml(p.name)}" loading="lazy">`:"<span>RS Mart</span>"}<span class="featured-trending-badge dhamaaka-badge">BUY 2 GET ${offerPercent}% OFF</span></div>
-      <div class="featured-product-info"><h3>${escapeHtml(p.name||"ধামাকা অফার")}</h3><div class="featured-product-price"><strong>${money(advance)}</strong></div><span class="dhamaaka-card-cta">অফার দেখুন →</span></div>
+      <div class="featured-product-info"><h3>${escapeHtml(p.name||"ধামাকা অফার")}</h3><div class="featured-product-price"><strong>${money(advance)}</strong></div>${advanceDiscountNote(p)}<span class="dhamaaka-card-cta">অফার দেখুন →</span></div>
     </a>`;
   } catch(error) { section.hidden=true;if(banner)banner.hidden=true; }
 }
@@ -163,6 +170,7 @@ function renderProducts() {
               <strong>${money(advanceDiscountPrice(p))}</strong>
             </span>
           </div>
+          ${advanceDiscountNote(p)}
           <div class="product-card-actions">
             <button class="buy-button" data-buy="${escapeHtml(p.id)}" ${outOfStock || !hasPrice ? "disabled" : ""}>
               ${outOfStock ? "স্টক নেই" : !hasPrice ? "দাম আসছে" : "অর্ডার নাও"}
