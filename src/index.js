@@ -193,6 +193,7 @@ async function ensureOrderSchema(env) {
   }
   await env.DB.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_submission_key ON orders(submission_key)").run();
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS public_order_phone_limits (phone_hash TEXT PRIMARY KEY, request_count INTEGER NOT NULL DEFAULT 0, window_started_at INTEGER NOT NULL, blocked_until INTEGER NOT NULL DEFAULT 0)").run();
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS dhamaaka_offer_settings (id INTEGER PRIMARY KEY CHECK (id = 1), product_id TEXT, discount_percent INTEGER NOT NULL DEFAULT 30, enabled INTEGER NOT NULL DEFAULT 0, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)").run();
 }
 
 async function getSettings(env) {
@@ -463,6 +464,16 @@ async function createOrder(request, env) {
   const phoneLimitResponse = await enforcePhoneOrderRateLimit(customerPhone, env);
   if (phoneLimitResponse) return phoneLimitResponse;
   const requestedItems = Array.isArray(body.items) && body.items.length ? body.items : [{ id: body.productId, quantity: body.quantity || 1, color: body.color || "", size: body.size || "" }];
+  let dhamaakaOffer = null;
+  if (body.dhamaakaOffer === true) {
+    dhamaakaOffer = await env.DB.prepare("SELECT product_id, discount_percent, enabled FROM dhamaaka_offer_settings WHERE id = 1").first();
+    if (!dhamaakaOffer || Number(dhamaakaOffer.enabled) !== 1 || !dhamaakaOffer.product_id) return json({error:"ধামাকা অফারটি বর্তমানে চালু নেই।"},409);
+    if (requestedItems.length !== 2 || requestedItems.some(item => String(item.id ?? item.productId) !== String(dhamaakaOffer.product_id) || Number(item.quantity || 1) !== 1)) {
+      return json({error:"ধামাকা অফারে একই পণ্যের ঠিক ২টি পিস নির্বাচন করতে হবে।"},400);
+    }
+    const offerPercent = Number(dhamaakaOffer.discount_percent);
+    if (!Number.isInteger(offerPercent) || offerPercent < 1 || offerPercent > 90) return json({error:"ধামাকা অফারের ছাড়ের সেটিং সঠিক নয়।"},409);
+  }
   if (requestedItems.length > 20) return json({error:"এক অর্ডারে সর্বোচ্চ ২০ ধরনের পণ্য যোগ করতে পারবেন।"},400);
   const catalog = await getCatalog(env);
   const orderItems = [];
@@ -486,11 +497,15 @@ async function createOrder(request, env) {
     const unitPrice = Number(settings.selling_price);
     if (!Number.isSafeInteger(unitPrice) || unitPrice < 1) return json({error:"একটি পণ্যের দাম সঠিক নয়।"},400);
     const lineSubtotal = unitPrice * quantity;
-    const discountPercent = body.paymentMethod === "advance" ? Number(settings.discount_percent || 0) : 0;
-    // Round the discounted unit price once, then multiply by quantity.
-    const discountedUnitPrice = discountPercent > 0
-      ? Math.max(0, Math.round(unitPrice * (100 - discountPercent) / 100))
+    const baseAdvancePercent = body.paymentMethod === "advance" ? Number(settings.discount_percent || 0) : 0;
+    // Apply the product's existing advance discount first; Dhamaaka's extra discount is calculated on that already-discounted price.
+    const baseDiscountedUnitPrice = baseAdvancePercent > 0
+      ? Math.max(0, Math.round(unitPrice * (100 - baseAdvancePercent) / 100))
       : unitPrice;
+    const discountedUnitPrice = dhamaakaOffer && body.paymentMethod === "advance"
+      ? Math.max(0, Math.round(baseDiscountedUnitPrice * (100 - Number(dhamaakaOffer.discount_percent)) / 100))
+      : baseDiscountedUnitPrice;
+    const discountPercent = unitPrice > 0 ? Math.round((unitPrice - discountedUnitPrice) * 100 / unitPrice) : 0;
     const discountAmount = (unitPrice - discountedUnitPrice) * quantity;
     subtotal += lineSubtotal; totalDiscount += discountAmount; totalQuantity += quantity;
     orderItems.push({id:String(product.id),name:String(product.name || ""),quantity,unitPrice,color,size,subtotal:lineSubtotal,discountPercent,discountAmount,discountedUnitPrice});
@@ -756,6 +771,26 @@ export default {
 
         requireDB(env);
 
+        if (path === "/api/admin/dhamaaka-offer" && method === "GET") {
+          await ensureOrderSchema(env);
+          const offer = await env.DB.prepare("SELECT product_id, discount_percent, enabled FROM dhamaaka_offer_settings WHERE id = 1").first();
+          const catalog = await getCatalog(env);
+          const settings = await getSettings(env);
+          return json({offer:offer || {product_id:null,discount_percent:30,enabled:0}, products:catalog.products.map(p=>publicProduct(p,settings.get(String(p.id))))});
+        }
+        if (path === "/api/admin/dhamaaka-offer" && method === "PUT") {
+          let body; try { body = await request.json(); } catch { return json({error:"সঠিক তথ্য পাঠান।"},400); }
+          const productId = String(body.productId || "").trim();
+          const discountPercent = Number(body.discountPercent);
+          const enabled = body.enabled === true;
+          if (!productId || !Number.isInteger(discountPercent) || discountPercent < 1 || discountPercent > 90) return json({error:"একটি পণ্য নির্বাচন করুন এবং ১–৯০ শতাংশ ছাড় দিন।"},400);
+          const catalog = await getCatalog(env);
+          const product = catalog.products.find(p=>String(p.id)===productId);
+          const settings = await env.DB.prepare("SELECT is_visible FROM product_settings WHERE product_id=?").bind(productId).first();
+          if (!product || isOutOfStock(product) || !settings || Number(settings.is_visible)!==1) return json({error:"নির্বাচিত পণ্যটি দৃশ্যমান ও স্টকে থাকা প্রয়োজন।"},400);
+          await env.DB.prepare("INSERT INTO dhamaaka_offer_settings (id,product_id,discount_percent,enabled,updated_at) VALUES (1,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(id) DO UPDATE SET product_id=excluded.product_id,discount_percent=excluded.discount_percent,enabled=excluded.enabled,updated_at=CURRENT_TIMESTAMP").bind(productId,discountPercent,enabled?1:0).run();
+          return json({success:true,message:"ধামাকা অফারের সেটিংস সংরক্ষণ হয়েছে।"});
+        }
         if (path === "/api/admin/products" && method === "GET") {
           return await adminProducts(env);
         }
@@ -793,6 +828,17 @@ export default {
         return json({ error: "Admin API route not found." }, 404);
       }
 
+      if (path === "/api/dhamaaka-offer" && method === "GET") {
+        await ensureOrderSchema(env);
+        const offer = await env.DB.prepare("SELECT product_id, discount_percent, enabled FROM dhamaaka_offer_settings WHERE id = 1").first();
+        if (!offer || Number(offer.enabled) !== 1 || !offer.product_id) return json({active:false});
+        const catalog = await getCatalog(env);
+        const settings = await getSettings(env);
+        const product = catalog.products.find(p => String(p.id) === String(offer.product_id));
+        const productSettings = settings.get(String(offer.product_id));
+        if (!product || !productSettings || Number(productSettings.is_visible) !== 1 || isOutOfStock(product)) return json({active:false});
+        return json({active:true, discountPercent:Number(offer.discount_percent), product:publicProduct(product, productSettings), deliveryCharges:catalog.deliveryCharges});
+      }
       if (path === "/api/products" && method === "GET") {
         return await publicProducts(env);
       }
