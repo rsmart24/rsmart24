@@ -3143,3 +3143,12 @@ body.order-modal-open {
   font-size: 9px;
   line-height: 1.4;
 }
+
+
+/* Make the Dhamaaka buy-two discount unmistakable on the home section */
+.dhamaaka-savings-callout{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:fit-content;max-width:100%;margin:10px 0 12px;padding:10px 16px;border:2px solid #b45309;border-radius:12px;background:linear-gradient(120deg,#fff1c2,#fffbeb);color:#78350f;box-shadow:0 4px 12px rgba(180,83,9,.12)}
+.dhamaaka-savings-callout span{font-size:clamp(13px,1.5vw,16px);font-weight:800;line-height:1.35}
+.dhamaaka-savings-callout strong{font-size:clamp(27px,3.2vw,40px);font-weight:950;line-height:1.08;color:#b91c1c;letter-spacing:-.5px}
+.dhamaaka-savings-callout small{font-size:12px;font-weight:700;line-height:1.4;color:#92400e}
+.dhamaaka-badge{font-size:12px!important;font-weight:900!important;padding:8px 11px!important}
+@media(max-width:600px){.dhamaaka-savings-callout{align-items:center;width:100%;margin:8px 0 10px;padding:10px 12px}.dhamaaka-savings-callout strong{font-size:34px}.dhamaaka-savings-callout small{font-size:11px}.dhamaaka-badge{font-size:11px!important;padding:7px 9px!important}}
