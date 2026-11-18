@@ -476,6 +476,7 @@ async function createOrder(request, env) {
   if (phoneLimitResponse) return phoneLimitResponse;
   const isSpecialOfferOrder = body.orderType === "special_offer";
   const requestedItems = Array.isArray(body.items) && body.items.length ? body.items : [{ id: body.productId, quantity: body.quantity || 1, color: body.color || "", size: body.size || "" }];
+  if (isSpecialOfferOrder && body.paymentMethod !== "cod") return json({error:"শীতের Special Offer-এ আপাতত ক্যাশ অন ডেলিভারি প্রযোজ্য।"},400);
   if (isSpecialOfferOrder && (requestedItems.length !== 1 || Number(requestedItems[0]?.quantity) !== 2)) return json({error:"শীতের Special Offer নিতে ঠিক ২টি পণ্য নির্বাচন করতে হবে।"},400);
   if (!isSpecialOfferOrder && requestedItems.some(item => Number(item.quantity || 1) === 2 && body.orderType === "special_offer")) return json({error:"Special Offer-এর অর্ডার আলাদা পেজ থেকে জমা দিন।"},400);
   if (requestedItems.length > 20) return json({error:"এক অর্ডারে সর্বোচ্চ ২০ ধরনের পণ্য যোগ করতে পারবেন।"},400);
@@ -501,7 +502,7 @@ async function createOrder(request, env) {
     if (isSpecialOfferOrder && Number(settings.special_offer_enabled || 0) !== 1) return json({error:"এই পণ্যটি বর্তমানে Special Offer-এ নেই।"},409);
     const baseUnitPrice = isSpecialOfferOrder ? Number(settings.special_offer_reference_price || settings.selling_price) : Number(settings.selling_price);
     if (!Number.isSafeInteger(baseUnitPrice) || baseUnitPrice < 1) return json({error:"একটি পণ্যের দাম সঠিক নয়।"},400);
-    const offerPercent = isSpecialOfferOrder ? Number(settings.special_offer_percent || 0) : 0;
+    const offerPercent = isSpecialOfferOrder ? Number(settings.special_offer_percent || 30) : 0;
     if (isSpecialOfferOrder && (!Number.isInteger(offerPercent) || offerPercent < 1 || offerPercent > 90)) return json({error:"এই Special Offer-এর ছাড়ের সেটিংস সঠিক নয়।"},409);
     const unitPrice = isSpecialOfferOrder ? Math.max(0, Math.round(baseUnitPrice * (100 - offerPercent) / 100)) : baseUnitPrice;
     const lineSubtotal = unitPrice * quantity;
