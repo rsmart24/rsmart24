@@ -95,12 +95,16 @@ function renderFeaturedSections() {
     if (!section || !strip) return;
     section.hidden = !items.length;
     strip.innerHTML = items.map(p => {
-      const advancePercent = Number(p.discountPercent || 0);
-      const price = money(advanceDiscountPrice(p));
-      const oldValue = advancePercent > 0 ? p.sellingPrice : null;
-      const oldPrice = oldValue != null && Number(oldValue) > Number(advanceDiscountPrice(p)) ? `<del>${money(oldValue)}</del>` : "";
+      const specialOfferPercent = type === "offer" ? Number(p.specialOfferPercent || 0) : 0;
+      const specialOfferPrice = Math.max(0, Math.round(Number(p.sellingPrice) * (100 - specialOfferPercent) / 100));
+      const featuredPrice = type === "offer" ? specialOfferPrice : advanceDiscountPrice(p);
+      const price = money(featuredPrice);
+      const oldValue = type === "offer" ? p.sellingPrice : (Number(p.discountPercent || 0) > 0 ? p.sellingPrice : null);
+      const oldPrice = oldValue != null && Number(oldValue) > Number(featuredPrice) ? `<del>${money(oldValue)}</del>` : "";
       const offerLabel = String(p.specialOfferText || "").trim() || "SPECIAL OFFER";
-      const badge = type === "offer" ? `<span class="featured-discount-badge">${escapeHtml(offerLabel)}</span>` : `<span class="featured-trending-badge">TRENDING</span>`;
+      const badge = type === "offer"
+        ? `<span class="featured-discount-badge">${escapeHtml(offerLabel)}${specialOfferPercent > 0 ? " · " + specialOfferPercent + "% ছাড়" : ""}</span>`
+        : `<span class="featured-trending-badge">TRENDING</span>`;
       return `<article class="featured-product-card" data-featured-product="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
         <div class="featured-product-image">${productImage(p)}${badge}</div>
         <div class="featured-product-info"><h3>${escapeHtml(p.name || "পণ্য")}</h3><div class="featured-product-price">${oldPrice}<strong>${price}</strong></div></div>

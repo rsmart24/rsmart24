@@ -369,8 +369,8 @@ async function saveProductSettings(request, env, productId) {
   }
   const mediaEnabled = has("mediaEnabled") ? (body.mediaEnabled === false ? 0 : 1) : Number(existing?.media_enabled ?? 1);
   const specialOfferEnabled = has("specialOfferEnabled") ? (body.specialOfferEnabled === true ? 1 : 0) : Number(existing?.special_offer_enabled || 0);
-  // Legacy percentage data is retained for compatibility but no longer changes Special Offer pricing.
-  const specialOfferPercent = Number(existing?.special_offer_percent || 0);
+  const specialOfferPercent = has("specialOfferPercent") ? Number(body.specialOfferPercent) : Number(existing?.special_offer_percent || 0);
+  if (!Number.isInteger(specialOfferPercent) || specialOfferPercent < 0 || specialOfferPercent > 90) return json({ error: "Special Offer ছাড় ০ থেকে ৯০ শতাংশের মধ্যে দিন।" }, 400);
   const specialOfferText = has("specialOfferText") ? String(body.specialOfferText ?? "").trim().slice(0, 80) : String(existing?.special_offer_text || "");
   const isTrending = has("isTrending") ? (body.isTrending === true ? 1 : 0) : Number(existing?.is_trending || 0);
 
@@ -494,8 +494,8 @@ async function createOrder(request, env) {
     }
     const baseUnitPrice = Number(settings.selling_price);
     if (!Number.isSafeInteger(baseUnitPrice) || baseUnitPrice < 0) return json({error:"একটি পণ্যের দাম সঠিক নয়।"},400);
-    const offerPercent = Number(settings.special_offer_enabled || 0) === 1 ? Number(settings.special_offer_percent || 0) : 0;
-    const unitPrice = offerPercent > 0 ? Math.max(0, Math.round(baseUnitPrice * (100 - offerPercent) / 100)) : baseUnitPrice;
+    // Special Offer pricing is promotional display only. Checkout/COD keeps the All Products price.
+    const unitPrice = baseUnitPrice;
     const lineSubtotal = unitPrice * quantity;
     const discountPercent = body.paymentMethod === "advance" ? Number(settings.discount_percent || 0) : 0;
     // Round the discounted unit price once, then multiply by quantity.
