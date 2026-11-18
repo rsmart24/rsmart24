@@ -25,6 +25,22 @@ body{margin:0;background:#f5f6f8;color:var(--ink,#172033);font-family:"Hind Sili
 .deal{margin:14px 0;padding:12px;border:1px solid #f2cf84;border-radius:12px;background:#fff8e8}
 .deal b{display:block;color:#9a4b08;font:800 20px Inter,sans-serif}
 .deal small{color:#805b2a}
+.product-description{margin:16px 0 12px;padding:14px;border:1px solid #dbeafe;border-radius:13px;background:linear-gradient(135deg,#f8fbff 0%,#fff 100%)}
+.product-description h2{display:flex;align-items:center;gap:8px;margin:0 0 11px;color:#1e3a8a;font-size:17px;font-weight:800}
+.product-description h2 span{display:grid;place-items:center;width:27px;height:27px;border-radius:8px;background:#dbeafe;color:#1d4ed8;font-size:15px}
+.product-feature-list{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0;padding:0;list-style:none}
+.product-feature-list li{display:flex;align-items:flex-start;gap:8px;min-width:0;padding:9px 10px;border:1px solid #edf0f5;border-radius:9px;background:#fff;color:#475467;font-size:13px;line-height:1.5}
+.product-feature-list li .feature-icon{flex:0 0 25px;display:grid;place-items:center;width:25px;height:25px;border-radius:8px;background:#eff6ff;color:#2563eb;font-size:14px}
+.product-feature-list li:nth-child(2n) .feature-icon{background:#ecfdf3;color:#16803d}
+.product-feature-list li:nth-child(3n) .feature-icon{background:#fff7ed;color:#c2410c}
+.product-feature-list strong{display:block;margin-bottom:1px;color:#172033;font-size:13px}
+.product-colors{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:11px}
+.product-colors-label{margin-right:2px;color:#344054;font-size:13px;font-weight:800}
+.product-color-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border:1px solid #e4e7ec;border-radius:20px;background:#fff;color:#475467;font-size:12px;font-weight:600}
+.product-color-dot{width:12px;height:12px;border:1px solid #d0d5dd;border-radius:50%}
+.product-color-dot.black{background:#171717}.product-color-dot.navy{background:#172554}.product-color-dot.ivory{background:#f5f0df}
+@media(max-width:700px){.product-description{margin:13px 0 10px;padding:11px}.product-description h2{font-size:16px;margin-bottom:9px}.product-feature-list{grid-template-columns:1fr 1fr;gap:6px}.product-feature-list li{gap:6px;padding:8px;font-size:12px}.product-feature-list li .feature-icon{flex-basis:22px;width:22px;height:22px;font-size:12px}.product-feature-list strong{font-size:12px}.product-colors{gap:5px}.product-color-chip{font-size:11px;padding:4px 7px}}
+@media(max-width:360px){.product-feature-list{grid-template-columns:1fr}}
 .detail-buy-two-callout{margin:14px 0 12px;padding:15px 16px;border:2px solid #b45309;border-radius:14px;background:linear-gradient(120deg,#fff1c2,#fffbeb);color:#78350f;text-align:center;box-shadow:0 5px 16px rgba(180,83,9,.13)}
 .detail-buy-two-callout span{display:block;font-size:14px;font-weight:850;line-height:1.4}
 .detail-buy-two-callout strong{display:block;margin:2px 0;font-size:clamp(30px,5vw,44px);font-weight:950;line-height:1.12;color:#b91c1c}
@@ -90,7 +106,20 @@ body{margin:0;background:#f5f6f8;color:var(--ink,#172033);font-family:"Hind Sili
 <main class="wrap">
 <a class="banner" href="#offer-order"><img src="/dhamaaka-offer-banner.webp" alt="RS Mart ধামাকা অফার — BUY 2 GET 30% OFF"></a>
 <div class="layout product-detail-layout" id="offer-content">
-<section class="card product-detail-info" id="product-card"><div id="product-image">পণ্য লোড হচ্ছে…</div><a class="detail-media-button" id="offer-media-button" href="#" target="_blank" rel="noopener noreferrer" hidden><span aria-hidden="true">▣</span> ছবি ও ভিডিও দেখুন <span aria-hidden="true">↗</span></a><h1 class="title" id="product-name">ধামাকা অফার</h1><div class="price"><strong id="unit-price">—</strong><del id="old-price"></del></div><div class="detail-buy-two-callout"><span>একসাথে ২টি কিনলে</span><strong id="detail-offer-percent">৩০% ছাড়!</strong><small>দুটি পণ্য একসাথে কিনে বিশেষ সাশ্রয় করুন</small></div><p class="product-payment-discount-note" id="advance-price-note" hidden></p><div class="deal"><b id="deal-heading">BUY 2 GET 30% OFF</b><small>একটি কিনলে স্বাভাবিক দাম। দুটি কিনলে অগ্রিম পেমেন্টে অতিরিক্ত অফার ছাড়।</small></div><p class="hint">পণ্যের বর্তমান ওয়েবসাইট মূল্য ও পণ্যের নিজস্ব অগ্রিম ছাড় স্বয়ংক্রিয়ভাবে অনুসরণ করা হবে।</p></section>
+<section class="card product-detail-info" id="product-card"><div id="product-image">পণ্য লোড হচ্ছে…</div><a class="detail-media-button" id="offer-media-button" href="#" target="_blank" rel="noopener noreferrer" hidden><span aria-hidden="true">▣</span> ছবি ও ভিডিও দেখুন <span aria-hidden="true">↗</span></a><h1 class="title" id="product-name">ধামাকা অফার</h1><div class="price"><strong id="unit-price">—</strong><del id="old-price"></del></div><div class="detail-buy-two-callout"><span>একসাথে ২টি কিনলে</span><strong id="detail-offer-percent">৩০% ছাড়!</strong><small>দুটি পণ্য একসাথে কিনে বিশেষ সাশ্রয় করুন</small></div><p class="product-payment-discount-note" id="advance-price-note" hidden></p><div class="deal"><b id="deal-heading">BUY 2 GET 30% OFF</b><small>একটি কিনলে স্বাভাবিক দাম। দুটি কিনলে অগ্রিম পেমেন্টে অতিরিক্ত অফার ছাড়।</small></div>
+<div class="product-description" aria-label="পণ্যের বিবরণ">
+ <h2><span aria-hidden="true">✦</span> পণ্যের বিশেষত্ব</h2>
+ <ul class="product-feature-list">
+  <li><span class="feature-icon" aria-hidden="true">🧵</span><span><strong>Premium Fabric</strong>350 GSM Heavy-Weight Brushed Fleece</span></li>
+  <li><span class="feature-icon" aria-hidden="true">❄️</span><span><strong>Soft &amp; Warm</strong>ভেতরে নরম ও আরামদায়ক, শীতের জন্য উপযোগী</span></li>
+  <li><span class="feature-icon" aria-hidden="true">✨</span><span><strong>Minimal Design</strong>ক্লিন Solid Color ও প্রিমিয়াম লুক</span></li>
+  <li><span class="feature-icon" aria-hidden="true">🧢</span><span><strong>Adjustable Hood</strong>Drawstring সহ স্টাইলিশ হুড</span></li>
+  <li><span class="feature-icon" aria-hidden="true">🧥</span><span><strong>Kangaroo Pocket</strong>সামনে ব্যবহারিক পকেট</span></li>
+  <li><span class="feature-icon" aria-hidden="true">👌</span><span><strong>Comfort Fit</strong>Ribbed Cuffs ও Bottom Hem</span></li>
+ </ul>
+ <div class="product-colors"><span class="product-colors-label">Available Colors:</span><span class="product-color-chip"><i class="product-color-dot black"></i>Jet Black</span><span class="product-color-chip"><i class="product-color-dot navy"></i>Navy Blue</span><span class="product-color-chip"><i class="product-color-dot ivory"></i>Ivory / Off-White</span></div>
+</div>
+<p class="hint">পণ্যের বর্তমান ওয়েবসাইট মূল্য ও পণ্যের নিজস্ব অগ্রিম ছাড় স্বয়ংক্রিয়ভাবে অনুসরণ করা হবে।</p></section>
 <section class="card" id="offer-order">
 <form id="offer-form" class="order-form">
 <div class="checkout-section-heading"><span>01</span><div><b>কেনার অপশন</b><small>একটি অথবা দুটি পিস নির্বাচন করুন</small></div></div>
