@@ -87,7 +87,7 @@ function productImage(product) {
 }
 
 function renderFeaturedSections() {
-  const offers = products.filter(p => p.isVisible !== false && !isOutOfStock(p) && p.specialOfferEnabled && Number(p.specialOfferPercent) > 0 && Number(p.sellingPrice) >= 0);
+  const offers = products.filter(p => p.isVisible !== false && !isOutOfStock(p) && p.specialOfferEnabled && Number(p.sellingPrice) >= 0);
   const trending = products.filter(p => p.isVisible !== false && !isOutOfStock(p) && p.isTrending);
   const renderRail = (items, sectionId, stripId, type) => {
     const section = document.querySelector("#" + sectionId);
@@ -95,12 +95,12 @@ function renderFeaturedSections() {
     if (!section || !strip) return;
     section.hidden = !items.length;
     strip.innerHTML = items.map(p => {
-      const percent = Number(p.specialOfferPercent || 0);
       const advancePercent = Number(p.discountPercent || 0);
       const price = money(advanceDiscountPrice(p));
-      const oldValue = advancePercent > 0 ? p.sellingPrice : (type === "offer" ? p.originalPrice : null);
+      const oldValue = advancePercent > 0 ? p.sellingPrice : null;
       const oldPrice = oldValue != null && Number(oldValue) > Number(advanceDiscountPrice(p)) ? `<del>${money(oldValue)}</del>` : "";
-      const badge = advancePercent > 0 ? `<span class="featured-discount-badge">অগ্রিমে ${advancePercent}% ছাড়</span>` : (type === "offer" ? `<span class="featured-discount-badge">${percent}% ছাড়</span>` : `<span class="featured-trending-badge">TRENDING</span>`);
+      const offerLabel = String(p.specialOfferText || "").trim() || "SPECIAL OFFER";
+      const badge = type === "offer" ? `<span class="featured-discount-badge">${escapeHtml(offerLabel)}</span>` : `<span class="featured-trending-badge">TRENDING</span>`;
       return `<article class="featured-product-card" data-featured-product="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
         <div class="featured-product-image">${productImage(p)}${badge}</div>
         <div class="featured-product-info"><h3>${escapeHtml(p.name || "পণ্য")}</h3><div class="featured-product-price">${oldPrice}<strong>${price}</strong></div></div>
@@ -143,7 +143,7 @@ function renderProducts() {
 
     return `
       <article class="product-card ${outOfStock ? "is-out-of-stock" : ""}" data-product-card="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
-        <div class="product-image">${productImage(p)}${Number(p.discountPercent) > 0 ? `<span class="product-special-offer-badge">অগ্রিমে ${Number(p.discountPercent)}% ছাড়</span>` : (p.specialOfferEnabled && Number(p.specialOfferPercent) > 0 ? `<span class="product-special-offer-badge">${Number(p.specialOfferPercent)}% ছাড়</span>` : "")}${outOfStock ? '<span class="stock-out-overlay">স্টক আউট</span>' : ""}</div>
+        <div class="product-image">${productImage(p)}${Number(p.discountPercent) > 0 ? `<span class="product-special-offer-badge">অগ্রিমে ${Number(p.discountPercent)}% ছাড়</span>` : ""}${outOfStock ? '<span class="stock-out-overlay">স্টক আউট</span>' : ""}</div>
         <div class="product-info">
           <h3>${escapeHtml(p.name)}</h3>
           <div class="product-bottom">
