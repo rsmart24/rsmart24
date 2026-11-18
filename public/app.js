@@ -340,6 +340,13 @@ function startCartCheckout() {
   document.querySelector(".floating-shop")?.classList.add("is-hidden");
   document.querySelector("#cart-page")?.setAttribute("hidden","");
   updateOrderSummary();
+  trackMetaPixelEvent("InitiateCheckout", {
+    content_ids: [...new Set((chosenCartItems || items).map(item => String(item.id)))],
+    content_type: "product",
+    num_items: (chosenCartItems || items).reduce((sum,item)=>sum+Math.max(1,Number(item.quantity||1)),0),
+    value: displayedOrderValue("#grand-total-value"),
+    currency: "BDT"
+  });
   orderSection.scrollIntoView({behavior:"smooth",block:"start"});
 }
 document.querySelector("#cart-items")?.addEventListener("click",event=>{
@@ -394,6 +401,14 @@ window.addEventListener("popstate", () => {
 function openDetailOrderForm() {
   const wrap = document.querySelector("#detail-order-form-wrap");
   if (!wrap) return;
+  const checkoutItems = cartCheckoutMode && chosenCartItems?.length ? chosenCartItems : (chosenProduct ? [{id:chosenProduct.id,quantity:Number(document.querySelector("#order-quantity")?.value||1)}] : []);
+  trackMetaPixelEvent("InitiateCheckout", {
+    content_ids:[...new Set(checkoutItems.map(item=>String(item.id)))],
+    content_type:"product",
+    num_items:checkoutItems.reduce((sum,item)=>sum+Math.max(1,Number(item.quantity||1)),0),
+    value:displayedOrderValue("#grand-total-value"),
+    currency:"BDT"
+  });
   wrap.hidden = false;
   wrap.scrollIntoView({ behavior: "smooth", block: "start" });
   wrap.querySelector('input[name="customerName"]')?.focus({ preventScroll: true });
@@ -528,6 +543,17 @@ document.querySelector("#detail-multi-order")?.addEventListener("click", () => {
 });
 document.querySelector(".header-cart")?.addEventListener("click", event => { event.preventDefault(); openCartPage(); });
 
+function trackMetaPixelEvent(eventName, params = {}, eventId = "") {
+  if (typeof window.fbq !== "function") return;
+  try { if (eventId) window.fbq("track", eventName, params, { eventID: eventId }); else window.fbq("track", eventName, params); }
+  catch (error) { console.warn("Meta Pixel event could not be queued:", eventName, error); }
+}
+function displayedOrderValue(elementId) {
+  const raw = document.querySelector(elementId)?.textContent || "";
+  const value = Number(raw.replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(value) ? value : 0;
+}
+
 function chooseProduct(id, pushHistory = true) {
   lastOrderTrigger = document.activeElement;
   chosenProduct = products.find(p => String(p.id) === String(id));
@@ -542,6 +568,7 @@ function chooseProduct(id, pushHistory = true) {
     alert("দুঃখিত, পণ্যটি স্টকে নেই।");
     return;
   }
+  trackMetaPixelEvent("ViewContent", {content_ids:[String(chosenProduct.id)],content_type:"product",content_name:String(chosenProduct.name||""),value:Number(chosenProduct.sellingPrice||0),currency:"BDT"});
 
   cartCheckoutMode=multiOrderItems.length>0;
   chosenCartItems=cartCheckoutMode?[...multiOrderItems.map(x=>({...x})),{id:chosenProduct.id,quantity:1,color:"",size:""}]:null;
@@ -738,6 +765,14 @@ form.addEventListener("submit", async event => {
     if (!response.ok) {
       throw new Error(result.error || result.message || "অর্ডার জমা হয়নি।");
     }
+    const purchaseItems = Array.isArray(payload.items) ? payload.items : [];
+    trackMetaPixelEvent("Purchase", {
+      content_ids:[...new Set(purchaseItems.map(item=>String(item.id)))],
+      content_type:"product",
+      num_items:purchaseItems.reduce((sum,item)=>sum+Math.max(1,Number(item.quantity||1)),0),
+      value:Number.isFinite(Number(result.value))?Number(result.value):displayedOrderValue("#grand-total-value"),
+      currency:"BDT"
+    },"rs-mart-order-"+String(result.orderId));
 
     window.rsMartPendingSubmissionKey = null;
     window.rsMartPendingSubmissionFingerprint = null;

@@ -180,7 +180,12 @@ body{margin:0;background:#f5f6f8;color:var(--ink,#172033);font-family:"Hind Sili
 </main>
 <script>
 const $=id=>document.getElementById(id),money=n=>"৳"+Number(n||0).toLocaleString("en-BD");
-let offer=null,product=null,charges={},percent=30,geoData=[];
+function trackMetaPixelEvent(eventName,params={},eventId=""){
+ if(typeof window.fbq!=="function")return;
+ try{if(eventId)window.fbq("track",eventName,params,{eventID:eventId});else window.fbq("track",eventName,params);}
+ catch(error){console.warn("Meta Pixel event could not be queued:",eventName,error);}
+}
+let offer=null,product=null,charges={},percent=30,geoData=[],checkoutEventSent=false;
 const escapeHtml=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function variantMarkup(index){
  const vars=product.variants||[],colors=[...new Set(vars.map(v=>v.color).filter(Boolean))],sizes=[...new Set(vars.map(v=>v.size).filter(Boolean))];
@@ -236,6 +241,7 @@ async function init(){
  const response=await fetch('/api/dhamaaka-offer',{cache:'no-store'}),data=await response.json();
  if(!response.ok||!data.active||!data.product){$('offer-content').innerHTML='<section class="card"><h2>এই মুহূর্তে ধামাকা অফারটি চালু নেই।</h2><a href="/">হোমপেজে ফিরে যান</a></section>';return;}
  offer=data;product=data.product;charges=data.deliveryCharges||{};percent=Number(data.discountPercent||30);$('detail-offer-percent').textContent=percent+'% ছাড়!';
+  trackMetaPixelEvent("ViewContent",{content_ids:[String(product.id)],content_type:"product",content_name:String(product.name||""),value:Number(product.sellingPrice||0),currency:"BDT"});
  const img=(product.images||[])[0];$('product-image').innerHTML=img?'<img class="photo" src="'+escapeHtml(img)+'" alt="'+escapeHtml(product.name)+'">':'<div class="photo"></div>';
  const mediaButton=$('offer-media-button');if(product.mediaEnabled!==false&&product.mediaUrl){mediaButton.href=product.mediaUrl;mediaButton.hidden=false;}else{mediaButton.hidden=true;mediaButton.removeAttribute('href');}
  $('product-name').textContent=product.name;$('unit-price').textContent=money(unitAdvance());$('old-price').textContent=Number(product.discountPercent)>0?money(product.sellingPrice):'';const advanceNote=$('advance-price-note');const ownAdvancePercent=Number(product.discountPercent||0);if(advanceNote&&ownAdvancePercent>0){advanceNote.hidden=false;advanceNote.textContent='অগ্রিম ডেলিভারি চার্জ দিলে পণ্যের দামে '+ownAdvancePercent+'% ছাড় প্রযোজ্য। ক্যাশ অন ডেলিভারিতে দাম '+money(product.sellingPrice)+'।';}
@@ -263,11 +269,17 @@ $('offer-form').addEventListener('submit',async e=>{
  const phone=String(data.get('customerPhone')||'').replace(/[\s-]/g,'');
  if(!/^(?:01[3-9][0-9]{8}|\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})$/.test(phone)){$('message').textContent='সঠিক বাংলাদেশি মোবাইল নম্বর দিন।';return;}
  if(method==='advance'&&!/^[A-Z0-9]{8,12}$/.test(String(data.get('transactionId')||''))){$('message').textContent='৮–১২ অক্ষরের সঠিক Transaction ID দিন।';return;}
+ if(!checkoutEventSent){
+  const shownTotal=Number(String($('total').textContent||'').replace(/[^0-9.-]/g,''));
+  trackMetaPixelEvent("InitiateCheckout",{content_ids:[String(product.id)],content_type:"product",num_items:items.length,value:Number.isFinite(shownTotal)?shownTotal:0,currency:"BDT"});
+  checkoutEventSent=true;
+ }
  const payload={dhamaakaOffer:two,items,customerName:data.get('customerName'),customerPhone:phone,customerDivision:data.get('customerDivision'),customerDistrict:data.get('customerDistrict'),customerArea:data.get('customerArea'),customerAddress:data.get('customerAddress'),customerNote:data.get('customerNote'),paymentMethod:method,transactionId:data.get('transactionId')||'',submissionKey:crypto.randomUUID()};
  $('submit').disabled=true;$('submit').textContent='অর্ডার পাঠানো হচ্ছে…';$('message').textContent='';$('message').classList.remove('error');
  try{
   const response=await fetch('/api/orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}),result=await response.json();
   if(!response.ok)throw new Error(result.error||'অর্ডার জমা হয়নি।');
+  trackMetaPixelEvent("Purchase",{content_ids:[String(product.id)],content_type:"product",num_items:items.length,value:Number(result.value||0),currency:"BDT"},"rs-mart-order-"+String(result.orderId));
   form.hidden=true;$('success').style.display='block';$('order-id').textContent=result.orderId;
  }catch(error){$('message').textContent=error.message;$('message').classList.add('error');}
  finally{$('submit').disabled=false;$('submit').textContent='অর্ডার কনফার্ম করুন';}
