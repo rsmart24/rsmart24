@@ -226,7 +226,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
     .detail-action-card .order-actions{margin-top:0;gap:7px}.detail-action-card .delete-order{margin-top:8px}
     .back-orders{background:#e8f4ec;color:#166534;border:1px solid #cce5d2;box-shadow:none;min-height:36px;padding:7px 11px}
     @media(max-width:650px){.detail-compact-grid{grid-template-columns:1fr}.order-detail-screen{padding:10px}.detail-customer-card{padding:12px}.detail-phone-line strong{font-size:20px}.order-detail-top h2{font-size:16px}}
-    .featured-admin-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}.featured-admin-controls label{font-size:12px;color:#315c40}.featured-admin-controls input[type=number]{margin-top:5px}.featured-admin-check{display:flex!important;align-items:center;gap:8px;padding:10px;border:1px solid #d8e9dc;border-radius:9px;background:#f7fcf8;font-weight:700!important}.featured-admin-check input{width:18px;height:18px;min-height:18px;margin:0;flex:0 0 auto}.featured-admin-product{grid-template-columns:76px minmax(0,1fr)}@media(max-width:650px){.featured-admin-controls{grid-template-columns:1fr}.featured-admin-check{min-height:42px}}
+    .trending-product-check{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid #d8e9dc;border-radius:9px;background:#f7fcf8;font-size:13px;font-weight:700;color:#315c40}.trending-product-check input{width:18px;height:18px;min-height:18px;margin:0;flex:0 0 auto}
     .product-action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
     .product-action-row button{flex:1;min-width:130px}
     .product-action-row .secondary{background:#edf7ef;color:#166534;border:1px solid #cfe5d4}
@@ -239,8 +239,6 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
     .business-koro-delivery select{width:100%;min-height:38px;border:1px solid #cbd5e1;border-radius:8px;padding:7px 9px;background:#fff;color:#1f2937;font:inherit;font-size:12px}
     @media(max-width:650px){.business-koro-card{align-items:stretch}.business-koro-card button{width:100%}}
   
-    .featured-admin-controls { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); align-items: end; }
-    .featured-admin-controls input[type="number"] { width: 100%; min-width: 0; }
 </style>
 </head>
 <body>
@@ -286,7 +284,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
         <article class="stat-card"><span>স্টক আউট</span><strong id="stat-out-stock">০</strong></article>
         <p class="muted stat-note">*বাতিল অর্ডার বাদে অর্ডারের মোট মূল্য; এটি লাভের হিসাব নয়।</p>
       </section>
-      <nav class="admin-nav" aria-label="Admin sections"><button type="button" data-tab="products" aria-selected="true">পণ্য ব্যবস্থাপনা</button><button type="button" data-tab="featured" aria-selected="false">Trending Products</button><button type="button" data-tab="orders" aria-selected="false">অর্ডার ব্যবস্থাপনা</button></nav>
+      <nav class="admin-nav" aria-label="Admin sections"><button type="button" data-tab="products" aria-selected="true">পণ্য ব্যবস্থাপনা</button><button type="button" data-tab="orders" aria-selected="false">অর্ডার ব্যবস্থাপনা</button></nav>
       <div class="panel" id="products-panel">
         <h2>পণ্য ব্যবস্থাপনা</h2>
         <p class="muted">বিক্রয়মূল্য, ক্যাটাগরি, মিডিয়া লিংক এবং পণ্যের দৃশ্যমানতা নিয়ন্ত্রণ করুন।</p>        <div class="admin-toolbar">
@@ -296,13 +294,6 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
           <p class="muted" style="grid-column:1/-1;margin:0">প্রতিটি পণ্যের তথ্য পরিবর্তন করে সংরক্ষণ করুন।</p>
         </div>
         <div id="products">পণ্য লোড হচ্ছে...</div>
-      </div>
-
-      <div class="panel hidden" id="featured-panel">
-        <h2>Trending Products</h2>
-        <p class="muted">All Products থেকে যেসব পণ্য নির্বাচন করবেন, শুধু সেগুলোই হোমপেজের Trending Products সেকশনে দেখাবে। পণ্যে ক্লিক করলে All Products-এর মতো একই Product Details ও অর্ডার ব্যবস্থা খুলবে।</p>
-        <div class="admin-toolbar"><input id="featured-search" type="search" placeholder="পণ্যের নাম দিয়ে খুঁজুন..." aria-label="Trending পণ্য খুঁজুন"><button type="button" class="secondary" id="refresh-featured">তালিকা রিফ্রেশ</button></div>
-        <div id="featured-products">পণ্য লোড হচ্ছে...</div>
       </div>
 
       <div class="panel hidden" id="orders-panel">
@@ -458,34 +449,10 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       logoutButton.classList.add("hidden");
     }
 
-    function renderFeaturedAdmin() {
-      const box = document.querySelector("#featured-products");
-      if (!box) return;
-      const query = (document.querySelector("#featured-search")?.value || "").trim().toLowerCase();
-      const items = adminProducts.filter(p => String(p.name || "").toLowerCase().includes(query));
-      if (!items.length) { box.textContent = "কোনো পণ্য পাওয়া যায়নি।"; return; }
-      box.innerHTML = items.map(p => `<article class="product featured-admin-product"><div>${p.images?.[0] ? `<img src="${escapeHTML(p.images[0])}" alt="">` : "<div>RS Mart</div>"}</div><div><h3>${escapeHTML(p.name)}</h3><p class="muted">বিক্রয়মূল্য: ${money(p.sellingPrice)}</p><div class="featured-admin-controls"><label class="featured-admin-check"><input type="checkbox" id="trending-${escapeHTML(p.id)}" ${p.isTrending ? "checked" : ""}> Trending Products-এ দেখান</label></div><button type="button" data-feature-save="${escapeHTML(p.id)}">${p.isTrending ? "Trending থেকে বাদ দিন / সংরক্ষণ" : "Trending-এ যোগ করুন / সংরক্ষণ"}</button></div></article>`).join("");
-      box.querySelectorAll("[data-feature-save]").forEach(button => button.addEventListener("click", async () => {
-        const id = button.dataset.featureSave;
-        const p = adminProducts.find(item => String(item.id) === String(id));
-        if (!p) return;
-        const isTrending = document.querySelector(`#trending-${CSS.escape(id)}`).checked;
-        button.disabled = true;
-        try {
-          await api(`/api/admin/products/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ isTrending }) });
-          p.isTrending = isTrending;
-          button.textContent = isTrending ? "Trending থেকে বাদ দিন / সংরক্ষণ" : "Trending-এ যোগ করুন / সংরক্ষণ";
-          alert(isTrending ? "পণ্যটি Trending Products-এ যোগ হয়েছে।" : "পণ্যটি Trending Products থেকে বাদ দেওয়া হয়েছে।");
-        } catch (error) { alert(error.message); }
-        finally { button.disabled = false; }
-      }));
-    }
-
     async function loadProducts() {
       const result = await api("/api/admin/products");
       adminProducts = Array.isArray(result.data) ? result.data : [];
       updateAdminStats();
-      renderFeaturedAdmin();
 
       if (!result.data.length) {
         productsBox.textContent = "কোনো পণ্য পাওয়া যায়নি।";
@@ -535,6 +502,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
                   <option value="no" ${!p.isVisible ? "selected" : ""}>না</option>
                 </select>
               </label>
+              <label class="trending-product-check"><input type="checkbox" id="trending-${escapeHTML(p.id)}" ${p.isTrending ? "checked" : ""}> হোমপেজের Trending Products-এ দেখান</label>
             </div>
 <div class="product-action-row">
 <button type="button" data-save="${escapeHTML(p.id)}">পরিবর্তন সংরক্ষণ</button>
@@ -553,6 +521,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
           const visible = document.querySelector(`#visible-${CSS.escape(id)}`).value;
           const mediaUrl = document.querySelector(`#media-url-${CSS.escape(id)}`).value.trim();
           const mediaEnabled = document.querySelector(`#media-enabled-${CSS.escape(id)}`).value;
+          const isTrending = document.querySelector(`#trending-${CSS.escape(id)}`).checked;
           if (discountPercent.trim() === "" || !Number.isInteger(Number(discountPercent)) || Number(discountPercent) < 10 || Number(discountPercent) > 20) {
             alert("Discount ১০ থেকে ২০ শতাংশের মধ্যে দিন।");
             return;
@@ -580,7 +549,8 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
   category,
   isVisible: visible === "yes",
   mediaUrl,
-  mediaEnabled: mediaEnabled === "yes"
+  mediaEnabled: mediaEnabled === "yes",
+  isTrending
 })
             });
             alert("পণ্যের সেটিংস সংরক্ষণ হয়েছে।");
@@ -890,14 +860,10 @@ orderDetailView.addEventListener("click",async e=>{
       button.addEventListener("click", () => {
         const tabName = button.dataset.tab;
         document.querySelector("#products-panel").classList.toggle("hidden", tabName !== "products");
-        document.querySelector("#featured-panel").classList.toggle("hidden", tabName !== "featured");
         document.querySelector("#orders-panel").classList.toggle("hidden", tabName !== "orders");
         document.querySelectorAll("[data-tab]").forEach(tab => tab.setAttribute("aria-selected", String(tab === button)));
-        if (tabName === "featured") renderFeaturedAdmin();
       });
     });
-    document.querySelector("#featured-search").addEventListener("input", renderFeaturedAdmin);
-    document.querySelector("#refresh-featured").addEventListener("click", async event => { event.currentTarget.disabled = true; try { await loadProducts(); } catch (error) { alert(error.message); } finally { event.currentTarget.disabled = false; } });
 
     async function copyText(text, button) {
       try {
