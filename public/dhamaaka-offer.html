@@ -7,7 +7,74 @@
 <link rel="stylesheet" href="/style.css?v=dhamaaka-parity-20261118-1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700;800&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f5f6f8;color:#172033;font-family:"Hind Siliguri",sans-serif}.wrap{max-width:1050px;margin:0 auto;padding:16px}.top{display:flex;justify-content:space-between;align-items:center;margin:0 auto 14px;max-width:1050px;padding:12px 16px}.brand{font:800 22px Inter,sans-serif;color:#172033;text-decoration:none}.back{color:#3157b7;text-decoration:none;font-weight:700}.banner{display:block;border-radius:14px;overflow:hidden;background:#111827}.banner img{display:block;width:100%;height:auto;aspect-ratio:auto;object-fit:contain;object-position:center;background:#fff}.layout{display:grid;grid-template-columns:minmax(0, .9fr) minmax(0,1.1fr);gap:20px;margin-top:18px}.card{background:#fff;border:1px solid #e5e9ef;border-radius:16px;padding:18px;box-shadow:0 8px 26px #1720330a}.photo{width:100%;aspect-ratio:1/1;border-radius:12px;background:#f7f8fa;object-fit:contain}.title{font-size:25px;margin:12px 0 5px}.price{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.price strong{font:800 24px Inter,sans-serif;color:#b45309}.price del{color:#98a2b3}.deal{margin:14px 0;padding:12px;border:1px solid #f2cf84;border-radius:12px;background:#fff8e8}.deal b{display:block;color:#9a4b08;font:800 20px Inter,sans-serif}.deal small{color:#805b2a}.choice{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.choice label{flex:1;min-width:140px;border:1px solid #d9e0e8;border-radius:10px;padding:12px;cursor:pointer}.choice label:has(input:checked){border:2px solid #d97706;background:#fffbeb}.choice input{margin-right:6px}.piece{padding:12px;border:1px solid #e6eaf0;border-radius:12px;margin:10px 0}.piece h3{margin:0 0 10px;font-size:16px}.variants{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:#475467}.field input,.field select,textarea{width:100%;padding:11px;border:1px solid #d0d5dd;border-radius:8px;font:inherit;color:#172033;background:#fff}.section-title{font-size:18px;margin:20px 0 10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.summary{margin-top:16px;background:#f8fafc;border:1px solid #e4eaf2;border-radius:12px;padding:13px}.sumrow{display:flex;justify-content:space-between;gap:10px;padding:5px 0}.grand{border-top:1px solid #dce3ec;margin-top:6px;padding-top:10px;font-weight:800;font-size:18px}.discount{color:#16803d;font-weight:700}.submit{width:100%;margin-top:14px;padding:14px;border:0;border-radius:10px;background:#e87516;color:white;font:800 16px inherit;cursor:pointer}.submit:disabled{opacity:.6}.hint{color:#667085;font-size:12px;line-height:1.6}.error{color:#b42318;font-weight:600}.success{display:none;padding:24px;text-align:center}.success h2{color:#16803d}@media(max-width:700px){.wrap{padding:10px}.top{padding:10px}.layout{grid-template-columns:1fr;gap:12px;margin-top:12px}.card{padding:14px}.banner{border-radius:9px}.banner img{aspect-ratio:4/1}.title{font-size:21px}.grid{grid-template-columns:1fr}.choice label{min-width:0}.price strong{font-size:21px}}
+*{box-sizing:border-box}
+body{margin:0;background:#f5f6f8;color:var(--ink,#172033);font-family:"Hind Siliguri",sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+.top{display:flex;justify-content:space-between;align-items:center;margin:0 auto 14px;max-width:1180px;padding:12px 16px}
+.brand{font:800 22px Inter,sans-serif;color:#172033;text-decoration:none}
+.back{color:#3157b7;text-decoration:none;font-weight:700}
+.banner{display:block;width:100%;border-radius:14px;overflow:hidden;background:#fff}
+.banner img{display:block;width:100%;height:auto;max-width:100%;object-fit:contain;object-position:center}
+.layout{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:20px;margin-top:18px;align-items:start}
+.card{min-width:0;background:#fff;border:1px solid #e5e9ef;border-radius:16px;padding:18px;box-shadow:0 8px 26px #1720330a}
+.photo{display:block;width:100%;aspect-ratio:1/1;border-radius:12px;background:#f7f8fa;object-fit:contain}
+.title{font-size:25px;margin:12px 0 5px}
+.price{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0}
+.price strong{font:800 24px Inter,sans-serif;color:#b45309}
+.price del{color:#98a2b3}
+.deal{margin:14px 0;padding:12px;border:1px solid #f2cf84;border-radius:12px;background:#fff8e8}
+.deal b{display:block;color:#9a4b08;font:800 20px Inter,sans-serif}
+.deal small{color:#805b2a}
+.offer-choice{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.offer-choice label{flex:1;min-width:150px;border:1px solid #d9e0e8;border-radius:10px;padding:12px;cursor:pointer}
+.offer-choice label:has(input:checked){border:2px solid #d97706;background:#fffbeb}
+.offer-choice input{margin-right:6px}
+.piece{padding:12px;border:1px solid #e6eaf0;border-radius:12px;margin:10px 0}
+.piece h3{margin:0 0 10px;font-size:16px}
+.variants{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-grid>label,.offer-field{display:flex;flex-direction:column;gap:6px;font-size:14px;color:#344054;font-weight:600}
+.field-grid input,.field-grid select,.offer-field input,.offer-field select,.offer-field textarea,.piece select{width:100%;min-height:44px;padding:10px 12px;border:1px solid #d0d5dd;border-radius:9px;background:#fff;color:#172033;font:inherit}
+.checkout-section-heading{display:flex;align-items:center;gap:10px;margin:20px 0 12px;padding-bottom:10px;border-bottom:1px solid #eaecf0}
+.checkout-section-heading>span{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#fff3df;color:#9a4b08;font-weight:800}
+.checkout-section-heading b{display:block;font-size:16px}
+.checkout-section-heading small{display:block;color:#667085;font-size:12px}
+.section-title{font-size:18px;margin:20px 0 10px}
+.payment-choice{display:grid;gap:10px;margin:16px 0}
+.payment-choice>h3{margin:0 0 2px;font-size:18px}
+.payment-option{display:flex;align-items:flex-start;gap:10px;padding:14px;border:1px solid #dfe4ec;border-radius:12px;background:#fff;cursor:pointer}
+.payment-option.is-selected{border:2px solid #c49a54;background:#fffaf1;padding:13px}
+.payment-option>input{margin-top:4px;accent-color:#a27a3d}
+.payment-option-content{display:grid;gap:6px;flex:1;min-width:0}
+.payment-option-title{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.payment-option-title em{font-size:11px;font-style:normal;padding:2px 7px;border-radius:20px;background:#e8f7ed;color:#16803d}
+.payment-option-content>small{color:#667085}
+.payment-mini-breakdown{display:grid;gap:4px;padding-top:8px;border-top:1px dashed #e1e5eb;font-size:13px}
+.payment-mini-breakdown>span,.payment-mini-breakdown>strong{display:flex;justify-content:space-between;gap:12px}
+.payment-mini-breakdown>strong{padding-top:5px;border-top:1px solid #eaecf0}
+.bkash-payment-box{padding:14px;border:1px solid #f0c5d2;border-radius:12px;background:#fff7fa}
+.bkash-payment-box h4{margin:0 0 7px;color:#a51c50}
+.bkash-number{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;background:#fff;border:1px solid #f0c5d2;border-radius:9px;font-weight:800}
+.bkash-number button{border:0;border-radius:7px;padding:7px 10px;background:#a51c50;color:#fff}
+.bkash-payment-box ol{padding-left:20px;font-size:13px;line-height:1.7}
+.bkash-payment-box label{display:grid;gap:6px;font-weight:600}
+.summary{margin-top:16px;background:#f8fafc;border:1px solid #e4eaf2;border-radius:12px;padding:13px}
+.sumrow{display:flex;justify-content:space-between;gap:10px;padding:5px 0}
+.grand{border-top:1px solid #dce3ec;margin-top:6px;padding-top:10px;font-weight:800;font-size:18px}
+.discount{color:#16803d;font-weight:700}
+.submit{width:100%;margin-top:14px;padding:14px;border:0;border-radius:10px;background:#c49a54;color:#172033;font:700 16px "Hind Siliguri",sans-serif;cursor:pointer}
+.submit:disabled{opacity:.6}
+.hint{color:#667085;font-size:12px;line-height:1.6}
+.error{color:#b42318;font-weight:600}
+.success{display:none;padding:24px;text-align:center}
+.success h2{color:#16803d}
+.detail-media-button{display:inline-flex;margin:10px 0 4px}
+@media(max-width:700px){
+ .wrap{padding:10px}.top{padding:10px}.layout{grid-template-columns:1fr;gap:12px;margin-top:12px}
+ .card{padding:14px}.banner{border-radius:9px}.banner img{width:100%;height:auto;aspect-ratio:auto}
+ .title{font-size:21px}.field-grid{grid-template-columns:1fr}.offer-choice label{min-width:0}
+ .price strong{font-size:21px}.variants{grid-template-columns:1fr 1fr}
+}
 </style>
 </head>
 <body>
@@ -15,26 +82,29 @@
 <main class="wrap">
 <a class="banner" href="#offer-order"><img src="/dhamaaka-offer-banner.webp" alt="RS Mart ধামাকা অফার — BUY 2 GET 30% OFF"></a>
 <div class="layout product-detail-layout" id="offer-content">
-<section class="card product-detail-info" id="product-card"><div id="product-image">পণ্য লোড হচ্ছে…</div><h1 class="title" id="product-name">ধামাকা অফার</h1><a class="detail-media-button" id="offer-media-button" href="#" target="_blank" rel="noopener noreferrer" hidden>▣ ছবি ও ভিডিও দেখুন ↗</a><div class="price"><strong id="unit-price">—</strong><del id="old-price"></del></div><div class="deal"><b id="deal-heading">BUY 2 GET 30% OFF</b><small>একটি কিনলে স্বাভাবিক দাম। দুটি কিনলে অগ্রিম পেমেন্টে অতিরিক্ত অফার ছাড়।</small></div><p class="hint">পণ্যের বর্তমান ওয়েবসাইট মূল্য ও পণ্যের নিজস্ব অগ্রিম ছাড় স্বয়ংক্রিয়ভাবে অনুসরণ করা হবে।</p></section>
+<section class="card product-detail-info" id="product-card"><div id="product-image">পণ্য লোড হচ্ছে…</div><a class="detail-media-button" id="offer-media-button" href="#" target="_blank" rel="noopener noreferrer" hidden>▣ ছবি ও ভিডিও দেখুন ↗</a><h1 class="title" id="product-name">ধামাকা অফার</h1><div class="price"><strong id="unit-price">—</strong><del id="old-price"></del></div><div class="deal"><b id="deal-heading">BUY 2 GET 30% OFF</b><small>একটি কিনলে স্বাভাবিক দাম। দুটি কিনলে অগ্রিম পেমেন্টে অতিরিক্ত অফার ছাড়।</small></div><p class="hint">পণ্যের বর্তমান ওয়েবসাইট মূল্য ও পণ্যের নিজস্ব অগ্রিম ছাড় স্বয়ংক্রিয়ভাবে অনুসরণ করা হবে।</p></section>
 <section class="card" id="offer-order">
 <form id="offer-form">
-<h2 style="margin:0">কেনার অপশন</h2>
-<div class="choice"><label><input type="radio" name="buyMode" value="one" checked> একটি কিনুন</label><label><input type="radio" name="buyMode" value="two"> দুটি কিনুন — BUY 2 GET 30% OFF</label></div>
+<div class="checkout-section-heading"><span>01</span><div><b>কেনার অপশন</b><small>একটি অথবা দুটি পিস নির্বাচন করুন</small></div></div>
+<div class="offer-choice"><label><input type="radio" name="buyMode" value="one" checked> একটি কিনুন</label><label><input type="radio" name="buyMode" value="two"> দুটি কিনুন — BUY 2 GET OFFER</label></div>
 <div id="piece-options"></div>
-<h2 class="section-title">ডেলিভারির তথ্য</h2>
-<div class="grid">
-<label class="field">আপনার নাম<input name="customerName" required maxlength="100"></label>
-<label class="field">মোবাইল নম্বর<input name="customerPhone" required inputmode="tel" maxlength="14" placeholder="01XXXXXXXXX"></label>
-<label class="field">বিভাগ<select name="customerDivision" id="division" required><option value="">বিভাগ নির্বাচন</option><option>ঢাকা</option><option>চট্টগ্রাম</option><option>রাজশাহী</option><option>খুলনা</option><option>বরিশাল</option><option>সিলেট</option><option>রংপুর</option><option>ময়মনসিংহ</option></select></label>
-<label class="field">জেলা<input name="customerDistrict" required></label>
-<label class="field">থানা / উপজেলা<input name="customerArea" required></label>
-<label class="field">সম্পূর্ণ ঠিকানা<input name="customerAddress" required></label>
+<div class="checkout-section-heading"><span>02</span><div><b>ডেলিভারির তথ্য</b><small>আপনার সঠিক যোগাযোগ ও ঠিকানা দিন</small></div></div>
+<div class="field-grid">
+<label>আপনার নাম<input name="customerName" required maxlength="100" placeholder="পূর্ণ নাম"></label>
+<label class="phone-field">মোবাইল নম্বর<input name="customerPhone" id="customer-phone" type="tel" required inputmode="tel" autocomplete="tel" maxlength="14" pattern="(?:01[3-9][0-9]{8}|\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})" placeholder="01XXXXXXXXX"><small id="phone-hint" class="hint">১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।</small></label>
+<label>বিভাগ<select name="customerDivision" id="division" required><option value="">বিভাগ নির্বাচন করুন</option><option value="ঢাকা">ঢাকা</option><option value="চট্টগ্রাম">চট্টগ্রাম</option><option value="রাজশাহী">রাজশাহী</option><option value="খুলনা">খুলনা</option><option value="বরিশাল">বরিশাল</option><option value="সিলেট">সিলেট</option><option value="রংপুর">রংপুর</option><option value="ময়মনসিংহ">ময়মনসিংহ</option></select></label>
+<label>জেলা<select name="customerDistrict" id="district" required disabled><option value="">আগে বিভাগ নির্বাচন করুন</option></select></label>
+<label>থানা / উপজেলা<select name="customerArea" id="area" required disabled><option value="">আগে জেলা নির্বাচন করুন</option></select></label>
+<label>সম্পূর্ণ ঠিকানা<input name="customerAddress" required maxlength="500" placeholder="বাসা, রোড, গ্রাম ইত্যাদি"></label>
 </div>
-<h2 class="section-title">পেমেন্ট পদ্ধতি</h2>
-<div class="choice"><label><input type="radio" name="paymentMethod" value="cod"> ক্যাশ অন ডেলিভারি</label><label><input type="radio" name="paymentMethod" value="advance" checked> অগ্রিম ডেলিভারি চার্জ</label></div>
-<div id="transaction-wrap" class="field"><span>বিকাশ Transaction ID</span><input name="transactionId" id="transaction-id" maxlength="12" placeholder="৮–১২ অক্ষর"><small class="hint">শুধু ডেলিভারি চার্জ অগ্রিম পাঠাবেন।</small></div>
-<div class="summary"><div class="sumrow"><span>পণ্যের মোট</span><b id="subtotal">—</b></div><div class="sumrow" id="discount-row"><span>অগ্রিম পেমেন্ট ছাড়</span><b class="discount" id="discount">—</b></div><div class="sumrow"><span>ডেলিভারি চার্জ</span><b id="delivery">ঠিকানা নির্বাচন করুন</b></div><div class="sumrow grand"><span>সর্বমোট</span><b id="total">—</b></div></div>
-<label class="field" style="margin-top:12px">অতিরিক্ত নির্দেশনা (ঐচ্ছিক)<textarea name="customerNote" rows="2" maxlength="500"></textarea></label>
+<div class="checkout-section-heading"><span>03</span><div><b>পেমেন্ট পদ্ধতি</b><small>আপনার পছন্দের পেমেন্ট পদ্ধতি নির্বাচন করুন</small></div></div>
+<section class="payment-choice">
+<label class="payment-option payment-option-cod" for="payment-cod"><input id="payment-cod" type="radio" name="paymentMethod" value="cod"><span class="payment-option-content"><b class="payment-option-title">১. ক্যাশ অন ডেলিভারি <em>নিরাপদ ও সহজ</em></b><small>পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন।</small><span class="payment-mini-breakdown"><span>পণ্যের মোট <b id="cod-subtotal">৳—</b></span><span>ডেলিভারি <b id="cod-delivery">ঠিকানা নির্বাচন করুন</b></span><strong>সর্বমোট <b id="cod-total">ঠিকানা নির্বাচন করুন</b></strong></span></span></label>
+<label class="payment-option payment-option-advance" for="payment-advance"><input id="payment-advance" type="radio" name="paymentMethod" value="advance" checked><span class="payment-option-content"><b class="payment-option-title">২. অগ্রিম ডেলিভারি চার্জ <em id="advance-badge">বিশেষ ছাড়</em></b><small>শুধু ডেলিভারি চার্জ অগ্রিম দিন, পণ্যের দামে ছাড় পান।</small><span class="payment-mini-breakdown advance-mini-breakdown"><span>পণ্যের মোট <b id="advance-subtotal">৳—</b></span><span class="advance-discount-line">আপনার ছাড় <b id="advance-discount">৳0</b></span><span>ডেলিভারি <b id="advance-delivery">ঠিকানা নির্বাচন করুন</b></span><strong>ছাড়ের পর সর্বমোট <b id="advance-total">ঠিকানা নির্বাচন করুন</b></strong></span></span></label>
+<div id="bkash-box" class="bkash-payment-box" hidden><h4>বিকাশ Send Money</h4><p>বিকাশ অ্যাপ থেকে নিচের নম্বরে Send Money করুন। পাঠাতে হবে শুধু ডেলিভারি চার্জ: <b id="advance-amount">ঠিকানা নির্বাচন করুন</b></p><div class="bkash-number">01716862470 <button type="button" id="copy-bkash">নম্বর কপি</button></div><ol><li>উপরের নম্বরে Send Money নির্বাচন করুন।</li><li>দেখানো অগ্রিম ডেলিভারি চার্জ পাঠান।</li><li>সফল হলে Transaction ID লিখুন।</li></ol><label>বিকাশ Transaction ID<input name="transactionId" id="transaction-id" maxlength="20" placeholder="যেমন: 8A1B2C3D4E" autocomplete="off"><small id="transaction-hint" class="hint">৮–১২ অক্ষরের Transaction ID লিখুন।</small></label></div>
+</section>
+<div class="summary"><div class="sumrow"><span>পণ্যের মোট দাম</span><b id="subtotal">—</b></div><div class="sumrow"><span>ডেলিভারি চার্জ</span><b id="delivery">ঠিকানা নির্বাচন করুন</b></div><div class="sumrow" id="discount-row" hidden><span>অগ্রিম পেমেন্ট ছাড়</span><b class="discount" id="discount">৳0</b></div><div class="sumrow grand"><span>সর্বমোট</span><b id="total">—</b></div></div>
+<label class="offer-field" style="margin-top:12px">অতিরিক্ত নির্দেশনা (ঐচ্ছিক)<textarea name="customerNote" rows="3" maxlength="500" placeholder="কিছু জানাতে চাইলে লিখুন"></textarea></label>
 <p id="message" class="hint" role="status"></p><button class="submit" id="submit" type="submit">অর্ডার কনফার্ম করুন</button>
 <p class="hint">আপনার অর্ডার RS Mart-এর Admin Panel ও Telegram-এ যাবে।</p>
 </form>
@@ -44,12 +114,12 @@
 </main>
 <script>
 const $=id=>document.getElementById(id),money=n=>"৳"+Number(n||0).toLocaleString("en-BD");
-let offer=null,product=null,charges={},percent=30;
+let offer=null,product=null,charges={},percent=30,geoData=[];
 const escapeHtml=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function variantMarkup(index){
  const vars=product.variants||[],colors=[...new Set(vars.map(v=>v.color).filter(Boolean))],sizes=[...new Set(vars.map(v=>v.size).filter(Boolean))];
- if(!vars.length)return '<p class="hint">এই পণ্যে আলাদা রং বা সাইজের অপশন নেই।</p>';
- return '<div class="variants">'+(colors.length?'<label class="field">রং<select name="color'+index+'" data-piece-color="'+index+'" required><option value="">রং নির্বাচন</option>'+colors.map(x=>'<option>'+escapeHtml(x)+'</option>').join('')+'</select></label>':'')+(sizes.length?'<label class="field">সাইজ<select name="size'+index+'" data-piece-size="'+index+'" required><option value="">সাইজ নির্বাচন</option>'+sizes.map(x=>'<option>'+escapeHtml(x)+'</option>').join('')+'</select></label>':'')+'</div>';
+ if(!colors.length&&!sizes.length)return '<p class="hint">এই পণ্যে আলাদা রং বা সাইজের অপশন নেই।</p>';
+ return '<div class="variants">'+(colors.length?'<label class="offer-field">রং নির্বাচন করুন<select name="color'+index+'" data-piece-color="'+index+'" required><option value="">রং বেছে নিন</option>'+colors.map(x=>'<option value="'+escapeHtml(x)+'">'+escapeHtml(x)+'</option>').join('')+'</select></label>':'')+(sizes.length?'<label class="offer-field">সাইজ নির্বাচন করুন<select name="size'+index+'" data-piece-size="'+index+'" required><option value="">সাইজ বেছে নিন</option>'+sizes.map(x=>'<option value="'+escapeHtml(x)+'">'+escapeHtml(x)+'</option>').join('')+'</select></label>':'')+'</div>';
 }
 function renderPieces(){
  const two=document.querySelector('input[name="buyMode"]:checked').value==="two";
@@ -63,43 +133,69 @@ function updateSummary(){
  const unit=Number(product.sellingPrice||0),base=unitAdvance(),offerUnit=two?Math.max(0,Math.round(base*(100-percent)/100)):base;
  const subtotal=unit*qty,discount=method==="advance"?(unit*qty-offerUnit*qty):0;
  const division=$('division').value,isDhaka=division==="ঢাকা",delivery=division?(Number(isDhaka?charges.insideDhaka||0:charges.outsideDhaka||0)):null;
+ const dText=delivery===null?"ঠিকানা নির্বাচন করুন":money(delivery),total=delivery===null?null:subtotal+delivery-discount,codTotal=delivery===null?null:subtotal+delivery;
  $('subtotal').textContent=money(subtotal);$('discount').textContent=money(discount);$('discount-row').hidden=method!=="advance"||discount<=0;
- $('delivery').textContent=delivery===null?"ঠিকানা নির্বাচন করুন":money(delivery);
- $('total').textContent=delivery===null?"—":money(subtotal-discount+delivery);
- $('transaction-wrap').hidden=method!=="advance";
- $('transaction-id').required=method==="advance";
+ $('delivery').textContent=dText;$('total').textContent=total===null?"—":money(total);
+ $('cod-subtotal').textContent=money(subtotal);$('cod-delivery').textContent=dText;$('cod-total').textContent=codTotal===null?dText:money(codTotal);
+ $('advance-subtotal').textContent=money(subtotal);$('advance-discount').textContent=money(discount);$('advance-delivery').textContent=dText;$('advance-total').textContent=total===null?dText:money(total);
+ $('bkash-box').hidden=method!=="advance";$('transaction-id').required=method==="advance";$('advance-amount').textContent=dText;
  $('deal-heading').textContent="BUY 2 GET "+percent+"% OFF";
+ $('advance-badge').textContent=percent+"% ছাড়";
+ document.querySelector('.payment-option-cod').classList.toggle('is-selected',method==="cod");
+ document.querySelector('.payment-option-advance').classList.toggle('is-selected',method==="advance");
+}
+function fillSelect(select,placeholder,items){
+ select.innerHTML='';const first=document.createElement('option');first.value='';first.textContent=placeholder;select.appendChild(first);
+ items.forEach(item=>{const option=document.createElement('option');option.value=item.bn_name;option.textContent=item.en_name?item.bn_name+' ('+item.en_name+')':item.bn_name;select.appendChild(option);});
+ select.disabled=!items.length;
+}
+async function setupAddressDropdowns(){
+ const division=$('division'),district=$('district'),area=$('area');
+ try{
+  const response=await fetch('https://iqbalhasandev.github.io/bangladesh-geo-json/bangladesh-geo.json');
+  if(!response.ok)throw new Error('Location data unavailable');
+  geoData=await response.json();fillSelect(division,'বিভাগ নির্বাচন করুন',geoData);fillSelect(district,'আগে বিভাগ নির্বাচন করুন',[]);fillSelect(area,'আগে জেলা নির্বাচন করুন',[]);
+  division.addEventListener('change',()=>{const selected=geoData.find(x=>x.bn_name===division.value);fillSelect(district,'জেলা নির্বাচন করুন',selected?.districts||[]);fillSelect(area,'আগে জেলা নির্বাচন করুন',[]);updateSummary();});
+  district.addEventListener('change',()=>{const selected=geoData.find(x=>x.bn_name===division.value)?.districts?.find(x=>x.bn_name===district.value);fillSelect(area,'থানা / উপজেলা নির্বাচন করুন',selected?.upazilas||[]);});
+ }catch(error){
+  console.warn('Address dropdown unavailable:',error);
+  district.outerHTML='<input name="customerDistrict" id="district" required maxlength="100" placeholder="জেলার নাম লিখুন">';
+  area.outerHTML='<input name="customerArea" id="area" required maxlength="150" placeholder="থানা / উপজেলার নাম লিখুন">';
+ }
 }
 async function init(){
  const response=await fetch('/api/dhamaaka-offer',{cache:'no-store'}),data=await response.json();
  if(!response.ok||!data.active||!data.product){$('offer-content').innerHTML='<section class="card"><h2>এই মুহূর্তে ধামাকা অফারটি চালু নেই।</h2><a href="/">হোমপেজে ফিরে যান</a></section>';return;}
  offer=data;product=data.product;charges=data.deliveryCharges||{};percent=Number(data.discountPercent||30);
  const img=(product.images||[])[0];$('product-image').innerHTML=img?'<img class="photo" src="'+escapeHtml(img)+'" alt="'+escapeHtml(product.name)+'">':'<div class="photo"></div>';
- $('product-name').textContent=product.name;const mediaButton=$('offer-media-button');if(product.mediaEnabled!==false&&product.mediaUrl){mediaButton.href=product.mediaUrl;mediaButton.hidden=false;}else{mediaButton.hidden=true;mediaButton.removeAttribute('href');}$('unit-price').textContent=money(unitAdvance());$('old-price').textContent=Number(product.discountPercent)>0?money(product.sellingPrice):'';
+ const mediaButton=$('offer-media-button');if(product.mediaEnabled!==false&&product.mediaUrl){mediaButton.href=product.mediaUrl;mediaButton.hidden=false;}else{mediaButton.hidden=true;mediaButton.removeAttribute('href');}
+ $('product-name').textContent=product.name;$('unit-price').textContent=money(unitAdvance());$('old-price').textContent=Number(product.discountPercent)>0?money(product.sellingPrice):'';
  document.querySelectorAll('input[name="buyMode"],input[name="paymentMethod"]').forEach(x=>x.addEventListener('change',()=>{if(x.name==="buyMode")renderPieces();else updateSummary();}));
  $('division').addEventListener('change',updateSummary);
  $('piece-options').addEventListener('change',event=>{
-  const colorSelect=event.target.closest('[data-piece-color]');
-  if(!colorSelect)return;
-  const index=colorSelect.dataset.pieceColor, sizeSelect=$('offer-form').querySelector('[data-piece-size="'+index+'"]');
-  if(!sizeSelect)return;
-  const selectedColor=colorSelect.value;
-  const validSizes=[...new Set((product.variants||[]).filter(v=>!selectedColor||String(v.color||'')===selectedColor).map(v=>v.size).filter(Boolean))];
-  const previous=sizeSelect.value;
-  sizeSelect.innerHTML='<option value="">সাইজ নির্বাচন</option>'+validSizes.map(x=>'<option>'+escapeHtml(x)+'</option>').join('');
+  const colorSelect=event.target.closest('[data-piece-color]');if(!colorSelect)return;
+  const index=colorSelect.dataset.pieceColor,sizeSelect=$('offer-form').querySelector('[data-piece-size="'+index+'"]');if(!sizeSelect)return;
+  const selectedColor=colorSelect.value,validSizes=[...new Set((product.variants||[]).filter(v=>!selectedColor||String(v.color||'')===selectedColor).map(v=>v.size).filter(Boolean))],previous=sizeSelect.value;
+  sizeSelect.innerHTML='<option value="">সাইজ বেছে নিন</option>'+validSizes.map(x=>'<option value="'+escapeHtml(x)+'">'+escapeHtml(x)+'</option>').join('');
   if(validSizes.includes(previous))sizeSelect.value=previous;
  });
- renderPieces();
+ $('customer-phone').addEventListener('input',event=>{const input=event.target;input.value=input.value.replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d)).replace(/[^0-9+]/g,'');const valid=/^(?:01[3-9][0-9]{8}|\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})$/.test(input.value);input.setCustomValidity(input.value&&!valid?'সঠিক বাংলাদেশি মোবাইল নম্বর লিখুন।':'');$('phone-hint').textContent=valid?'✓ মোবাইল নম্বর সঠিক।':'১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।';});
+ $('transaction-id').addEventListener('input',event=>{event.target.value=event.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');const valid=/^[A-Z0-9]{8,12}$/.test(event.target.value);$('transaction-hint').textContent=valid?'✓ Transaction ID-এর ফরম্যাট সঠিক।':'৮–১২ অক্ষরের Transaction ID লিখুন।';});
+ $('copy-bkash').addEventListener('click',async()=>{try{await navigator.clipboard.writeText('01716862470');$('message').textContent='বিকাশ নম্বর কপি হয়েছে।';}catch{$('message').textContent='বিকাশ নম্বর: 01716862470';}});
+ await setupAddressDropdowns();renderPieces();updateSummary();
 }
+$('offer-form').addEventListener('input',updateSummary);
+$('offer-form').addEventListener('change',updateSummary);
 $('offer-form').addEventListener('submit',async e=>{
  e.preventDefault();if(!product)return;
- const form=e.currentTarget,data=new FormData(form),two=data.get('buyMode')==='two',method=data.get('paymentMethod');
+ const form=e.currentTarget;if(!form.reportValidity())return;
+ const data=new FormData(form),two=data.get('buyMode')==='two',method=data.get('paymentMethod');
  const items=Array.from({length:two?2:1},(_,i)=>({id:product.id,quantity:1,color:data.get('color'+(i+1))||'',size:data.get('size'+(i+1))||''}));
  const phone=String(data.get('customerPhone')||'').replace(/[\s-]/g,'');
  if(!/^(?:01[3-9][0-9]{8}|\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})$/.test(phone)){$('message').textContent='সঠিক বাংলাদেশি মোবাইল নম্বর দিন।';return;}
- if(method==='advance'&&!/^[A-Za-z0-9]{8,12}$/.test(String(data.get('transactionId')||''))){$('message').textContent='৮–১২ অক্ষরের সঠিক Transaction ID দিন।';return;}
- const payload={dhamaakaOffer:two,items,customerName:data.get('customerName'),customerPhone:phone,customerDivision:data.get('customerDivision'),customerDistrict:data.get('customerDistrict'),customerArea:data.get('customerArea'),customerAddress:data.get('customerAddress'),customerNote:data.get('customerNote'),paymentMethod:method,transactionId:data.get('transactionId'),submissionKey:crypto.randomUUID()};
- $('submit').disabled=true;$('submit').textContent='অর্ডার পাঠানো হচ্ছে...';$('message').textContent='';
+ if(method==='advance'&&!/^[A-Z0-9]{8,12}$/.test(String(data.get('transactionId')||''))){$('message').textContent='৮–১২ অক্ষরের সঠিক Transaction ID দিন।';return;}
+ const payload={dhamaakaOffer:two,items,customerName:data.get('customerName'),customerPhone:phone,customerDivision:data.get('customerDivision'),customerDistrict:data.get('customerDistrict'),customerArea:data.get('customerArea'),customerAddress:data.get('customerAddress'),customerNote:data.get('customerNote'),paymentMethod:method,transactionId:data.get('transactionId')||'',submissionKey:crypto.randomUUID()};
+ $('submit').disabled=true;$('submit').textContent='অর্ডার পাঠানো হচ্ছে…';$('message').textContent='';$('message').classList.remove('error');
  try{
   const response=await fetch('/api/orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}),result=await response.json();
   if(!response.ok)throw new Error(result.error||'অর্ডার জমা হয়নি।');
