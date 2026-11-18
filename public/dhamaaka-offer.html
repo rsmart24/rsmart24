@@ -139,9 +139,9 @@ function updateSummary(){
  const division=$('division').value,isDhaka=division==="ঢাকা",delivery=division?(Number(isDhaka?charges.insideDhaka||0:charges.outsideDhaka||0)):null;
  const dText=delivery===null?"ঠিকানা নির্বাচন করুন":money(delivery),total=subtotal+(delivery===null?0:delivery)-discount,codTotal=subtotal+(delivery===null?0:delivery);
  $('subtotal').textContent=money(subtotal);$('discount').textContent=money(discount);$('discount-row').hidden=method!=="advance"||discount<=0;
- $('delivery').textContent=dText;$('total').textContent=money(total);$('total-label').textContent=delivery===null?'সর্বমোট (ডেলিভারি ছাড়া)':'সর্বমোট';
+ $('delivery').textContent=dText;$('total').textContent=money(total);$('total-label').textContent=delivery===null?(method==='advance'?'ছাড়ের পর পণ্যের দাম (ডেলিভারি ছাড়া)':'পণ্যের মোট দাম (ডেলিভারি ছাড়া)'):'সর্বমোট (ডেলিভারি চার্জসহ)';
  $('cod-subtotal').textContent=money(subtotal);$('cod-delivery').textContent=dText;$('cod-total').textContent=money(codTotal);
- $('advance-subtotal').textContent=money(subtotal);$('advance-discount').textContent=money(discount);$('advance-delivery').textContent=dText;$('advance-total').textContent=money(total);$('advance-total-label').textContent=delivery===null?'ছাড়ের পর মোট (ডেলিভারি ছাড়া)':'ছাড়ের পর সর্বমোট';
+ $('advance-subtotal').textContent=money(subtotal);$('advance-discount').textContent=money(discount);$('advance-delivery').textContent=dText;$('advance-total').textContent=money(total);$('advance-total-label').textContent=delivery===null?'ছাড়ের পর পণ্যের দাম (ডেলিভারি ছাড়া)':'ছাড়ের পর সর্বমোট (ডেলিভারি চার্জসহ)';
  $('bkash-box').hidden=method!=="advance";$('transaction-id').required=method==="advance";$('advance-amount').textContent=dText;
  $('deal-heading').textContent="BUY 2 GET "+percent+"% OFF";
  $('advance-badge').textContent=percent+"% ছাড়";
