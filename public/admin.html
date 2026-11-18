@@ -238,7 +238,10 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
     .business-koro-delivery label{font-size:11px;font-weight:700;color:#14532d}
     .business-koro-delivery select{width:100%;min-height:38px;border:1px solid #cbd5e1;border-radius:8px;padding:7px 9px;background:#fff;color:#1f2937;font:inherit;font-size:12px}
     @media(max-width:650px){.business-koro-card{align-items:stretch}.business-koro-card button{width:100%}}
-  </style>
+  
+    .featured-admin-controls { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); align-items: end; }
+    .featured-admin-controls input[type="number"] { width: 100%; min-width: 0; }
+</style>
 </head>
 <body>
   <header>
@@ -963,7 +966,3 @@ orderDetailView.addEventListener("click",async e=>{
 </body>
 </html>
 <!-- Admin panel redeploy trigger -->
-<style>
-.featured-admin-controls{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));align-items:end}
-.featured-admin-controls input[type="number"]{width:100%;min-width:0}
-</style>
