@@ -99,10 +99,18 @@ body{margin:0;background:#f5f6f8;color:var(--ink,#172033);font-family:"Hind Sili
  .title{font-size:21px}.field-grid{grid-template-columns:1fr}.offer-choice label{min-width:0}
  .price strong{font-size:21px}.variants{grid-template-columns:1fr 1fr}.detail-media-button{width:100%;min-height:48px}
 }
+
+/* WhatsApp contact CTA: floating on desktop, thumb-friendly sticky bar on mobile */
+.whatsapp-offer-cta{position:fixed;right:22px;bottom:22px;z-index:1000;display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 20px;border:2px solid #fff;border-radius:999px;background:#25d366;color:#073b20;text-decoration:none;font-size:15px;font-weight:800;box-shadow:0 7px 24px rgba(0,0,0,.22);transition:transform .18s,box-shadow .18s}
+.whatsapp-offer-cta:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.26)}
+.whatsapp-offer-cta .wa-icon{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#fff;color:#16a34a;font:900 19px Arial,sans-serif}
+.whatsapp-offer-cta:focus-visible{outline:3px solid #166534;outline-offset:4px}
+@media(max-width:700px){body{padding-bottom:82px}.whatsapp-offer-cta{right:12px;bottom:calc(10px + env(safe-area-inset-bottom));left:12px;width:auto;min-height:54px;padding:0 16px;border-radius:13px;font-size:15px}.whatsapp-offer-cta .wa-icon{width:29px;height:29px}}
 </style>
 </head>
 <body>
 <header class="top"><a class="brand" href="/">RS MART</a><a class="back" href="/">← দোকানে ফিরে যান</a></header>
+<a class="whatsapp-offer-cta" href="https://wa.me/8801716862470?text=%E0%A6%86%E0%A6%B8%E0%A6%B8%E0%A6%BE%E0%A6%B2%E0%A6%BE%E0%A6%AE%E0%A7%81%20%E0%A6%86%E0%A6%B2%E0%A6%BE%E0%A6%87%E0%A6%95%E0%A7%81%E0%A6%AE%2C%20RS%20Mart-%E0%A6%8F%E0%A6%B0%20%E0%A6%A7%E0%A6%BE%E0%A6%AE%E0%A6%BE%E0%A6%95%E0%A6%BE%20%E0%A6%85%E0%A6%AB%E0%A6%BE%E0%A6%B0%20%E0%A6%B8%E0%A6%AE%E0%A7%8D%E0%A6%AA%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A7%87%20%E0%A6%9C%E0%A6%BE%E0%A6%A8%E0%A6%A4%E0%A7%87%20%E0%A6%9A%E0%A6%BE%E0%A6%87%E0%A5%A4" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp-এ RS Mart-এর সাথে যোগাযোগ করুন"><span class="wa-icon" aria-hidden="true">✆</span><span>WhatsApp-এ অর্ডার / বিস্তারিত জানুন</span></a>
 <main class="wrap">
 <a class="banner" href="#offer-order"><img src="/dhamaaka-offer-banner.webp" alt="RS Mart ধামাকা অফার — BUY 2 GET 30% OFF"></a>
 <div class="layout product-detail-layout" id="offer-content">
