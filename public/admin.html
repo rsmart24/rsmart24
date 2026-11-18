@@ -238,7 +238,10 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
     .business-koro-delivery label{font-size:11px;font-weight:700;color:#14532d}
     .business-koro-delivery select{width:100%;min-height:38px;border:1px solid #cbd5e1;border-radius:8px;padding:7px 9px;background:#fff;color:#1f2937;font:inherit;font-size:12px}
     @media(max-width:650px){.business-koro-card{align-items:stretch}.business-koro-card button{width:100%}}
-  </style>
+  
+    .featured-admin-controls { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); align-items: end; }
+    .featured-admin-controls input[type="number"] { width: 100%; min-width: 0; }
+</style>
 </head>
 <body>
   <header>
@@ -297,7 +300,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
 
       <div class="panel hidden" id="featured-panel">
         <h2>Special Offer ও Trending Product</h2>
-        <p class="muted">যে পণ্য Special Offer-এ দেখাতে চান সেটি চালু করে ছাড়ের হার লিখুন। Trending Product-এর জন্য আলাদা টিক দিন। সব পরিবর্তন আলাদাভাবে সংরক্ষণ করতে পারবেন।</p>
+        <p class="muted">যে পণ্য শীতের Special Offer-এ দিতে চান সেটি চালু করুন। ২টি পণ্যের প্রতি পিসের রেফারেন্স দাম ও ছাড়ের হার আলাদাভাবে দিন। ২টি কিনলেই ছাড় কার্যকর হবে; All Products-এর স্বাভাবিক দাম অপরিবর্তিত থাকবে।</p>
         <div class="admin-toolbar"><input id="featured-search" type="search" placeholder="পণ্যের নাম দিয়ে খুঁজুন..." aria-label="Featured পণ্য খুঁজুন"><button type="button" class="secondary" id="refresh-featured">তালিকা রিফ্রেশ</button></div>
         <div id="featured-products">পণ্য লোড হচ্ছে...</div>
       </div>
@@ -461,17 +464,23 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       const query = (document.querySelector("#featured-search")?.value || "").trim().toLowerCase();
       const items = adminProducts.filter(p => String(p.name || "").toLowerCase().includes(query));
       if (!items.length) { box.textContent = "কোনো পণ্য পাওয়া যায়নি।"; return; }
-      box.innerHTML = items.map(p => `<article class="product featured-admin-product"><div>${p.images?.[0] ? `<img src="${escapeHTML(p.images[0])}" alt="">` : "<div>RS Mart</div>"}</div><div><h3>${escapeHTML(p.name)}</h3><p class="muted">বিক্রয়মূল্য: ${money(p.sellingPrice)}</p><div class="featured-admin-controls"><label class="featured-admin-check"><input type="checkbox" id="offer-enabled-${escapeHTML(p.id)}" ${p.specialOfferEnabled ? "checked" : ""}> Special Offer চালু</label><label>Special Offer-এর লেখা<input type="text" id="offer-text-${escapeHTML(p.id)}" maxlength="80" value="${escapeHTML(p.specialOfferText || "")}" placeholder="যেমন ৩ দিনের অফার"></label><label class="featured-admin-check"><input type="checkbox" id="trending-${escapeHTML(p.id)}" ${p.isTrending ? "checked" : ""}> Trending Product-এ দেখান</label></div><button type="button" data-feature-save="${escapeHTML(p.id)}">এই পণ্যের Featured সেটিংস সংরক্ষণ</button></div></article>`).join("");
+      box.innerHTML = items.map(p => `<article class="product featured-admin-product"><div>${p.images?.[0] ? `<img src="${escapeHTML(p.images[0])}" alt="">` : "<div>RS Mart</div>"}</div><div><h3>${escapeHTML(p.name)}</h3><p class="muted">বিক্রয়মূল্য: ${money(p.sellingPrice)}</p><div class="featured-admin-controls"><label class="featured-admin-check"><input type="checkbox" id="offer-enabled-${escapeHTML(p.id)}" ${p.specialOfferEnabled ? "checked" : ""}> শীতের Special Offer চালু</label><label>অফারের প্রতি পিসের রেফারেন্স দাম (৳)<input type="number" min="1" step="1" id="offer-reference-${escapeHTML(p.id)}" value="${escapeHTML(p.specialOfferReferencePrice ?? p.sellingPrice ?? "")}" placeholder="যেমন ৯০০"></label><label>২টি কিনলে ছাড় (%)<input type="number" min="1" max="90" step="1" id="offer-percent-${escapeHTML(p.id)}" value="${escapeHTML(p.specialOfferPercent || 30)}"></label><label>অফারের শিরোনাম<input type="text" id="offer-text-${escapeHTML(p.id)}" maxlength="80" value="${escapeHTML(p.specialOfferText || "শীতের স্পেশাল অফার")}" placeholder="শীতের স্পেশাল অফার"></label><label class="featured-admin-check"><input type="checkbox" id="trending-${escapeHTML(p.id)}" ${p.isTrending ? "checked" : ""}> Trending Product-এ দেখান</label></div><button type="button" data-feature-save="${escapeHTML(p.id)}">এই পণ্যের Featured সেটিংস সংরক্ষণ</button></div></article>`).join("");
       box.querySelectorAll("[data-feature-save]").forEach(button => button.addEventListener("click", async () => {
         const id = button.dataset.featureSave;
         const p = adminProducts.find(item => String(item.id) === String(id));
         if (!p) return;
         const enabled = document.querySelector(`#offer-enabled-${CSS.escape(id)}`).checked;
         const offerText = document.querySelector(`#offer-text-${CSS.escape(id)}`).value.trim();
+        const referencePrice = document.querySelector(`#offer-reference-${CSS.escape(id)}`).value;
+        const offerPercent = Number(document.querySelector(`#offer-percent-${CSS.escape(id)}`).value);
+        if (enabled && (!Number.isSafeInteger(Number(referencePrice)) || Number(referencePrice) < 1 || !Number.isInteger(offerPercent) || offerPercent < 1 || offerPercent > 90)) {
+          alert("Special Offer-এর রেফারেন্স দাম ও ১–৯০% ছাড় সঠিকভাবে দিন।");
+          return;
+        }
         button.disabled = true;
         try {
-          await api(`/api/admin/products/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ specialOfferEnabled: enabled, specialOfferText: offerText, isTrending: document.querySelector(`#trending-${CSS.escape(id)}`).checked }) });
-          p.specialOfferEnabled = enabled; p.specialOfferText = offerText; p.isTrending = document.querySelector(`#trending-${CSS.escape(id)}`).checked;
+          await api(`/api/admin/products/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ specialOfferEnabled: enabled, specialOfferText: offerText, specialOfferReferencePrice: referencePrice, specialOfferPercent: offerPercent, isTrending: document.querySelector(`#trending-${CSS.escape(id)}`).checked }) });
+          p.specialOfferEnabled = enabled; p.specialOfferText = offerText; p.specialOfferReferencePrice = Number(referencePrice); p.specialOfferPercent = offerPercent; p.isTrending = document.querySelector(`#trending-${CSS.escape(id)}`).checked;
           alert("Featured সেটিংস সংরক্ষণ হয়েছে।");
         } catch (error) { alert(error.message); }
         finally { button.disabled = false; }
