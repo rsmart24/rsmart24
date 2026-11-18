@@ -448,8 +448,8 @@ async function createOrder(request, env) {
   const submissionKey = String(body.submissionKey || "").trim();
   if (submissionKey && !/^[0-9a-f-]{36}$/i.test(submissionKey)) return json({ error: "অর্ডার জমার অনুরোধটি সঠিক নয়। পেজ রিফ্রেশ করে আবার চেষ্টা করুন।" }, 400);
   if (submissionKey) {
-    const previous = await env.DB.prepare("SELECT id FROM orders WHERE submission_key = ?").bind(submissionKey).first();
-    if (previous) return json({ success: true, orderId: previous.id, duplicate: true, message: "এই অর্ডারটি আগেই জমা হয়েছে।" }, 200);
+    const previous = await env.DB.prepare("SELECT id, total_amount FROM orders WHERE submission_key = ?").bind(submissionKey).first();
+    if (previous) return json({ success: true, orderId: previous.id, value: Number(previous.total_amount || 0), currency: "BDT", duplicate: true, message: "এই অর্ডারটি আগেই জমা হয়েছে।" }, 200);
   }
   const required = ["customerName","customerPhone","customerAddress","customerDivision","customerDistrict","customerArea"];
   for (const key of required) {
@@ -549,7 +549,7 @@ async function createOrder(request, env) {
     deliveryCharge,
     totalAmount
   });
-  return json({success:true,orderId,message:"আপনার অর্ডার RS Mart-এ জমা হয়েছে। আমাদের প্রতিনিধি ফোন করে অর্ডার নিশ্চিত করবেন।"},201);
+  return json({success:true,orderId,value:totalAmount,currency:"BDT",message:"আপনার অর্ডার RS Mart-এ জমা হয়েছে। আমাদের প্রতিনিধি ফোন করে অর্ডার নিশ্চিত করবেন।"},201);
 }
 
 async function sendOrderToBusinessKoro(request, env, orderId) {
