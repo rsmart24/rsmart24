@@ -49,7 +49,7 @@ const escapeHtml=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 function variantMarkup(index){
  const vars=product.variants||[],colors=[...new Set(vars.map(v=>v.color).filter(Boolean))],sizes=[...new Set(vars.map(v=>v.size).filter(Boolean))];
  if(!vars.length)return '<p class="hint">এই পণ্যে আলাদা রং বা সাইজের অপশন নেই।</p>';
- return '<div class="variants">'+(colors.length?'<label class="field">রং<select name="color'+index+'" '+(colors.length?'required':'')+'><option value="">রং নির্বাচন</option>'+colors.map(x=>'<option>'+escapeHtml(x)+'</option>').join('')+'</select></label>':'')+(sizes.length?'<label class="field">সাইজ<select name="size'+index+'" required><option value="">সাইজ নির্বাচন</option>'+sizes.map(x=>'<option>'+escapeHtml(x)+'</option>').join('')+'</select></label>':'')+'</div>';
+ return '<div class="variants">'+(colors.length?'<label class="field">রং<select name="color'+index+'" data-piece-color="'+index+'" required><option value="">রং নির্বাচন</option>'+colors.map(x=>'<option>'+escapeHtml(x)+'</option>').join('')+'</select></label>':'')+(sizes.length?'<label class="field">সাইজ<select name="size'+index+'" data-piece-size="'+index+'" required><option value="">সাইজ নির্বাচন</option>'+sizes.map(x=>'<option>'+escapeHtml(x)+'</option>').join('')+'</select></label>':'')+'</div>';
 }
 function renderPieces(){
  const two=document.querySelector('input[name="buyMode"]:checked').value==="two";
@@ -78,7 +78,17 @@ async function init(){
  $('product-name').textContent=product.name;$('unit-price').textContent=money(unitAdvance());$('old-price').textContent=Number(product.discountPercent)>0?money(product.sellingPrice):'';
  document.querySelectorAll('input[name="buyMode"],input[name="paymentMethod"]').forEach(x=>x.addEventListener('change',()=>{if(x.name==="buyMode")renderPieces();else updateSummary();}));
  $('division').addEventListener('change',updateSummary);
- $('piece-options').addEventListener('change',()=>{});
+ $('piece-options').addEventListener('change',event=>{
+  const colorSelect=event.target.closest('[data-piece-color]');
+  if(!colorSelect)return;
+  const index=colorSelect.dataset.pieceColor, sizeSelect=$('offer-form').querySelector('[data-piece-size="'+index+'"]');
+  if(!sizeSelect)return;
+  const selectedColor=colorSelect.value;
+  const validSizes=[...new Set((product.variants||[]).filter(v=>!selectedColor||String(v.color||'')===selectedColor).map(v=>v.size).filter(Boolean))];
+  const previous=sizeSelect.value;
+  sizeSelect.innerHTML='<option value="">সাইজ নির্বাচন</option>'+validSizes.map(x=>'<option>'+escapeHtml(x)+'</option>').join('');
+  if(validSizes.includes(previous))sizeSelect.value=previous;
+ });
  renderPieces();
 }
 $('offer-form').addEventListener('submit',async e=>{
