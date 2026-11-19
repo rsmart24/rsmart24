@@ -332,10 +332,13 @@ function seoAbsoluteImage(value, origin) {
   } catch { return ""; }
 }
 
-function renderSeoProductPage(product, origin) {
+function renderSeoProductPage(product, origin, relatedProducts = []) {
   const id = String(product.id);
-  const title = String(product.name || "পণ্য") + " | RS Mart বাংলাদেশ";
-  const description = String(product.description || (product.name + " RS Mart থেকে অনলাইনে অর্ডার করুন। সারা বাংলাদেশে ডেলিভারি।")).replace(/\s+/g, " ").trim().slice(0, 160);
+  const name = String(product.name || "পণ্য").trim();
+  const title = name + " | RS Mart বাংলাদেশ";
+  const sourceDescription = String(product.description || "").replace(/\\s+/g, " ").trim();
+  const fallbackDescription = name + " পণ্যের দাম, ছবি ও বিস্তারিত দেখুন। RS Mart থেকে অনলাইনে অর্ডার করুন।";
+  const description = (sourceDescription || fallbackDescription).slice(0, 160);
   const canonical = origin + "/product/" + encodeURIComponent(id);
   const image = seoAbsoluteImage(product.images?.[0], origin);
   const price = Number(product.sellingPrice || 0);
@@ -343,23 +346,33 @@ function renderSeoProductPage(product, origin) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: String(product.name || "পণ্য"),
+    name,
     description,
     sku: id,
+    url: canonical,
+    mainEntityOfPage: canonical,
     image: image ? [image] : undefined,
     brand: { "@type": "Brand", name: "RS Mart" },
     offers: {
       "@type": "Offer",
       url: canonical,
       priceCurrency: "BDT",
-      price: price,
+      price,
       availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       itemCondition: "https://schema.org/NewCondition"
     }
   };
-  const safeJsonLd = JSON.stringify(jsonLd).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "হোম", item: origin + "/" },
+      { "@type": "ListItem", position: 2, name, item: canonical }
+    ]
+  };
+  const safeJson = value => JSON.stringify(value).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");
   const imageMarkup = image
-    ? '<img class="product-image" src="' + seoEscapeHtml(image) + '" alt="' + seoEscapeHtml(product.name) + '" loading="eager">'
+    ? '<img class="product-image" src="' + seoEscapeHtml(image) + '" alt="' + seoEscapeHtml(name + " - RS Mart পণ্যের ছবি") + '" loading="eager" decoding="async">'
     : '<div class="product-image image-placeholder">ছবি পাওয়া যায়নি</div>';
   const oldPrice = Number(product.originalPrice || 0) > price
     ? '<del>' + Number(product.originalPrice).toLocaleString("en-BD") + ' টাকা</del>'
@@ -370,6 +383,17 @@ function renderSeoProductPage(product, origin) {
   const variantText = [colors.length ? "রং: " + colors.join(", ") : "", sizes.length ? "সাইজ: " + sizes.join(", ") : ""].filter(Boolean).join(" | ");
   const orderUrl = "/#product-" + encodeURIComponent(id);
   const stockText = inStock ? "স্টকে আছে" : "স্টক শেষ";
+  const relatedMarkup = relatedProducts.length ? `
+<section class="related" aria-labelledby="related-title">
+<h2 id="related-title">সম্পর্কিত আরও পণ্য</h2>
+<div class="related-grid">${relatedProducts.map(item => {
+  const relatedName = String(item.name || "পণ্য");
+  const relatedImage = seoAbsoluteImage(item.images?.[0], origin);
+  const relatedPrice = Number(item.sellingPrice || 0);
+  return '<a class="related-card" href="/product/' + encodeURIComponent(String(item.id)) + '">' +
+    (relatedImage ? '<img src="' + seoEscapeHtml(relatedImage) + '" alt="' + seoEscapeHtml(relatedName + " - RS Mart পণ্যের ছবি") + '" loading="lazy" decoding="async">' : '') +
+    '<strong>' + seoEscapeHtml(relatedName) + '</strong><span>' + relatedPrice.toLocaleString("en-BD") + ' টাকা</span></a>';
+}).join("")}</div></section>` : "";
   return `<!doctype html>
 <html lang="bn">
 <head>
@@ -389,40 +413,44 @@ ${image ? '<meta property="og:image" content="' + seoEscapeHtml(image) + '">' : 
 <meta name="twitter:title" content="${seoEscapeHtml(title)}">
 <meta name="twitter:description" content="${seoEscapeHtml(description)}">
 ${image ? '<meta name="twitter:image" content="' + seoEscapeHtml(image) + '">' : ""}
-<script type="application/ld+json">${safeJsonLd}</script>
+<script type="application/ld+json">${safeJson(jsonLd)}</script>
+<script type="application/ld+json">${safeJson(breadcrumbJsonLd)}</script>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f7f7f8;color:#202124;font-family:Arial,"Noto Sans Bengali",sans-serif;line-height:1.65}.wrap{max-width:980px;margin:0 auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}.brand{font-weight:800;font-size:24px;color:#c90018;text-decoration:none}.back{color:#444;text-decoration:none}.card{background:#fff;border-radius:16px;padding:22px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;box-shadow:0 4px 20px #0000000a}.product-image{width:100%;height:auto;max-height:480px;object-fit:contain;border-radius:12px;background:#fafafa}.image-placeholder{min-height:240px;display:grid;place-items:center}.info h1{font-size:28px;line-height:1.35;margin:0 0 14px}.price{font-size:26px;font-weight:800;color:#c90018}.price del{display:block;color:#777;font-size:16px;font-weight:400}.stock{font-weight:700;color:${inStock ? "#16803c" : "#b42318"}}.description{white-space:pre-line;margin:18px 0}.order{display:inline-block;background:#c90018;color:#fff;text-decoration:none;padding:12px 22px;border-radius:9px;font-weight:700;margin-top:14px}.note{font-size:13px;color:#666;margin-top:16px}@media(max-width:680px){.wrap{padding:14px}.card{grid-template-columns:1fr;padding:16px;gap:16px}.info h1{font-size:23px}.product-image{max-height:360px}}
+*{box-sizing:border-box}body{margin:0;background:#f7f7f8;color:#202124;font-family:Arial,"Noto Sans Bengali",sans-serif;line-height:1.65}.wrap{max-width:980px;margin:0 auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}.brand{font-weight:800;font-size:24px;color:#c90018;text-decoration:none}.back{color:#444;text-decoration:none}.breadcrumb{font-size:13px;margin:0 0 18px;color:#666}.breadcrumb a{color:#444}.card{background:#fff;border-radius:16px;padding:22px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;box-shadow:0 4px 20px #0000000a}.product-image{width:100%;height:auto;max-height:480px;object-fit:contain;border-radius:12px;background:#fafafa}.image-placeholder{min-height:240px;display:grid;place-items:center}.info h1{font-size:28px;line-height:1.35;margin:0 0 14px}.price{font-size:26px;font-weight:800;color:#c90018}.price del{display:block;color:#777;font-size:16px;font-weight:400}.stock{font-weight:700;color:${inStock ? "#16803c" : "#b42318"}}.description{white-space:pre-line;margin:18px 0}.order{display:inline-block;background:#c90018;color:#fff;text-decoration:none;padding:12px 22px;border-radius:9px;font-weight:700;margin-top:14px}.note{font-size:13px;color:#666;margin-top:16px}.related{margin-top:26px}.related h2{font-size:20px}.related-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.related-card{display:grid;gap:6px;padding:10px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;color:#202124;text-decoration:none}.related-card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#fafafa;border-radius:8px}.related-card strong{font-size:14px}.related-card span{font-weight:700;color:#c90018}@media(max-width:680px){.wrap{padding:14px}.card{grid-template-columns:1fr;padding:16px;gap:16px}.info h1{font-size:23px}.product-image{max-height:360px}}
 </style>
 </head>
 <body><main class="wrap">
 <header class="top"><a class="brand" href="/">RS Mart</a><a class="back" href="/">← সব পণ্য দেখুন</a></header>
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">হোম</a> / <span>${seoEscapeHtml(name)}</span></nav>
 <article class="card">
 <div>${imageMarkup}</div>
 <div class="info">
 <p class="stock">${stockText}</p>
-<h1>${seoEscapeHtml(product.name || "পণ্য")}</h1>
+<h1>${seoEscapeHtml(name)}</h1>
 <div class="price">${price.toLocaleString("en-BD")} টাকা ${oldPrice}</div>
 <p class="description">${seoEscapeHtml(description)}</p>
 ${variantText ? '<p>' + seoEscapeHtml(variantText) + '</p>' : ""}
 <a class="order" href="${seoEscapeHtml(orderUrl)}">${inStock ? "অর্ডার করুন" : "পণ্যটি দেখুন"}</a>
 <p class="note">RS Mart থেকে সহজ অনলাইন অর্ডার। সারা বাংলাদেশে ডেলিভারি।</p>
-</div></article></main></body></html>`;
+</div></article>
+${relatedMarkup}
+</main></body></html>`;
 }
-
 async function seoProductPage(request, env, productId) {
   const catalog = await getCatalog(env);
   const settings = await getSettings(env);
-  const raw = catalog.products.find(item => String(item.id) === String(productId));
-  if (!raw) return new Response("পণ্য পাওয়া যায়নি।", { status: 404, headers: { "content-type": "text/plain; charset=utf-8" } });
-  const product = publicProduct(raw, settings.get(String(raw.id)));
-  if (!product.isVisible || product.sellingPrice === null || product.sellingPrice === undefined) {
-    return new Response("পণ্য পাওয়া যায়নি।", { status: 404, headers: { "content-type": "text/plain; charset=utf-8" } });
-  }
-  return new Response(renderSeoProductPage(product, new URL(request.url).origin), {
+  const products = catalog.products
+    .map(item => publicProduct(item, settings.get(String(item.id))))
+    .filter(item => item.isVisible && item.sellingPrice !== null && item.sellingPrice !== undefined);
+  const product = products.find(item => String(item.id) === String(productId));
+  if (!product) return new Response("পণ্য পাওয়া যায়নি।", { status: 404, headers: { "content-type": "text/plain; charset=utf-8" } });
+  const sameCategory = products.filter(item => String(item.id) !== String(productId) && product.category && item.category === product.category);
+  const otherProducts = products.filter(item => String(item.id) !== String(productId) && !sameCategory.some(related => String(related.id) === String(item.id)));
+  const relatedProducts = [...sameCategory, ...otherProducts].slice(0, 4);
+  return new Response(renderSeoProductPage(product, new URL(request.url).origin, relatedProducts), {
     headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=300, s-maxage=900" }
   });
 }
-
 async function seoSitemap(request, env) {
   let catalog;
   let settings;
