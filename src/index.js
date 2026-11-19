@@ -146,7 +146,6 @@ async function submitProductReview(request, env) {
     }
   }
   return json({error:"রিভিউ জমা দেওয়া যায়নি। আবার চেষ্টা করুন।"},409);
-  return json({success:true,message:"আপনার রিভিউ জমা হয়েছে। অনুমোদনের পর প্রকাশ করা হবে।"},201);
 }
 async function adminProductReviews(env, url) {
   await ensureOrderSchema(env);
