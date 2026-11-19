@@ -202,6 +202,23 @@
         <button type="button" class="detail-add-cart" id="detail-add-cart">🛒 Add to Cart</button>
         <button type="button" class="detail-multi-order" id="detail-multi-order">আরও পণ্য যোগ করুন</button>
       </div>
+      <section class="product-reviews" id="product-reviews" aria-labelledby="reviews-heading">
+        <div class="reviews-heading-row"><div><h3 id="reviews-heading">ক্রেতাদের রিভিউ</h3><p id="reviews-summary">এখনো কোনো অনুমোদিত রিভিউ নেই</p></div><span class="reviews-average" id="reviews-average">—</span></div>
+        <div id="reviews-list" class="reviews-list"><p class="reviews-empty">এই পণ্যের প্রথম রিভিউটি আপনিই দিন।</p></div>
+        <button type="button" id="reviews-show-all" class="reviews-show-all" hidden>সব রিভিউ দেখুন</button>
+        <form id="review-form" class="review-form">
+          <h4>আপনার মতামত দিন</h4>
+          <div class="review-form-grid">
+            <label>আপনার নাম<input name="reviewName" required maxlength="80" placeholder="নাম লিখুন"></label>
+            <label>মোবাইল নম্বর<input name="reviewPhone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="14" placeholder="01XXXXXXXXX"><small class="review-private-note">🔒 আপনার ফোন নম্বর গোপন থাকবে। শুধু RS Mart অ্যাডমিন দেখতে পারবেন।</small></label>
+          </div>
+          <label class="review-rating-label">রেটিং দিন
+            <select name="reviewRating" required><option value="5">★★★★★ — ৫</option><option value="4">★★★★☆ — ৪</option><option value="3">★★★☆☆ — ৩</option><option value="2">★★☆☆☆ — ২</option><option value="1">★☆☆☆☆ — ১</option></select>
+          </label>
+          <label>আপনার মন্তব্য<textarea name="reviewComment" rows="2" minlength="3" maxlength="500" required placeholder="পণ্যটি সম্পর্কে আপনার অভিজ্ঞতা লিখুন..."></textarea></label>
+          <button type="submit" id="review-submit">রিভিউ জমা দিন</button><p id="review-form-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
       <section class="detail-description-section">
         <h3>Product Description</h3>
         <div class="detail-description" id="detail-description"></div>
