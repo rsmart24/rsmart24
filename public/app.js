@@ -554,6 +554,58 @@ function displayedOrderValue(elementId) {
   return Number.isFinite(value) ? value : 0;
 }
 
+
+const reviewList = document.querySelector("#reviews-list");
+const reviewForm = document.querySelector("#review-form");
+let activeProductReviews = [];
+let showAllProductReviews = false;
+function renderProductReviews() {
+  if (!reviewList) return;
+  const visible = showAllProductReviews ? activeProductReviews : activeProductReviews.slice(0,3);
+  if (!activeProductReviews.length) {
+    reviewList.innerHTML = '<p class="reviews-empty">এখনো কোনো অনুমোদিত রিভিউ নেই। আপনার মতামত প্রথমে জানান।</p>';
+  } else {
+    reviewList.innerHTML = visible.map(r => {
+      const stars = "★".repeat(Number(r.rating)) + "☆".repeat(5-Number(r.rating));
+      const date = r.created_at ? new Date(String(r.created_at).replace(" ","T")+"Z").toLocaleDateString("bn-BD") : "";
+      return '<article class="review-card"><div class="review-card-top"><strong>'+escapeHtml(r.customer_name)+'</strong><span class="review-stars" aria-label="'+Number(r.rating)+' out of 5">'+stars+'</span></div><p>'+escapeHtml(r.comment)+'</p><small>'+escapeHtml(date)+'</small></article>';
+    }).join("");
+  }
+  const count = activeProductReviews.length;
+  const average = count ? (activeProductReviews.reduce((sum,r)=>sum+Number(r.rating),0)/count).toFixed(1) : "—";
+  document.querySelector("#reviews-summary").textContent = count ? count+"টি অনুমোদিত রিভিউ" : "এখনো কোনো অনুমোদিত রিভিউ নেই";
+  document.querySelector("#reviews-average").textContent = average;
+  const more = document.querySelector("#reviews-show-all");
+  more.hidden = count <= 3;
+  more.textContent = showAllProductReviews ? "কম দেখুন" : "সব রিভিউ দেখুন ("+count+")";
+}
+async function loadProductReviews(productId) {
+  reviewList.innerHTML = '<p class="reviews-empty">রিভিউ লোড হচ্ছে...</p>';
+  showAllProductReviews = false;
+  try {
+    const response = await fetch("/api/reviews?productId="+encodeURIComponent(productId),{cache:"no-store"});
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "রিভিউ লোড হয়নি।");
+    activeProductReviews = Array.isArray(result.data) ? result.data : [];
+    renderProductReviews();
+  } catch(error) { reviewList.innerHTML='<p class="reviews-empty">রিভিউ লোড করা যায়নি। পরে আবার চেষ্টা করুন।</p>'; }
+}
+document.querySelector("#reviews-show-all")?.addEventListener("click",()=>{showAllProductReviews=!showAllProductReviews;renderProductReviews();});
+reviewForm?.addEventListener("submit",async event=>{
+  event.preventDefault();
+  if(!chosenProduct || !reviewForm.reportValidity()) return;
+  const button=document.querySelector("#review-submit"),status=document.querySelector("#review-form-status");
+  button.disabled=true;status.textContent="রিভিউ জমা হচ্ছে...";
+  const data=new FormData(reviewForm);
+  try {
+    const response=await fetch("/api/reviews",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({productId:String(chosenProduct.id),name:data.get("reviewName"),phone:data.get("reviewPhone"),rating:Number(data.get("reviewRating")),comment:data.get("reviewComment")})});
+    const result=await response.json();
+    if(!response.ok) throw new Error(result.error || "রিভিউ জমা হয়নি।");
+    reviewForm.reset();status.textContent=result.message || "রিভিউ জমা হয়েছে। অনুমোদনের পর প্রকাশ হবে।";
+  } catch(error) { status.textContent=error.message; }
+  finally { button.disabled=false; }
+});
+
 function chooseProduct(id, pushHistory = true) {
   lastOrderTrigger = document.activeElement;
   chosenProduct = products.find(p => String(p.id) === String(id));
@@ -651,6 +703,7 @@ function chooseProduct(id, pushHistory = true) {
   cartButton.textContent = "🛒 Add to Cart";
   cartButton.classList.remove("is-added");
   orderSection.hidden = false;
+  loadProductReviews(chosenProduct.id);
   if(pushHistory) history.pushState({view:"product",productId:chosenProduct.id},"","#product-"+encodeURIComponent(chosenProduct.id));
   document.body.classList.add("order-modal-open");
   document.querySelector(".floating-shop")?.classList.add("is-hidden");
