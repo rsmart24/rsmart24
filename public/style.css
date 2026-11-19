@@ -3716,3 +3716,19 @@ body.order-modal-open {
   .main-header .brand-logo{border-width:1.5px}
   .header-cart{border-width:1px}
 }
+
+
+/* ===== RS MART CART BUTTON: VIVID TRUE RED ===== */
+.header-cart{
+  color:#fff;
+  background:linear-gradient(135deg,#ff1a1a 0%,#f00000 52%,#a80000 100%);
+  border:1px solid #ff5555;
+  box-shadow:0 4px 13px rgba(220,0,0,.42),0 0 0 2px rgba(255,0,0,.12),inset 0 1px 0 rgba(255,255,255,.24);
+}
+.header-cart:hover{
+  color:#fff;
+  background:linear-gradient(135deg,#ff3333 0%,#e60000 52%,#940000 100%);
+  filter:brightness(1.08);
+  box-shadow:0 6px 17px rgba(220,0,0,.5),0 0 0 2px rgba(255,0,0,.16);
+}
+.header-cart:focus-visible{outline:3px solid #00d95b;outline-offset:3px}
