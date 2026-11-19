@@ -64,6 +64,13 @@
   <!-- End Meta Pixel Code -->
 </head>
 <body>
+
+  <!-- RS Mart Winter Dhamaka entry animation -->
+  <div id="winter-dhamaka-popup" class="winter-dhamaka-popup" aria-hidden="true">
+    <div class="winter-dhamaka-popup__backdrop"></div>
+    <img class="winter-dhamaka-popup__sticker" src="/winter-dhamaka-popup.png" alt="RS Mart Winter Dhamaka — সব পণ্যে চলছে বিশেষ ছাড়">
+  </div>
+
   
 
 
@@ -356,6 +363,30 @@
       <span>Made for smart everyday shopping</span>
     </div>
   </footer>
+
+  <script>
+    (function () {
+      if (window.location.pathname !== "/") return;
+      try {
+        if (sessionStorage.getItem("rsWinterDhamakaShown") === "1") return;
+        sessionStorage.setItem("rsWinterDhamakaShown", "1");
+      } catch (_) {}
+      var popup = document.getElementById("winter-dhamaka-popup");
+      if (!popup) return;
+      window.setTimeout(function () {
+        popup.classList.add("is-visible");
+        popup.setAttribute("aria-hidden", "false");
+      }, 120);
+      window.setTimeout(function () {
+        popup.classList.add("is-leaving");
+        popup.setAttribute("aria-hidden", "true");
+      }, 2670);
+      window.setTimeout(function () {
+        popup.remove();
+      }, 3150);
+    })();
+  </script>
+
   <script src="/app.js?v=meta-events-20261119-1"></script>
 </body>
 </html>
