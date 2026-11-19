@@ -818,13 +818,13 @@ async function sendOrderToBusinessKoro(request, env, orderId) {
     return json({error:"অর্ডারটি পাঠানোর প্রক্রিয়ায় আছে। কিছুক্ষণ পর অবস্থা দেখুন।"},409);
   }
   let items=[];
-  try { items=JSON.parse(order.order_items_json || "[]"); } catch {}
+  try { items=JSON.parse(order.order_items_json || "[]"); } catch { /* Use the legacy single-product order fields below. */ }
   if (!items.length && order.product_id) items=[{id:order.product_id,name:order.product_name,quantity:Number(order.quantity||1),unitPrice:Number(order.unit_price||0),color:order.color||"",size:order.size||""}];
   if (items.length !== 1) return json({error:"এই অর্ডারে একাধিক পণ্য আছে। Business Koro-র দেওয়া API একবারে একটি পণ্য নেয়। তাই ভুল ডেলিভারি/চার্জ এড়াতে এটি পাঠানো হয়নি।"},400);
   const item=items[0];
   if (Number(item.quantity||1) !== 1) return json({error:"এই API-তে quantity গ্রহণ করা হয় না। একাধিক পিসের অর্ডার আপাতত পাঠানো যাচ্ছে না।"},400);
   let requestBody={};
-  try { requestBody=await request.json(); } catch {}
+  try { requestBody=await request.json(); } catch { /* No optional delivery mode was supplied. */ }
   const deliveryChargeMode=String(requestBody.deliveryChargeMode || "customer_delivery");
   const allowedDeliveryModes=["customer_delivery","customer_upfront","reseller_bears"];
   if (!allowedDeliveryModes.includes(deliveryChargeMode)) return json({error:"ডেলিভারি চার্জের অপশন সঠিক নয়।"},400);
@@ -897,7 +897,7 @@ async function refreshExternalOrderStatuses(env, orders) {
       try {
         const response = await fetch(API_BASE + "/orders/" + encodeURIComponent(order.business_koro_order_id), { headers: apiHeaders(env) });
         let data = {};
-        try { data = await response.json(); } catch {}
+        try { data = await response.json(); } catch { /* Ignore an unreadable optional status payload. */ }
         if (response.ok) {
           const status = findExternalStatus(data);
           await env.DB.prepare("UPDATE orders SET business_koro_live_status=?, business_koro_status_checked_at=CURRENT_TIMESTAMP WHERE id=?").bind(status ? status.slice(0, 100) : null, order.id).run();
