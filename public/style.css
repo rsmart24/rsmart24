@@ -3762,3 +3762,24 @@ body.order-modal-open {
 @media(prefers-reduced-motion:reduce){
  .winter-dhamaka-popup__backdrop,.winter-dhamaka-popup__sticker,.winter-dhamaka-popup.is-leaving{transition:none}
 }
+
+
+/* Winter Dhamaka product discount badge: compact campaign label + prominent discount */
+.product-advance-discount-badge{
+  display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  padding:5px 9px 6px;border:1px solid rgba(255,255,255,.42);
+  border-radius:8px;background:linear-gradient(135deg,#e60000 0%,#c90000 62%,#008c35 100%);
+  color:#fff;line-height:1.05;max-width:calc(100% - 18px);
+  box-shadow:0 3px 10px rgba(0,0,0,.24);
+}
+.product-advance-discount-badge small{
+  display:block;font-size:7px;font-weight:800;letter-spacing:.75px;line-height:1.15;
+}
+.product-advance-discount-badge strong{
+  display:block;font-size:15px;font-weight:950;line-height:1.12;white-space:nowrap;
+}
+@media(max-width:480px){
+  .product-advance-discount-badge{padding:4px 7px 5px;gap:1px}
+  .product-advance-discount-badge small{font-size:6px;letter-spacing:.55px}
+  .product-advance-discount-badge strong{font-size:13px}
+}
