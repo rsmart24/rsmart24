@@ -3167,3 +3167,38 @@ body.order-modal-open {
 .dhamaaka-savings-callout small{font-size:12px;font-weight:700;line-height:1.4;color:#92400e}
 .dhamaaka-badge{font-size:12px!important;font-weight:900!important;padding:8px 11px!important}
 @media(max-width:600px){.dhamaaka-savings-callout{align-items:center;width:100%;margin:8px 0 10px;padding:10px 12px}.dhamaaka-savings-callout strong{font-size:34px}.dhamaaka-savings-callout small{font-size:11px}.dhamaaka-badge{font-size:11px!important;padding:7px 9px!important}}
+
+
+/* PROMINENT BILINGUAL LANGUAGE SWITCH */
+.top-strip { min-height:42px; }
+.top-strip-inner { min-height:42px; }
+.top-strip .language-toggle {
+  min-height:34px;
+  padding:0 13px;
+  border:1px solid rgba(255,130,27,.85);
+  border-radius:999px;
+  background:rgba(255,130,27,.14);
+  color:#fff;
+  font:700 13px "Hind Siliguri",Inter,sans-serif;
+  letter-spacing:.1px;
+  gap:8px;
+  box-shadow:0 1px 8px rgba(255,130,27,.12);
+}
+.top-strip .language-toggle .globe { font-size:16px; line-height:1; }
+.top-strip .language-toggle:hover,
+.top-strip .language-toggle:focus-visible {
+  background:var(--gg-orange);
+  border-color:var(--gg-orange);
+  color:#fff;
+  outline:2px solid rgba(255,130,27,.35);
+  outline-offset:2px;
+}
+@media(max-width:760px) {
+  .top-strip { min-height:40px; }
+  .top-strip-inner { min-height:40px; gap:8px; }
+  .top-utilities { gap:9px; }
+  .top-strip .language-toggle { min-height:32px; padding:0 10px; font-size:12px; }
+}
+@media(max-width:390px) {
+  .top-strip .language-toggle { min-height:30px; padding:0 8px; font-size:11px; gap:5px; }
+}
