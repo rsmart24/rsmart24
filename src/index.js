@@ -856,7 +856,7 @@ export default {
         return await seoSitemap(request, env);
       }
 
-      const seoProductMatch = path.match(/^\\/product\\/([^/]+)\\/?$/);
+      const seoProductMatch = path.match(/^\/product\/([^/]+)\/?$/);
       if (seoProductMatch && method === "GET") {
         return await seoProductPage(request, env, decodeURIComponent(seoProductMatch[1]));
       }
