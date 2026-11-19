@@ -955,7 +955,7 @@ function setLanguage(language) {
     const key = element.dataset.i18nPlaceholder;
     if (translations[language][key]) element.placeholder = translations[language][key];
   });
-  if (languageLabel) languageLabel.textContent = language === "bn" ? "বাংলা" : "English";
+  if (languageLabel) languageLabel.textContent = "বাংলা | English";
   if (products.length) renderProducts();
 }
 languageButton?.addEventListener("click", () => setLanguage(currentLanguage === "bn" ? "en" : "bn"));
