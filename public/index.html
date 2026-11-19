@@ -193,7 +193,7 @@
   <div class="product-detail-layout">
     <div class="product-detail-image" id="detail-image"><span class="image-placeholder">RS</span></div>
     <div class="product-detail-info">
-      <div class="detail-meta"><span class="detail-category" id="detail-category"></span><span class="detail-stock" id="detail-stock"></span><span class="detail-rating" id="detail-rating" hidden></span></div>
+      <div class="detail-meta"><span class="detail-category" id="detail-category"></span><span class="detail-stock" id="detail-stock"></span><span class="detail-rating-label" id="detail-rating-label" hidden>এই পণ্যের রেটিং</span><span class="detail-rating" id="detail-rating" hidden></span></div>
       <h2 id="selected-product">পণ্যের নাম</h2>
       <div class="detail-shortcut-row">
         <a class="detail-media-button" id="detail-media-button" href="#" target="_blank" rel="noopener noreferrer" hidden><span aria-hidden="true">▣</span> ছবি ও ভিডিও দেখুন <span aria-hidden="true">↗</span></a>
@@ -216,9 +216,17 @@
             <label>আপনার নাম<input name="reviewName" required maxlength="80" placeholder="নাম লিখুন"></label>
             <label>মোবাইল নম্বর<input name="reviewPhone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="14" placeholder="01XXXXXXXXX"><small class="review-private-note">🔒 আপনার ফোন নম্বর গোপন থাকবে। শুধু RS Mart অ্যাডমিন দেখতে পারবেন।</small></label>
           </div>
-          <label class="review-rating-label">রেটিং দিন
-            <select name="reviewRating" required><option value="5">★★★★★ — ৫</option><option value="4">★★★★☆ — ৪</option><option value="3">★★★☆☆ — ৩</option><option value="2">★★☆☆☆ — ২</option><option value="1">★☆☆☆☆ — ১</option></select>
-          </label>
+          <div class="review-rating-field">
+            <span class="review-rating-title">আপনার রেটিং</span>
+            <div class="review-star-picker" role="group" aria-label="১ থেকে ৫ স্টার রেটিং নির্বাচন করুন">
+              <button type="button" class="review-star-choice" data-rating="1" aria-label="১ স্টার" aria-pressed="false">★</button>
+              <button type="button" class="review-star-choice" data-rating="2" aria-label="২ স্টার" aria-pressed="false">★</button>
+              <button type="button" class="review-star-choice" data-rating="3" aria-label="৩ স্টার" aria-pressed="false">★</button>
+              <button type="button" class="review-star-choice" data-rating="4" aria-label="৪ স্টার" aria-pressed="false">★</button>
+              <button type="button" class="review-star-choice is-selected" data-rating="5" aria-label="৫ স্টার" aria-pressed="true">★</button>
+            </div>
+            <input type="hidden" name="reviewRating" id="review-rating-value" value="5" required>
+          </div>
           <label>আপনার মন্তব্য<textarea name="reviewComment" rows="2" minlength="3" maxlength="500" required placeholder="পণ্যটি সম্পর্কে আপনার অভিজ্ঞতা লিখুন..."></textarea></label>
           <button type="submit" id="review-submit">রিভিউ জমা দিন</button><p id="review-form-status" role="status" aria-live="polite"></p>
         </form>

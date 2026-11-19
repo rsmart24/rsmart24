@@ -578,6 +578,8 @@ function renderProductReviews() {
   const detailRating = document.querySelector("#detail-rating");
   if (detailRating) {
     detailRating.hidden = !count;
+    const ratingLabel = document.querySelector("#detail-rating-label");
+    if (ratingLabel) ratingLabel.hidden = !count;
     detailRating.textContent = count ? "★ " + average + " (" + count + ")" : "";
     if (count) detailRating.setAttribute("aria-label", average + " out of 5 from " + count + " reviews");
     else detailRating.removeAttribute("aria-label");
@@ -597,6 +599,19 @@ async function loadProductReviews(productId) {
     renderProductReviews();
   } catch(error) { reviewList.innerHTML='<p class="reviews-empty">রিভিউ লোড করা যায়নি। পরে আবার চেষ্টা করুন।</p>'; }
 }
+const reviewRatingValue = document.querySelector("#review-rating-value");
+const reviewStarChoices = [...document.querySelectorAll(".review-star-choice")];
+function setReviewStarRating(value) {
+  if (!reviewRatingValue) return;
+  reviewRatingValue.value = String(value);
+  reviewStarChoices.forEach(star => {
+    const selected = Number(star.dataset.rating) <= Number(value);
+    star.classList.toggle("is-selected", selected);
+    star.setAttribute("aria-pressed", String(Number(star.dataset.rating) === Number(value)));
+  });
+}
+reviewStarChoices.forEach(star => star.addEventListener("click", () => setReviewStarRating(star.dataset.rating)));
+reviewForm?.addEventListener("reset", () => setTimeout(() => setReviewStarRating(5), 0));
 document.querySelector("#reviews-show-all")?.addEventListener("click",()=>{showAllProductReviews=!showAllProductReviews;renderProductReviews();});
 document.querySelector("#review-jump-button")?.addEventListener("click",()=>{document.querySelector("#product-reviews")?.scrollIntoView({behavior:"smooth",block:"start"});});
 reviewForm?.addEventListener("submit",async event=>{

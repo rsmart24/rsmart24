@@ -3316,3 +3316,35 @@ body.order-modal-open {
   .order-section .detail-actions #detail-multi-order{min-height:43px;padding:9px 6px;font-size:12px}
 }
 .order-section .detail-shortcut-row .detail-media-button[hidden]{display:none!important}
+
+
+/* Compact rating label beside the product's approved review score. */
+.detail-meta #detail-rating-label{
+  margin-left:auto;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:700;
+  white-space:nowrap;
+}
+.detail-meta #detail-rating-label[hidden]{display:none!important}
+.detail-meta #detail-rating{margin-left:0}
+.review-rating-field{margin:0 0 13px}
+.review-rating-title{display:block;margin-bottom:7px;font-size:13px;font-weight:700;color:var(--ink)}
+.review-star-picker{display:inline-flex;align-items:center;gap:4px;padding:7px 10px;border:1px solid #f1d58c;border-radius:12px;background:linear-gradient(135deg,#fffdf5,#fff7df)}
+.review-star-choice{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;padding:0;border:0;border-radius:9px;
+  background:transparent;color:#cbd0d8;font-size:30px;line-height:1;
+  cursor:pointer;transition:color .16s,background .16s,transform .16s;
+  -webkit-tap-highlight-color:transparent;
+}
+.review-star-choice.is-selected{color:#f5a623;text-shadow:0 1px 2px rgba(160,95,0,.16)}
+.review-star-choice:hover,.review-star-choice:focus-visible{
+  color:#f59e0b;background:#fff0c2;transform:translateY(-2px);outline:none;
+}
+.review-star-choice:focus-visible{box-shadow:0 0 0 3px rgba(245,158,11,.25)}
+@media(max-width:650px){
+  .detail-meta #detail-rating-label{font-size:10px}
+  .review-star-picker{gap:3px;padding:6px 8px}
+  .review-star-choice{width:36px;height:36px;font-size:28px}
+}
