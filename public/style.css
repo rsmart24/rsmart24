@@ -3783,3 +3783,12 @@ body.order-modal-open {
   .product-advance-discount-badge small{font-size:6px;letter-spacing:.55px}
   .product-advance-discount-badge strong{font-size:13px}
 }
+
+
+/* Winter Dhamaka badge: solid vivid red, no mixed colors or gradient */
+.product-advance-discount-badge{
+  background:#e00000;
+  border:1px solid #ff6666;
+  color:#fff;
+  box-shadow:0 3px 10px rgba(120,0,0,.28);
+}
