@@ -3490,3 +3490,116 @@ body.order-modal-open {
   .main-header .header-search button{width:29px;height:29px;margin-right:3px;font-size:18px}
   .header-cart{min-height:35px;padding:0 6px;font-size:10px}
 }
+
+
+/* ===== RS MART HEADER: REFINED PREMIUM BRAND + NAV (VISUAL ONLY) ===== */
+.main-header-inner{
+  width:min(1240px,92%);
+  grid-template-columns:auto minmax(180px,1fr) auto;
+  gap:clamp(10px,2vw,22px);
+  min-height:78px;
+}
+.main-header .brand{
+  width:auto;height:auto;min-width:0;
+  justify-content:flex-start;gap:11px;
+  padding:0;border:0;border-radius:0;
+  background:transparent;box-shadow:none;overflow:visible;
+}
+.main-header .brand-logo{
+  display:block;width:62px;height:62px;max-width:62px;max-height:62px;
+  padding:4px;object-fit:contain;border-radius:15px;
+  background:linear-gradient(145deg,#fff 0%,#f4f7fb 100%);
+  border:1px solid rgba(219,174,91,.58);
+  box-shadow:0 5px 16px rgba(0,0,0,.22),inset 0 1px 0 #fff;
+}
+.main-header .brand-name{
+  display:inline-block;white-space:nowrap;
+  color:#fff;font-family:Inter,"Hind Siliguri",sans-serif;
+  font-size:clamp(18px,2vw,23px);font-weight:800;letter-spacing:.15px;
+  line-height:1;
+  text-shadow:0 2px 10px rgba(0,0,0,.22);
+}
+.main-header .brand-name strong{
+  color:#f4c76e;font-weight:900;
+  background:linear-gradient(100deg,#ffe6a4 0%,#f5c66a 48%,#e49a38 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.main-header .header-search{
+  max-width:none;height:46px;border-radius:14px;
+  border:1px solid rgba(211,225,237,.26);
+  background:linear-gradient(110deg,#f8fafc 0%,#edf3f8 100%);
+  box-shadow:0 5px 16px rgba(0,0,0,.16),inset 0 1px 0 #fff;
+}
+.main-header .header-search input{
+  color:#172b3c;font-size:14px;padding:0 17px;
+}
+.main-header .header-search input::placeholder{color:#748496}
+.main-header .header-search:focus-within{
+  border-color:#e9b85d;background:#fff;
+  box-shadow:0 0 0 3px rgba(233,184,93,.18),0 6px 18px rgba(0,0,0,.18);
+}
+.main-header .header-search button{
+  width:38px;height:36px;margin-right:5px;border-radius:10px;
+  color:#fff;background:linear-gradient(135deg,#f0bd59 0%,#d98a2d 100%);
+  border:1px solid rgba(255,255,255,.45);
+  box-shadow:0 3px 9px rgba(182,112,30,.25);
+}
+.header-cart{
+  min-height:46px;padding:0 16px;gap:8px;border-radius:13px;
+  color:#fff;background:linear-gradient(135deg,#e6a944 0%,#c87b25 100%);
+  border:1px solid rgba(255,226,167,.62);
+  box-shadow:0 5px 15px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.28);
+  font-size:13px;font-weight:800;
+}
+.header-cart:hover{color:#fff;filter:brightness(1.08);transform:translateY(-1px)}
+.header-cart .cart-symbol{font-size:18px}
+.category-nav{
+  background:linear-gradient(90deg,#0a1925 0%,#102536 50%,#0a1925 100%);
+  border-top:1px solid rgba(255,255,255,.06);
+  border-bottom:1px solid rgba(235,190,105,.22);
+}
+.category-nav-inner{min-height:44px;gap:8px}
+.category-nav-inner a{
+  min-height:31px;height:31px;padding:0 14px;border:1px solid transparent;
+  border-radius:9px;color:#e2eaf1;
+  font-size:12px;font-weight:650;letter-spacing:.05px;
+  transition:background .18s,border-color .18s,color .18s,transform .18s;
+}
+.category-nav-inner a span:first-child{color:#f0c36e;font-size:14px}
+.category-nav-inner a:hover{
+  color:#fff;background:rgba(236,181,83,.12);
+  border-color:rgba(236,181,83,.26);transform:translateY(-1px)
+}
+.category-nav-inner a.active{
+  color:#172536;background:linear-gradient(120deg,#f6d58e 0%,#e5ad4e 100%);
+  border-color:#f8d998;box-shadow:0 3px 9px rgba(0,0,0,.16)
+}
+.category-nav-inner a.active span:first-child{color:#172536}
+@media(max-width:760px){
+  .main-header-inner{
+    width:96%;min-height:66px;padding:7px 0;
+    grid-template-columns:auto minmax(0,1fr) auto;gap:8px
+  }
+  .main-header .brand{gap:7px}
+  .main-header .brand-logo{
+    width:44px;height:44px;max-width:44px;max-height:44px;
+    padding:3px;border-radius:11px
+  }
+  .main-header .brand-name{font-size:15px;letter-spacing:0}
+  .main-header .header-search{height:39px;min-width:0}
+  .main-header .header-search input{font-size:11px;padding:0 9px}
+  .main-header .header-search button{width:31px;height:31px;margin-right:4px;font-size:19px}
+  .header-cart{min-height:38px;padding:0 9px;gap:5px;font-size:11px}
+  .category-nav-inner{width:96%;min-height:41px;gap:5px}
+  .category-nav-inner a{height:29px;min-height:29px;padding:0 10px;font-size:11px}
+}
+@media(max-width:390px){
+  .main-header-inner{gap:6px}
+  .main-header .brand{gap:5px}
+  .main-header .brand-logo{width:39px;height:39px;max-width:39px;max-height:39px}
+  .main-header .brand-name{font-size:13px}
+  .main-header .header-search{height:36px}
+  .main-header .header-search input{font-size:10px;padding:0 7px}
+  .main-header .header-search button{width:28px;height:29px;margin-right:3px;font-size:17px}
+  .header-cart{min-height:35px;padding:0 6px;font-size:10px}
+}
