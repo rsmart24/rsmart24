@@ -1034,7 +1034,7 @@ const translations = {
     search:"Search smart gadgets, fashion or more..."
   }
 };
-function setLanguage(language) {
+let setLanguage = function(language) {
   currentLanguage = language;
   document.documentElement.lang = language;
   document.querySelectorAll("[data-i18n]").forEach(element => {
@@ -1047,7 +1047,7 @@ function setLanguage(language) {
   });
   if (languageLabel) languageLabel.textContent = "বাংলা | English";
   if (products.length) renderProducts();
-}
+};
 languageButton?.addEventListener("click", () => setLanguage(currentLanguage === "bn" ? "en" : "bn"));
 setLanguage("bn");
 document.querySelector("#search-button")?.addEventListener("click", () => searchInput?.focus());
@@ -1146,7 +1146,6 @@ document.addEventListener("DOMContentLoaded", loadDhamaakaHomeSection);
     "বিশেষ ছাড়":"Special Discount",
     "শুধু ডেলিভারি চার্জ অগ্রিম দিন, পণ্যের দামে ছাড় পান।":"Pay only the delivery charge in advance and get a product discount.",
     "আপনার ছাড়":"Your Discount",
-    "পণ্যের মোট":"Product total",
     "ছাড়ের পর পণ্যের দাম (ডেলিভারি ছাড়া)":"Product price after discount (excluding delivery)",
     "বিকাশ Send Money":"bKash Send Money",
     "বিকাশ অ্যাপ থেকে নিচের নম্বরে Send Money করুন। পাঠাতে হবে শুধু ডেলিভারি চার্জ:":"Send Money to the number below using the bKash app. Only the delivery charge is payable:",
@@ -1196,7 +1195,6 @@ document.addEventListener("DOMContentLoaded", loadDhamaakaHomeSection);
     "অগ্রিম ডেলিভারি চার্জ দিলে পণ্যের দামে ছাড় প্রযোজ্য।":"A product discount applies when the delivery charge is paid in advance.",
     "ক্যাশ অন ডেলিভারিতে দাম":"Cash on Delivery price",
     "অগ্রিমে":"Advance payment discount",
-    "ছাড়ের পর পণ্যের দাম (ডেলিভারি ছাড়া)":"Product price after discount (excluding delivery)",
     "পণ্যের মোট দাম (ডেলিভারি ছাড়া)":"Product subtotal (excluding delivery)",
     "সর্বমোট (ডেলিভারি চার্জসহ)":"Grand total (including delivery)",
     "ছাড়ের পর সর্বমোট (ডেলিভারি চার্জসহ)":"Discounted grand total (including delivery)",
