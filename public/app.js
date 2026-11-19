@@ -457,10 +457,11 @@ function updateOrderSummary() {
     const paymentDiscountNote = document.querySelector("#detail-payment-discount-note");
     if (paymentDiscountNote) {
       paymentDiscountNote.hidden = advancePercent <= 0;
+      const savingPerUnit = Math.max(0, productPrice - advancePrice);
       paymentDiscountNote.textContent = advancePercent > 0
         ? (showAdvance
-          ? `অগ্রিম ডেলিভারি চার্জ দিলে পণ্যের দামে ${advancePercent}% ছাড় প্রযোজ্য। ক্যাশ অন ডেলিভারিতে দাম ${money(productPrice)}।`
-          : `এই ${advancePercent}% ছাড় শুধু অগ্রিম ডেলিভারি চার্জ দিলে প্রযোজ্য। অগ্রিম দিলে দাম ${money(advancePrice)}।`)
+          ? `অগ্রিম ডেলিভারি চার্জ বেছে নিয়েছেন: এখনকার পণ্যমূল্য ${money(advancePrice)}। ক্যাশ অন ডেলিভারি মূল্য ${money(productPrice)}। আপনি প্রতি পিসে সাশ্রয় করছেন ${money(savingPerUnit)} (${advancePercent}%)।`
+          : `ক্যাশ অন ডেলিভারি মূল্য ${money(productPrice)}। অগ্রিম ডেলিভারি চার্জ বেছে নিলে মূল্য হবে ${money(advancePrice)}—প্রতি পিসে সাশ্রয় ${money(savingPerUnit)} (${advancePercent}%)।`)
         : "";
     }
   }

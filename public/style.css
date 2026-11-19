@@ -3348,3 +3348,38 @@ body.order-modal-open {
   .review-star-picker{gap:3px;padding:6px 8px}
   .review-star-choice{width:36px;height:36px;font-size:28px}
 }
+
+
+/* Make the advance-payment savings amount easy to notice without changing totals. */
+.detail-payment-discount-note,
+.product-payment-discount-note{
+  border-color:#86efac;
+  background:linear-gradient(135deg,#ecfdf3,#f0fdf4);
+  color:#166534;
+}
+.advance-mini-breakdown .advance-discount-line,
+.advance-mini-breakdown .advance-discount-line b{
+  color:#15803d!important;
+  font-weight:850;
+}
+.advance-mini-breakdown .advance-discount-line b{
+  display:inline-flex;
+  align-items:center;
+  padding:2px 8px;
+  border-radius:999px;
+  background:#dcfce7;
+}
+#advance-price-note{
+  border:1px solid #86efac;
+  background:linear-gradient(135deg,#ecfdf3,#f0fdf4);
+  color:#166534;
+  border-radius:9px;
+  padding:9px 11px;
+  font-size:13px;
+  font-weight:750;
+  line-height:1.55;
+}
+@media(max-width:700px){
+  .detail-payment-discount-note{font-size:12px;line-height:1.5}
+  #advance-price-note{font-size:12px;padding:8px 9px}
+}
