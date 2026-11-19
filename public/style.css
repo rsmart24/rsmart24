@@ -3825,3 +3825,21 @@ body.order-modal-open {
   .search-suggestion-thumb{flex-basis:42px;width:42px;height:42px}
   .search-suggestion-copy strong{font-size:12px}
 }
+
+
+/* Enhanced customer review summary and rating distribution */
+.reviews-heading-row{align-items:center}
+.reviews-average{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border:1px solid #f2d28a;border-radius:12px;background:#fffbeb;color:#a16207;font-size:25px;line-height:1}
+.reviews-rating-breakdown{display:grid;gap:6px;max-width:390px;margin:14px 0 4px;padding:12px 14px;border:1px solid #eef0f3;border-radius:12px;background:#fafbfc}
+.reviews-rating-breakdown[hidden]{display:none!important}
+.rating-breakdown-row{display:grid;grid-template-columns:42px minmax(80px,1fr) 28px;align-items:center;gap:9px;color:#475467;font-size:12px;font-weight:700}
+.rating-breakdown-track{height:8px;overflow:hidden;border-radius:99px;background:#e9edf2}
+.rating-breakdown-track>span{display:block;height:100%;border-radius:99px;background:#e0a126;transition:width .25s ease}
+.rating-breakdown-row small{color:#667085;text-align:right;font-size:11px}
+.review-top-rated{display:inline-flex;margin-top:7px;padding:3px 8px;border-radius:999px;background:#fff7df;color:#9a6700;font-size:10px;font-weight:800}
+.review-card{transition:border-color .18s,box-shadow .18s}
+.review-card:hover{border-color:#e6c879;box-shadow:0 4px 13px rgba(16,24,40,.06)}
+@media(max-width:650px){
+ .reviews-average{padding:6px 9px;font-size:21px}
+ .reviews-rating-breakdown{max-width:none;padding:10px}
+}
