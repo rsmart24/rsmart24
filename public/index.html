@@ -214,7 +214,7 @@
           <h4>আপনার মতামত দিন</h4>
           <div class="review-form-grid">
             <label>আপনার নাম<input name="reviewName" required maxlength="80" placeholder="নাম লিখুন"></label>
-            <label>মোবাইল নম্বর<input name="reviewPhone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="14" placeholder="01XXXXXXXXX"><small class="review-private-note">🔒 আপনার ফোন নম্বর গোপন থাকবে। শুধু RS Mart অ্যাডমিন দেখতে পারবেন।</small></label>
+            <label>মোবাইল নম্বর<input name="reviewPhone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="14" pattern="(?:01[3-9][0-9]{8}|\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})" title="সঠিক বাংলাদেশি মোবাইল নম্বর লিখুন, যেমন 017XXXXXXXX" placeholder="01XXXXXXXXX"><small class="review-private-note">🔒 বৈধ বাংলাদেশি নম্বর দিন। OTP লাগবে না; একই নম্বরে প্রতি পণ্যে সর্বোচ্চ ২টি রিভিউ। ফোন নম্বর গোপন থাকবে।</small></label>
           </div>
           <div class="review-rating-field">
             <span class="review-rating-title">আপনার রেটিং</span>
