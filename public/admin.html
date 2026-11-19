@@ -279,10 +279,10 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
         <article class="stat-card"><span>মোট অর্ডার</span><strong id="stat-total-orders">০</strong></article>
         <article class="stat-card"><span>নতুন অর্ডার</span><strong id="stat-new-orders">০</strong></article>
         <article class="stat-card"><span>ডেলিভারি সম্পন্ন</span><strong id="stat-delivered-orders">০</strong></article>
-        <article class="stat-card"><span>মোট বিক্রির মূল্য*</span><strong id="stat-sales">৳০</strong></article>
+        <article class="stat-card"><span>আদায়কৃত বিক্রি*</span><strong id="stat-sales">৳০</strong></article>
         <article class="stat-card"><span>মোট পণ্য</span><strong id="stat-products">০</strong></article>
         <article class="stat-card"><span>স্টক আউট</span><strong id="stat-out-stock">০</strong></article>
-        <p class="muted stat-note">*বাতিল অর্ডার বাদে অর্ডারের মোট মূল্য; এটি লাভের হিসাব নয়।</p>
+        <p class="muted stat-note">*শুধু ডেলিভারি সম্পন্ন এবং COD/যাচাইকৃত অগ্রিম পেমেন্টের অর্ডার; এটি লাভের হিসাব নয়।</p>
       </section>
       <nav class="admin-nav" aria-label="Admin sections"><button type="button" data-tab="products" aria-selected="true">পণ্য ব্যবস্থাপনা</button><button type="button" data-tab="dhamaaka" aria-selected="false">ধামাকা অফার</button><button type="button" data-tab="orders" aria-selected="false">অর্ডার ব্যবস্থাপনা</button><button type="button" data-tab="reviews" aria-selected="false">রিভিউ ব্যবস্থাপনা</button></nav>
       <div class="panel" id="products-panel">
@@ -360,7 +360,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
       set("#stat-total-orders", adminOrderSummary?.total_orders ?? adminOrders.length);
       set("#stat-new-orders", adminOrderSummary?.new_orders ?? adminOrders.filter(o => o.status === "new").length);
       set("#stat-delivered-orders", adminOrderSummary?.delivered_orders ?? adminOrders.filter(o => o.status === "delivered").length);
-      const sales = adminOrderSummary?.total_sales ?? adminOrders.filter(o => o.status !== "cancelled").reduce((sum,o) => sum + Number(o.total_amount || 0),0);
+      const sales = adminOrderSummary?.total_sales ?? adminOrders.filter(o => o.status === "delivered" && (o.payment_method === "cod" || o.payment_verification_status === "verified")).reduce((sum,o) => sum + Number(o.total_amount || 0),0);
       const salesEl = document.querySelector("#stat-sales"); if (salesEl) salesEl.textContent = money(sales);
       set("#stat-products", adminProducts.length);
       set("#stat-out-stock", adminProducts.filter(p => p.inStock === false || ["out_of_stock","sold_out","unavailable"].includes(String(p.stockStatus || p.stock_status || "").toLowerCase())).length);
