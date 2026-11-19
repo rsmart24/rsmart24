@@ -686,6 +686,9 @@ async function loadProducts() {
     renderCartPage();
     updateCartCount();
 
+    const initialProductMatch = location.hash.match(/^#product-(.+)$/);
+    if (initialProductMatch) chooseProduct(decodeURIComponent(initialProductMatch[1]), false);
+
   } catch (error) {
     count.textContent = "লোড করা যায়নি";
     grid.innerHTML = '<div class="loading">পণ্য দেখানো যাচ্ছে না। পরে আবার চেষ্টা করুন।</div>';
