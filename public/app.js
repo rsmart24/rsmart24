@@ -564,18 +564,34 @@ let activeProductReviews = [];
 let showAllProductReviews = false;
 function renderProductReviews() {
   if (!reviewList) return;
-  const visible = showAllProductReviews ? activeProductReviews : activeProductReviews.slice(0,3);
-  if (!activeProductReviews.length) {
+  const count = activeProductReviews.length;
+  const sortedReviews = [...activeProductReviews].sort((a,b) => {
+    const dateA = Date.parse(String(a.created_at || "").replace(" ","T") + "Z") || 0;
+    const dateB = Date.parse(String(b.created_at || "").replace(" ","T") + "Z") || 0;
+    return dateB - dateA;
+  });
+  const visible = showAllProductReviews ? sortedReviews : sortedReviews.slice(0,3);
+  if (!count) {
     reviewList.innerHTML = '<p class="reviews-empty">এখনো কোনো অনুমোদিত রিভিউ নেই। আপনার মতামত প্রথমে জানান।</p>';
   } else {
     reviewList.innerHTML = visible.map(r => {
-      const stars = "★".repeat(Number(r.rating)) + "☆".repeat(5-Number(r.rating));
-      const date = r.created_at ? new Date(String(r.created_at).replace(" ","T")+"Z").toLocaleDateString("bn-BD") : "";
-      return '<article class="review-card"><div class="review-card-top"><strong>'+escapeHtml(r.customer_name)+'</strong><span class="review-stars" aria-label="'+Number(r.rating)+' out of 5">'+stars+'</span></div><p>'+escapeHtml(r.comment)+'</p><small>'+escapeHtml(date)+'</small></article>';
+      const rating = Math.min(5, Math.max(1, Number(r.rating) || 1));
+      const stars = "★".repeat(rating) + "☆".repeat(5-rating);
+      const parsedDate = r.created_at ? new Date(String(r.created_at).replace(" ","T")+"Z") : null;
+      const date = parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString("bn-BD") : "";
+      return '<article class="review-card"><div class="review-card-top"><strong>'+escapeHtml(r.customer_name)+'</strong><span class="review-stars" aria-label="'+rating+' out of 5">'+stars+'</span></div>'+(rating===5?'<span class="review-top-rated">সর্বোচ্চ রেটিং</span>':"")+'<p>'+escapeHtml(r.comment)+'</p><small>'+escapeHtml(date)+'</small></article>';
     }).join("");
   }
-  const count = activeProductReviews.length;
   const average = count ? (activeProductReviews.reduce((sum,r)=>sum+Number(r.rating),0)/count).toFixed(1) : "—";
+  const distribution = document.querySelector("#reviews-rating-breakdown");
+  if (distribution) {
+    distribution.innerHTML = count ? [5,4,3,2,1].map(rating => {
+      const amount = activeProductReviews.filter(r => Number(r.rating) === rating).length;
+      const percent = Math.round(amount / count * 100);
+      return '<div class="rating-breakdown-row"><span>'+rating+' ★</span><span class="rating-breakdown-track"><span style="width:'+percent+'%"></span></span><small>'+amount+'</small></div>';
+    }).join("") : "";
+    distribution.hidden = !count;
+  }
   document.querySelector("#reviews-summary").textContent = count ? count+"টি অনুমোদিত রিভিউ" : "এখনো কোনো অনুমোদিত রিভিউ নেই";
   document.querySelector("#reviews-average").textContent = average;
   const detailRating = document.querySelector("#detail-rating");
