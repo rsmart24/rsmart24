@@ -424,8 +424,15 @@ async function seoProductPage(request, env, productId) {
 }
 
 async function seoSitemap(request, env) {
-  const catalog = await getCatalog(env);
-  const settings = await getSettings(env);
+  let catalog;
+  let settings;
+  try {
+    catalog = await getCatalog(env);
+    settings = await getSettings(env);
+  } catch (error) {
+    console.error("Dynamic sitemap generation failed:", error?.message || "Unknown error");
+    return env.ASSETS.fetch(request);
+  }
   const origin = new URL(request.url).origin;
   const products = catalog.products
     .map(item => publicProduct(item, settings.get(String(item.id))))
