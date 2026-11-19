@@ -439,6 +439,7 @@ function updateOrderSummary() {
   document.querySelector("#cod-total").textContent=money(subtotal+(delivery===null?0:delivery));
   document.querySelector("#advance-subtotal").textContent=money(subtotal);
   document.querySelector("#advance-discount-amount").textContent=money(discount);
+  document.querySelector("#advance-product-total").textContent=money(subtotal-discount);
   document.querySelector("#advance-delivery").textContent=dText;
   document.querySelector("#advance-total").textContent=tText;
   // Keep the product detail price synchronized with the selected payment method.
@@ -1132,6 +1133,7 @@ document.addEventListener("DOMContentLoaded", loadDhamaakaHomeSection);
     "বিশেষ ছাড়":"Special Discount",
     "শুধু ডেলিভারি চার্জ অগ্রিম দিন, পণ্যের দামে ছাড় পান।":"Pay only the delivery charge in advance and get a product discount.",
     "আপনার ছাড়":"Your Discount",
+    "পণ্যের মোট":"Product total",
     "ছাড়ের পর পণ্যের দাম (ডেলিভারি ছাড়া)":"Product price after discount (excluding delivery)",
     "বিকাশ Send Money":"bKash Send Money",
     "বিকাশ অ্যাপ থেকে নিচের নম্বরে Send Money করুন। পাঠাতে হবে শুধু ডেলিভারি চার্জ:":"Send Money to the number below using the bKash app. Only the delivery charge is payable:",
