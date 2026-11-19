@@ -477,6 +477,10 @@ async function seoSitemap(request, env) {
   const urls = [
     origin + "/",
     origin + "/dhamaaka-offer.html",
+    origin + "/contact.html",
+    origin + "/delivery-policy.html",
+    origin + "/return-refund.html",
+    origin + "/privacy-policy.html",
     ...products.map(product => origin + "/product/" + encodeURIComponent(product.id))
   ];
   const xml = '<?xml version="1.0" encoding="UTF-8"?>' +

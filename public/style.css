@@ -2031,8 +2031,8 @@ body.order-modal-open {
   margin: auto;
   padding: 48px 0 38px;
   display: grid;
-  grid-template-columns: 1.35fr .8fr 1fr;
-  gap: 58px;
+  grid-template-columns: 1.25fr .8fr 1fr 1fr;
+  gap: 32px;
 }
 .footer-about { min-width: 0; }
 .footer-logo {
@@ -2184,6 +2184,12 @@ body.order-modal-open {
   .footer-bottom p,.footer-bottom span,.footer-bottom a { font-size: 10px; }
 }
 
+
+
+.footer-socials{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+.footer-socials a{display:inline-flex;align-items:center;padding:6px 9px;border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#b9c6d0;font:11px "Hind Siliguri",sans-serif;text-decoration:none;transition:.2s}
+.footer-socials a:hover{border-color:#ff9a43;color:#fff}
+.footer-policies a{white-space:normal}
 
 /* Accessibility and keyboard focus improvements */
 .order-section :focus-visible,
