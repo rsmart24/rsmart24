@@ -284,7 +284,7 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
         <article class="stat-card"><span>স্টক আউট</span><strong id="stat-out-stock">০</strong></article>
         <p class="muted stat-note">*বাতিল অর্ডার বাদে অর্ডারের মোট মূল্য; এটি লাভের হিসাব নয়।</p>
       </section>
-      <nav class="admin-nav" aria-label="Admin sections"><button type="button" data-tab="products" aria-selected="true">পণ্য ব্যবস্থাপনা</button><button type="button" data-tab="dhamaaka" aria-selected="false">ধামাকা অফার</button><button type="button" data-tab="orders" aria-selected="false">অর্ডার ব্যবস্থাপনা</button></nav>
+      <nav class="admin-nav" aria-label="Admin sections"><button type="button" data-tab="products" aria-selected="true">পণ্য ব্যবস্থাপনা</button><button type="button" data-tab="dhamaaka" aria-selected="false">ধামাকা অফার</button><button type="button" data-tab="orders" aria-selected="false">অর্ডার ব্যবস্থাপনা</button><button type="button" data-tab="reviews" aria-selected="false">রিভিউ ব্যবস্থাপনা</button></nav>
       <div class="panel" id="products-panel">
         <h2>পণ্য ব্যবস্থাপনা</h2>
         <p class="muted">বিক্রয়মূল্য, ক্যাটাগরি, মিডিয়া লিংক এবং পণ্যের দৃশ্যমানতা নিয়ন্ত্রণ করুন।</p>        <div class="admin-toolbar">
@@ -315,6 +315,11 @@ button.secondary{background:#e8f1eb;color:#24543a;border:1px solid #cfe1d3;box-s
         <p id="dhamaaka-save-status" class="muted" aria-live="polite"></p>
       </div>
 
+      <div class="panel hidden" id="reviews-panel">
+        <h2>প্রোডাক্ট রিভিউ</h2><p class="muted">ক্রেতাদের জমা দেওয়া রিভিউ, নাম ও ব্যক্তিগত মোবাইল নম্বর এখানে শুধু অ্যাডমিন দেখতে পারবেন। অনুমোদনের আগে কোনো রিভিউ প্রকাশ হবে না।</p>
+        <div class="admin-toolbar"><select id="review-status-filter"><option value="pending">অনুমোদনের অপেক্ষায়</option><option value="approved">প্রকাশিত</option><option value="rejected">বাতিল</option><option value="all">সব রিভিউ</option></select><button type="button" class="secondary" id="refresh-reviews">রিভিউ রিফ্রেশ</button></div>
+        <div id="reviews-admin-list">রিভিউ লোড হচ্ছে...</div>
+      </div>
       <div class="panel hidden" id="orders-panel">
         <h2>গ্রাহকের অর্ডার</h2>
         <div class="admin-toolbar" id="orders-toolbar">
@@ -848,6 +853,24 @@ orderDetailView.addEventListener("click",async e=>{
       finally { orderPollBusy = false; }
     });
 
+
+    async function loadAdminReviews() {
+      const status = document.querySelector("#review-status-filter").value;
+      const result = await api("/api/admin/reviews?status="+encodeURIComponent(status));
+      const box = document.querySelector("#reviews-admin-list");
+      const rows = Array.isArray(result.data) ? result.data : [];
+      if (!rows.length) { box.innerHTML='<p class="muted">এই তালিকায় কোনো রিভিউ নেই।</p>'; return; }
+      box.innerHTML = rows.map(r=>'<article class="order"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><b>'+escapeHTML(r.customer_name)+'</b><b>★'.repeat(0)+'</b></div><p class="muted">পণ্য: '+escapeHTML(adminProducts.find(p=>String(p.id)===String(r.product_id))?.name || r.product_id)+' · ফোন: '+escapeHTML(r.customer_phone)+' · রেটিং: '+Number(r.rating)+'/5</p><p>'+escapeHTML(r.comment)+'</p><p class="muted">অবস্থা: '+escapeHTML(r.status)+' · '+escapeHTML(r.created_at||"")+'</p><div class="order-actions"><button type="button" data-review-action="approved" data-review-id="'+Number(r.id)+'">Approve</button><button type="button" class="secondary" data-review-action="rejected" data-review-id="'+Number(r.id)+'">Reject</button><button type="button" class="danger" data-review-action="delete" data-review-id="'+Number(r.id)+'">Delete</button></div></article>').join("");
+      box.querySelectorAll("[data-review-action]").forEach(button=>button.addEventListener("click",async()=>{
+        const id=button.dataset.reviewId, action=button.dataset.reviewAction;
+        if(action==="delete"){if(!confirm("এই রিভিউ স্থায়ীভাবে মুছে ফেলবেন?"))return;await api("/api/admin/reviews/"+id,{method:"DELETE"});}
+        else await api("/api/admin/reviews/"+id,{method:"PATCH",body:JSON.stringify({status:action})});
+        await loadAdminReviews();
+      }));
+    }
+    document.querySelector("#refresh-reviews").addEventListener("click",()=>loadAdminReviews().catch(error=>alert(error.message)));
+    document.querySelector("#review-status-filter").addEventListener("change",()=>loadAdminReviews().catch(error=>alert(error.message)));
+
     async function openDashboard() {
       try {
         await api("/api/admin/products");
@@ -905,6 +928,8 @@ orderDetailView.addEventListener("click",async e=>{
         document.querySelector("#products-panel").classList.toggle("hidden", tabName !== "products");
         document.querySelector("#dhamaaka-panel").classList.toggle("hidden", tabName !== "dhamaaka");
         document.querySelector("#orders-panel").classList.toggle("hidden", tabName !== "orders");
+        document.querySelector("#reviews-panel").classList.toggle("hidden", tabName !== "reviews");
+        if(tabName === "reviews") loadAdminReviews().catch(error=>alert(error.message));
         if(tabName === "dhamaaka") loadDhamaakaOffer().catch(error=>{document.querySelector("#dhamaaka-save-status").textContent=error.message;});
         document.querySelectorAll("[data-tab]").forEach(tab => tab.setAttribute("aria-selected", String(tab === button)));
       });

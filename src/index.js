@@ -83,6 +83,61 @@ async function getCatalog(env) {
   return { products: allProducts, deliveryCharges };
 }
 
+
+function normalizeReviewPhone(value) {
+  let phone = String(value || "").replace(/[\s-]/g, "");
+  if (phone.startsWith("+88")) phone = phone.slice(3);
+  else if (phone.startsWith("88") && phone.length === 13) phone = phone.slice(2);
+  return /^01[3-9]\d{8}$/.test(phone) ? phone : "";
+}
+async function reviewPhoneHash(phone) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("rs-mart-review:" + phone));
+  return Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2,"0")).join("");
+}
+async function publicProductReviews(env, productId) {
+  await ensureOrderSchema(env);
+  const result = await env.DB.prepare("SELECT id, customer_name, rating, comment, created_at FROM product_reviews WHERE product_id = ? AND status = 'approved' ORDER BY created_at DESC, id DESC LIMIT 100").bind(productId).all();
+  return json({ data: result.results || [] });
+}
+async function submitProductReview(request, env) {
+  await ensureOrderSchema(env);
+  let body;
+  try { body = await request.json(); } catch { return json({error:"রিভিউয়ের তথ্য সঠিক নয়।"},400); }
+  const productId = String(body?.productId || "").trim().slice(0,100);
+  const name = String(body?.name || "").trim().replace(/\s+/g," ").slice(0,80);
+  const phone = normalizeReviewPhone(body?.phone);
+  const rating = Number(body?.rating);
+  const comment = String(body?.comment || "").trim().slice(0,500);
+  if (!productId || !name || !phone || !Number.isInteger(rating) || rating < 1 || rating > 5 || comment.length < 3) {
+    return json({error:"নাম, সঠিক মোবাইল নম্বর, রেটিং ও কমপক্ষে ৩ অক্ষরের মন্তব্য দিন।"},400);
+  }
+  const hash = await reviewPhoneHash(phone);
+  try {
+    await env.DB.prepare("INSERT INTO product_reviews (product_id, customer_name, customer_phone, phone_hash, rating, comment, status) VALUES (?,?,?,?,?,?,'pending')").bind(productId,name,phone,hash,rating,comment).run();
+  } catch (error) {
+    if (/unique/i.test(String(error?.message || error))) return json({error:"এই নম্বর দিয়ে এই পণ্যে ইতিমধ্যে একটি রিভিউ দেওয়া হয়েছে।"},409);
+    throw error;
+  }
+  return json({success:true,message:"আপনার রিভিউ জমা হয়েছে। অনুমোদনের পর প্রকাশ করা হবে।"},201);
+}
+async function adminProductReviews(env, url) {
+  await ensureOrderSchema(env);
+  const status = ["pending","approved","rejected","all"].includes(url.searchParams.get("status")) ? url.searchParams.get("status") : "pending";
+  const result = await env.DB.prepare("SELECT id, product_id, customer_name, customer_phone, rating, comment, status, created_at FROM product_reviews " + (status === "all" ? "" : "WHERE status = ? ") + "ORDER BY created_at DESC, id DESC LIMIT 300").bind(...(status === "all" ? [] : [status])).all();
+  return json({data:result.results || []});
+}
+async function updateProductReview(request, env, reviewId) {
+  let body; try { body = await request.json(); } catch { return json({error:"সঠিক তথ্য দিন।"},400); }
+  const status = String(body?.status || "");
+  if (!["approved","rejected","pending"].includes(status)) return json({error:"রিভিউয়ের অবস্থা সঠিক নয়।"},400);
+  const result = await env.DB.prepare("UPDATE product_reviews SET status = ? WHERE id = ?").bind(status,reviewId).run();
+  return result.meta?.changes ? json({success:true}) : json({error:"রিভিউ পাওয়া যায়নি।"},404);
+}
+async function deleteProductReview(env, reviewId) {
+  const result = await env.DB.prepare("DELETE FROM product_reviews WHERE id = ?").bind(reviewId).run();
+  return result.meta?.changes ? json({success:true}) : json({error:"রিভিউ পাওয়া যায়নি।"},404);
+}
+
 function requireDB(env) {
   if (!env.DB) throw new Error("D1 database binding DB is missing.");
 }
@@ -194,6 +249,8 @@ async function ensureOrderSchema(env) {
   await env.DB.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_submission_key ON orders(submission_key)").run();
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS public_order_phone_limits (phone_hash TEXT PRIMARY KEY, request_count INTEGER NOT NULL DEFAULT 0, window_started_at INTEGER NOT NULL, blocked_until INTEGER NOT NULL DEFAULT 0)").run();
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS dhamaaka_offer_settings (id INTEGER PRIMARY KEY CHECK (id = 1), product_id TEXT, discount_percent INTEGER NOT NULL DEFAULT 30, enabled INTEGER NOT NULL DEFAULT 0, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)").run();
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS product_reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, product_id TEXT NOT NULL, customer_name TEXT NOT NULL, customer_phone TEXT NOT NULL, phone_hash TEXT NOT NULL, rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5), comment TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')), created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE(product_id, phone_hash))").run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_product_reviews_public ON product_reviews(product_id, status, created_at DESC)").run();
 }
 
 async function getSettings(env) {
@@ -971,6 +1028,11 @@ export default {
           await env.DB.prepare("INSERT INTO dhamaaka_offer_settings (id,product_id,discount_percent,enabled,updated_at) VALUES (1,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(id) DO UPDATE SET product_id=excluded.product_id,discount_percent=excluded.discount_percent,enabled=excluded.enabled,updated_at=CURRENT_TIMESTAMP").bind(productId,discountPercent,enabled?1:0).run();
           return json({success:true,message:"ধামাকা অফারের সেটিংস সংরক্ষণ হয়েছে।"});
         }
+        if (path === "/api/admin/reviews" && method === "GET") return await adminProductReviews(env, url);
+        const reviewAdminMatch = path.match(/^\/api\/admin\/reviews\/(\d+)$/);
+        if (reviewAdminMatch && method === "PATCH") return await updateProductReview(request, env, Number(reviewAdminMatch[1]));
+        if (reviewAdminMatch && method === "DELETE") return await deleteProductReview(env, Number(reviewAdminMatch[1]));
+
         if (path === "/api/admin/products" && method === "GET") {
           return await adminProducts(env);
         }
@@ -1019,6 +1081,13 @@ export default {
         if (!product || !productSettings || Number(productSettings.is_visible) !== 1 || isOutOfStock(product)) return json({active:false});
         return json({active:true, discountPercent:Number(offer.discount_percent), product:publicProduct(product, productSettings), deliveryCharges:catalog.deliveryCharges});
       }
+      if (path === "/api/reviews" && method === "GET") {
+        const productId = String(url.searchParams.get("productId") || "").trim().slice(0,100);
+        if (!productId) return json({error:"পণ্য নির্বাচন করুন।"},400);
+        return await publicProductReviews(env, productId);
+      }
+      if (path === "/api/reviews" && method === "POST") return await submitProductReview(request, env);
+
       if (path === "/api/products" && method === "GET") {
         return await publicProducts(env);
       }
