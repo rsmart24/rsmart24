@@ -885,7 +885,68 @@ form.addEventListener("submit", async event => {
   }
 });
 
-searchInput?.addEventListener("input", renderProducts);
+function renderSearchSuggestions() {
+  const panel = document.querySelector("#search-suggestions");
+  if (!panel || !searchInput) return;
+  const query = searchInput.value.trim().toLocaleLowerCase();
+  if (query.length < 2) {
+    panel.hidden = true;
+    panel.innerHTML = "";
+    return;
+  }
+
+  const matches = products.filter(product =>
+    product.isVisible !== false &&
+    `${product.name || ""} ${product.description || ""}`.toLocaleLowerCase().includes(query)
+  ).slice(0, 6);
+
+  if (!matches.length) {
+    panel.innerHTML = '<div class="search-suggestion-empty">কোনো মিল পাওয়া যায়নি</div>';
+    panel.hidden = false;
+    return;
+  }
+
+  panel.innerHTML = matches.map(product => {
+    const image = productImage(product);
+    const price = money(advanceDiscountPrice(product));
+    const discount = Number(product.discountPercent || 0);
+    return `<button type="button" class="search-suggestion-item" role="option" data-search-product="${escapeHtml(product.id)}">
+      <span class="search-suggestion-thumb">${image}</span>
+      <span class="search-suggestion-copy"><strong>${escapeHtml(product.name || "পণ্য")}</strong><small>${price}</small></span>
+      ${discount > 0 ? `<span class="search-suggestion-discount">${discount}% ছাড়</span>` : ""}
+    </button>`;
+  }).join("");
+  panel.hidden = false;
+}
+
+searchInput?.addEventListener("input", () => {
+  renderProducts();
+  renderSearchSuggestions();
+});
+
+document.querySelector("#search-suggestions")?.addEventListener("click", event => {
+  const item = event.target.closest("[data-search-product]");
+  if (!item) return;
+  const id = item.dataset.searchProduct;
+  const panel = document.querySelector("#search-suggestions");
+  if (panel) panel.hidden = true;
+  chooseProduct(id);
+});
+
+searchInput?.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    const panel = document.querySelector("#search-suggestions");
+    if (panel) panel.hidden = true;
+    searchInput.blur();
+  }
+});
+
+document.addEventListener("click", event => {
+  if (!event.target.closest(".header-search")) {
+    const panel = document.querySelector("#search-suggestions");
+    if (panel) panel.hidden = true;
+  }
+});
 
 loadProducts();
 
