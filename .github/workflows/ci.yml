@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   checks:
-    name: Syntax and regression tests
+    name: Lint, syntax and regression tests
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -20,6 +20,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Run ESLint
+        run: npm run lint
       - name: Check JavaScript syntax
         run: npm run check
       - name: Run critical regression tests
