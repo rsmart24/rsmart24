@@ -3220,3 +3220,99 @@ body.order-modal-open {
 .review-jump-button:hover{background:#dcfce7;border-color:#4ade80;transform:translateY(-1px)}
 @media(max-width:640px){.review-jump-button{width:100%;min-height:48px}}
 #product-reviews{scroll-margin-top:18px}
+
+
+/* Correct product-detail action layout: media and review shortcuts share one row. */
+.order-section .detail-shortcut-row{
+  display:flex;
+  align-items:stretch;
+  gap:10px;
+  width:100%;
+  margin:16px 0 10px;
+}
+.order-section .detail-shortcut-row .detail-media-button,
+.order-section .detail-shortcut-row .review-jump-button{
+  display:inline-flex;
+  flex:1 1 0;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  width:auto;
+  min-height:46px;
+  margin:0;
+  padding:10px 12px;
+  border-radius:12px;
+  font-size:14px;
+  font-weight:800;
+  line-height:1.25;
+  text-align:center;
+  white-space:normal;
+  transition:background .2s,border-color .2s,box-shadow .2s,transform .2s;
+}
+.order-section .detail-shortcut-row .detail-media-button:not([hidden]){
+  background:linear-gradient(135deg,#3b82f6 0%,#1d4ed8 100%);
+  color:#fff;
+  border:1px solid #2563eb;
+  box-shadow:0 5px 16px rgba(37,99,235,.25);
+  text-shadow:0 1px 1px rgba(20,50,110,.18);
+}
+.order-section .detail-shortcut-row .detail-media-button:not([hidden]):hover{
+  background:linear-gradient(135deg,#60a5fa 0%,#1e40af 100%);
+  border-color:#1d4ed8;
+  box-shadow:0 7px 20px rgba(37,99,235,.34);
+  transform:translateY(-2px);
+}
+.order-section .detail-shortcut-row .review-jump-button{
+  border:1px solid #16a34a;
+  background:linear-gradient(135deg,#22c55e 0%,#15803d 100%);
+  color:#fff;
+  box-shadow:0 5px 16px rgba(21,128,61,.24);
+  cursor:pointer;
+}
+.order-section .detail-shortcut-row .review-jump-button:hover{
+  background:linear-gradient(135deg,#4ade80 0%,#166534 100%);
+  border-color:#15803d;
+  box-shadow:0 7px 20px rgba(21,128,61,.34);
+  transform:translateY(-2px);
+}
+.order-section .detail-actions{
+  display:flex!important;
+  flex-wrap:wrap;
+  gap:9px;
+  margin:8px 0 18px;
+}
+.order-section .detail-actions #detail-order-now{
+  display:flex;
+  flex:1 0 100%;
+  width:100%;
+  min-height:54px;
+  align-items:center;
+  justify-content:center;
+  font-size:16px;
+}
+.order-section .detail-actions #detail-add-cart,
+.order-section .detail-actions #detail-multi-order{
+  display:flex;
+  flex:1 1 0;
+  min-width:0;
+  min-height:44px;
+  align-items:center;
+  justify-content:center;
+  padding:10px 12px;
+  font-size:14px;
+}
+@media(max-width:640px){
+  .order-section .detail-shortcut-row{gap:8px;margin:14px 0 9px}
+  .order-section .detail-shortcut-row .detail-media-button,
+  .order-section .detail-shortcut-row .review-jump-button{
+    min-height:46px;
+    padding:9px 7px;
+    font-size:12px;
+    gap:5px;
+  }
+  .order-section .detail-actions{gap:8px;margin:7px 0 16px}
+  .order-section .detail-actions #detail-order-now{min-height:52px;font-size:15px}
+  .order-section .detail-actions #detail-add-cart,
+  .order-section .detail-actions #detail-multi-order{min-height:43px;padding:9px 6px;font-size:12px}
+}
+.order-section .detail-shortcut-row .detail-media-button[hidden]{display:none!important}

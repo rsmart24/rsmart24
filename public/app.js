@@ -674,8 +674,6 @@ function chooseProduct(id, pushHistory = true) {
     mediaButton.hidden = !showMediaButton;
     if (showMediaButton) mediaButton.href = chosenProduct.mediaUrl;
     else mediaButton.removeAttribute("href");
-    const title = document.querySelector("#selected-product");
-    if (title && title.parentElement === mediaButton.parentElement) title.insertAdjacentElement("afterend", mediaButton);
   }
 
   const variants = Array.isArray(chosenProduct.variants) ? chosenProduct.variants : [];
