@@ -1029,7 +1029,7 @@ export default {
           return json({success:true,message:"ধামাকা অফারের সেটিংস সংরক্ষণ হয়েছে।"});
         }
         if (path === "/api/admin/reviews" && method === "GET") return await adminProductReviews(env, url);
-        const reviewAdminMatch = path.match(/^\\/api\\/admin\\/reviews\\/(\\d+)$/);
+        const reviewAdminMatch = path.match(/^\/api\/admin\/reviews\/(\d+)$/);
         if (reviewAdminMatch && method === "PATCH") return await updateProductReview(request, env, Number(reviewAdminMatch[1]));
         if (reviewAdminMatch && method === "DELETE") return await deleteProductReview(env, Number(reviewAdminMatch[1]));
 
