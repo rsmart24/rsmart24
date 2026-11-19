@@ -159,7 +159,7 @@ function renderProducts() {
 
     return `
       <article class="product-card ${outOfStock ? "is-out-of-stock" : ""}" data-product-card="${escapeHtml(p.id)}" tabindex="0" role="button" aria-label="${escapeHtml(p.name)} বিস্তারিত দেখুন">
-        <div class="product-image">${productImage(p)}${Number(p.discountPercent) > 0 ? `<span class="product-advance-discount-badge">অগ্রিমে ${Number(p.discountPercent)}% ছাড়</span>` : ""}${outOfStock ? '<span class="stock-out-overlay">স্টক আউট</span>' : ""}</div>
+        <div class="product-image">${productImage(p)}${Number(p.discountPercent) > 0 ? `<span class="product-advance-discount-badge"><small>WINTER DHAMAKA</small><strong>${Number(p.discountPercent)}% ছাড়</strong></span>` : ""}${outOfStock ? '<span class="stock-out-overlay">স্টক আউট</span>' : ""}</div>
         <div class="product-info">
           <h3>${escapeHtml(p.name)}</h3>
           <div class="product-bottom">
