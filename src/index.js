@@ -80,12 +80,16 @@ async function getCatalog(env) {
     if (page >= expectedLastPage && !hasNext) break;
     if (page === 1 && expectedLastPage === 1 && !hasNext && pageProducts.length < 20) break;
   }
-  return { products: allProducts, deliveryCharges };
+  // Storefront delivery policy: Dhaka District ৳70; every other district ৳130.
+  // Do not use Business Koro's division-level charges for customer checkout.
+  return { products: allProducts, deliveryCharges: { insideDhaka: 70, outsideDhaka: 130 } };
 }
 
 
 function normalizeReviewPhone(value) {
-  let phone = String(value || "").replace(/[\s-]/g, "");
+  let phone = String(value || "")
+    .replace(/[০-৯]/g, digit => "০১২৩৪৫৬৭৮৯".indexOf(digit))
+    .replace(/[\s-]/g, "");
   if (phone.startsWith("+88")) phone = phone.slice(3);
   else if (phone.startsWith("88") && phone.length === 13) phone = phone.slice(2);
   return /^01[3-9]\d{8}$/.test(phone) ? phone : "";
@@ -112,12 +116,36 @@ async function submitProductReview(request, env) {
     return json({error:"নাম, সঠিক মোবাইল নম্বর, রেটিং ও কমপক্ষে ৩ অক্ষরের মন্তব্য দিন।"},400);
   }
   const hash = await reviewPhoneHash(phone);
-  try {
-    await env.DB.prepare("INSERT INTO product_reviews (product_id, customer_name, customer_phone, phone_hash, rating, comment, status) VALUES (?,?,?,?,?,?,'pending')").bind(productId,name,phone,hash,rating,comment).run();
-  } catch (error) {
-    if (/unique/i.test(String(error?.message || error))) return json({error:"এই নম্বর দিয়ে এই পণ্যে ইতিমধ্যে একটি রিভিউ দেওয়া হয়েছে।"},409);
-    throw error;
+  // Keep the existing UNIQUE(product_id, phone_hash) constraint and use two
+  // deterministic slots per phone/product. This safely upgrades the limit
+  // without rebuilding or deleting any existing review rows.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const existing = await env.DB.prepare(
+      "SELECT COUNT(*) AS total FROM product_reviews WHERE product_id = ? AND phone_hash IN (?, ?)"
+    ).bind(productId, hash, hash + ":2").first();
+    const count = Number(existing?.total || 0);
+    if (count >= 2) {
+      return json({error:"এই নম্বর দিয়ে এই পণ্যে সর্বোচ্চ ২টি রিভিউ দেওয়া যাবে।"},409);
+    }
+    const storedHash = count === 0 ? hash : hash + ":2";
+    try {
+      await env.DB.prepare("INSERT INTO product_reviews (product_id, customer_name, customer_phone, phone_hash, rating, comment, status) VALUES (?,?,?,?,?,?,'pending')").bind(productId,name,phone,storedHash,rating,comment).run();
+      return json({success:true,message:"আপনার রিভিউ জমা হয়েছে। অনুমোদনের পর প্রকাশ করা হবে।"},201);
+    } catch (error) {
+      if (/unique/i.test(String(error?.message || error))) {
+        // A simultaneous submission may have taken this slot; recount once.
+        if (attempt === 0) continue;
+        const latest = await env.DB.prepare(
+          "SELECT COUNT(*) AS total FROM product_reviews WHERE product_id = ? AND phone_hash IN (?, ?)"
+        ).bind(productId, hash, hash + ":2").first();
+        if (Number(latest?.total || 0) >= 2) {
+          return json({error:"এই নম্বর দিয়ে এই পণ্যে সর্বোচ্চ ২টি রিভিউ দেওয়া যাবে।"},409);
+        }
+      }
+      throw error;
+    }
   }
+  return json({error:"রিভিউ জমা দেওয়া যায়নি। আবার চেষ্টা করুন।"},409);
   return json({success:true,message:"আপনার রিভিউ জমা হয়েছে। অনুমোদনের পর প্রকাশ করা হবে।"},201);
 }
 async function adminProductReviews(env, url) {
@@ -738,9 +766,9 @@ async function createOrder(request, env) {
     subtotal += lineSubtotal; totalDiscount += discountAmount; totalQuantity += quantity;
     orderItems.push({id:String(product.id),name:String(product.name || ""),quantity,unitPrice,color,size,subtotal:lineSubtotal,discountPercent,discountAmount,discountedUnitPrice});
   }
-  const division = String(body.customerDivision).trim().toLowerCase();
-  const isDhaka = division === "dhaka" || division === "ঢাকা";
-  const deliveryCharge = Number(isDhaka ? catalog.deliveryCharges.insideDhaka || 0 : catalog.deliveryCharges.outsideDhaka || 0);
+  const district = String(body.customerDistrict || "").trim().toLowerCase().replace(/[\s-]+/g, "");
+  const isDhakaDistrict = ["ঢাকা", "dhaka", "ঢাকাজেলা", "dhakadistrict"].includes(district);
+  const deliveryCharge = isDhakaDistrict ? 70 : 130;
   const paymentMethod = body.paymentMethod === "advance" ? "advance" : "cod";
   const totalAmount = subtotal + deliveryCharge - totalDiscount;
   const advancePaymentAmount = paymentMethod === "advance" ? deliveryCharge : 0;
@@ -906,7 +934,7 @@ async function adminOrders(env, url) {
     SELECT COUNT(*) AS total_orders,
       SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) AS new_orders,
       SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) AS delivered_orders,
-      SUM(CASE WHEN status != 'cancelled' THEN total_amount ELSE 0 END) AS total_sales
+      SUM(CASE WHEN status = 'delivered' AND (payment_method = 'cod' OR payment_verification_status = 'verified') THEN total_amount ELSE 0 END) AS total_sales
     FROM orders WHERE archived_at IS NULL
   `).first();
   const countResult = await env.DB.prepare("SELECT COUNT(*) AS total FROM orders" + where).bind(...filterValues).first();
@@ -945,7 +973,13 @@ async function exportOrdersCSV(env, url) {
   const result=await env.DB.prepare("SELECT * FROM orders WHERE "+conditions.join(" AND ")+" ORDER BY created_at DESC,id DESC").bind(...values).all();
   const headers=["Order ID","Date","Customer","Phone","Product","Quantity","Product price","Delivery","Total","Payment","Transaction ID","Payment verification","Order status","Address","Business Koro status","Archived at"];
   const rows=(result.results||[]).map(o=>[o.id,o.created_at,o.customer_name,o.customer_phone,o.product_name,o.quantity,o.unit_price,o.delivery_charge,o.total_amount,o.payment_method,o.transaction_id,o.payment_verification_status,o.status,[o.customer_division,o.customer_district,o.customer_area,o.customer_address].filter(Boolean).join(", "),o.business_koro_status,o.archived_at]);
-  const csv="\uFEFF"+[headers,...rows].map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
+  const csvCell = value => {
+    let text = String(value ?? "");
+    // Prefix text cells that could be interpreted as spreadsheet formulas.
+    if (typeof value === "string" && /^[\s\u0000-\u001f]*[=+\-@]/.test(text)) text = "'" + text;
+    return '"' + text.replace(/"/g, '""') + '"';
+  };
+  const csv="\uFEFF"+[headers,...rows].map(row=>row.map(csvCell).join(",")).join("\r\n");
   return new Response(csv,{headers:{"content-type":"text/csv; charset=utf-8","content-disposition":'attachment; filename="rs-mart-orders.csv"',"cache-control":"no-store"}});
 }
 async function updateOrderStatus(request,env,orderId){await ensureOrderSchema(env);let b;try{b=await request.json()}catch{return json({error:"সঠিক তথ্য পাঠান।"},400)}const allowed=["new","confirmed","shipped","delivered","cancelled"],pay=["pending_manual","verified","rejected"],sets=[],vals=[];if(b.status!==undefined){if(!allowed.includes(b.status))return json({error:"অর্ডারের অবস্থা সঠিক নয়।"},400);sets.push("status=?");vals.push(b.status)}if(b.paymentVerificationStatus!==undefined){if(!pay.includes(b.paymentVerificationStatus))return json({error:"পেমেন্ট যাচাইয়ের অবস্থা সঠিক নয়।"},400);sets.push("payment_verification_status=?");vals.push(b.paymentVerificationStatus)}if(!sets.length)return json({error:"কোনো পরিবর্তন পাওয়া যায়নি।"},400);vals.push(orderId);const r=await env.DB.prepare("UPDATE orders SET "+sets.join(", ")+" WHERE id=?").bind(...vals).run();if(!r.meta?.changes)return json({error:"অর্ডার পাওয়া যায়নি।"},404);return json({success:true})}
