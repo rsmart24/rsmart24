@@ -1110,8 +1110,12 @@ document.addEventListener("DOMContentLoaded", loadDhamaakaHomeSection);
     const original = node.nodeValue;
     const trimmed = original.trim();
     if (!trimmed) return;
+    if (node.__rsMartTranslatedLanguage === language) return;
     const translated = (language === "en" ? uiPairs : enToBn)[trimmed];
-    if (translated) node.nodeValue = original.replace(trimmed, translated);
+    if (translated) {
+      node.nodeValue = original.replace(trimmed, translated);
+      node.__rsMartTranslatedLanguage = language;
+    }
   }
   function translateElement(element, language) {
     if (!element || element.nodeType !== 1 || skipTags.has(element.tagName)) return;
