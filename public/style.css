@@ -3383,3 +3383,110 @@ body.order-modal-open {
   .detail-payment-discount-note{font-size:12px;line-height:1.5}
   #advance-price-note{font-size:12px;padding:8px 9px}
 }
+
+
+/* ===== RS MART PREMIUM HEADER POLISH (DESKTOP + MOBILE) ===== */
+.site-header{
+  background:linear-gradient(115deg,#06131d 0%,#0a1c2b 52%,#101d2b 100%);
+  box-shadow:0 8px 26px rgba(3,12,22,.18);
+}
+.top-strip{
+  background:linear-gradient(90deg,#050b12 0%,#101b27 55%,#07121d 100%);
+  border-bottom:1px solid rgba(226,180,86,.22);
+}
+.top-brandline{gap:9px}
+.top-brandline strong{
+  font-size:15px;
+  font-weight:900;
+  letter-spacing:.8px;
+  background:linear-gradient(100deg,#fff1bd 0%,#f6c96b 42%,#d9942d 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  text-shadow:0 2px 12px rgba(229,174,75,.12);
+}
+.top-flash{color:#f4c66b;font-size:17px;text-shadow:0 0 10px rgba(244,198,107,.45)}
+.main-header{
+  background:linear-gradient(110deg,#081722 0%,#102536 52%,#0a1925 100%);
+  border-bottom:1px solid rgba(231,190,112,.2);
+}
+.main-header-inner{gap:18px}
+.main-header .brand{
+  width:54px;height:54px;min-width:54px;
+  display:flex;align-items:center;justify-content:center;
+  padding:4px;
+  border:1px solid rgba(244,202,119,.72);
+  border-radius:16px;
+  background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.025));
+  box-shadow:0 4px 15px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.14),0 0 0 3px rgba(224,171,78,.07);
+  overflow:hidden;
+}
+.main-header .brand-logo{
+  width:100%;height:100%;max-width:100%;max-height:100%;
+  object-fit:contain;object-position:center;
+  border-radius:11px;
+}
+.main-header .header-search{
+  height:45px;
+  border:1px solid rgba(225,184,102,.52);
+  border-radius:15px;
+  background:linear-gradient(110deg,#172a38,#1c3040);
+  box-shadow:inset 0 1px 2px rgba(255,255,255,.05),0 4px 13px rgba(0,0,0,.16);
+  transition:border-color .2s,box-shadow .2s,transform .2s;
+}
+.main-header .header-search:focus-within{
+  border-color:#edbd60;
+  box-shadow:0 0 0 3px rgba(237,189,96,.16),0 6px 17px rgba(0,0,0,.2);
+}
+.main-header .header-search input{
+  color:#fff;background:transparent;
+}
+.main-header .header-search input::placeholder{color:#bdc9d2}
+.main-header .header-search button{
+  width:39px;height:37px;margin-right:4px;
+  border:1px solid rgba(255,239,201,.36);
+  border-radius:11px;
+  background:linear-gradient(135deg,#f4cb75 0%,#df9a37 52%,#c87920 100%);
+  color:#172333;font-size:23px;font-weight:900;
+  box-shadow:0 3px 9px rgba(207,137,39,.24);
+  transition:filter .2s,transform .2s,box-shadow .2s;
+}
+.main-header .header-search button:hover{
+  filter:brightness(1.08);transform:translateY(-1px);
+  box-shadow:0 5px 13px rgba(207,137,39,.34);
+}
+.header-cart{
+  min-height:44px;padding:0 15px;gap:8px;
+  border:1px solid rgba(245,205,126,.62);
+  border-radius:14px;
+  background:linear-gradient(135deg,#f5d58c 0%,#e8ae50 48%,#c77b27 100%);
+  color:#142334;
+  font-size:13px;font-weight:900;
+  box-shadow:0 5px 14px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.45);
+  transition:transform .2s,filter .2s,box-shadow .2s;
+}
+.header-cart:hover{
+  color:#102030;filter:brightness(1.06);transform:translateY(-2px);
+  box-shadow:0 8px 18px rgba(0,0,0,.24);
+}
+.header-cart .cart-symbol{font-size:19px}
+@media(max-width:760px){
+  .top-brandline strong{font-size:13px;letter-spacing:.55px}
+  .top-flash{font-size:15px}
+  .main-header-inner{gap:8px}
+  .main-header .brand{
+    width:43px;height:43px;min-width:43px;padding:3px;border-radius:13px;
+  }
+  .main-header .brand-logo{width:100%;height:100%;max-width:100%;max-height:100%;border-radius:9px}
+  .main-header .header-search{height:39px;border-radius:13px}
+  .main-header .header-search button{width:33px;height:32px;border-radius:9px;font-size:20px}
+  .header-cart{min-height:38px;padding:0 9px;gap:5px;border-radius:12px;font-size:11px}
+  .header-cart .cart-symbol{font-size:16px}
+}
+@media(max-width:390px){
+  .main-header .brand{width:39px;height:39px;min-width:39px}
+  .main-header .header-search{height:36px}
+  .main-header .header-search input{font-size:10px;padding:0 8px}
+  .main-header .header-search button{width:29px;height:29px;margin-right:3px;font-size:18px}
+  .header-cart{min-height:35px;padding:0 6px;font-size:10px}
+}
