@@ -368,8 +368,8 @@
     (function () {
       if (window.location.pathname !== "/") return;
       try {
-        if (sessionStorage.getItem("rsWinterDhamakaShown") === "1") return;
-        sessionStorage.setItem("rsWinterDhamakaShown", "1");
+        if (sessionStorage.getItem("rsWinterDhamakaShownV2") === "1") return;
+        sessionStorage.setItem("rsWinterDhamakaShownV2", "1");
       } catch (_) {}
       var popup = document.getElementById("winter-dhamaka-popup");
       if (!popup) return;

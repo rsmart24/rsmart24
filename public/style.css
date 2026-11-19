@@ -3750,7 +3750,7 @@ body.order-modal-open {
   transform:translateY(28px) scale(.72);opacity:0;
   transition:transform .62s cubic-bezier(.2,.85,.25,1.18),opacity .35s ease;
 }
-.winter-dhamaka-popup.is-visible{visibility:visible}
+.winter-dhamaka-popup.is-visible{visibility:visible;opacity:1}
 .winter-dhamaka-popup.is-visible .winter-dhamaka-popup__backdrop{opacity:1}
 .winter-dhamaka-popup.is-visible .winter-dhamaka-popup__sticker{transform:translateY(0) scale(1);opacity:1}
 .winter-dhamaka-popup.is-leaving{opacity:0;transition:opacity .45s ease}
