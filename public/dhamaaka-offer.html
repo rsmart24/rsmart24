@@ -216,7 +216,7 @@ function updateSummary(){
  const two=document.querySelector('input[name="buyMode"]:checked').value==="two",qty=two?2:1,method=document.querySelector('input[name="paymentMethod"]:checked').value;
  const unit=Number(product.sellingPrice||0),base=unitAdvance(),offerUnit=two?Math.max(0,Math.round(base*(100-percent)/100)):base;
  const subtotal=unit*qty,discount=method==="advance"?(unit*qty-offerUnit*qty):0;
- const division=$('division').value,isDhaka=division==="ঢাকা",delivery=division?(Number(isDhaka?charges.insideDhaka||0:charges.outsideDhaka||0)):null;
+ const district=$('district').value,normalizedDistrict=district.trim().toLowerCase().replace(/[\s-]+/g,''),isDhakaDistrict=['ঢাকা','dhaka','ঢাকাজেলা','dhakadistrict'].includes(normalizedDistrict),delivery=district?(isDhakaDistrict?70:130):null;
  const dText=delivery===null?"ঠিকানা নির্বাচন করুন":money(delivery),total=subtotal+(delivery===null?0:delivery)-discount,codTotal=subtotal+(delivery===null?0:delivery);
  $('subtotal').textContent=money(subtotal);$('discount').textContent=money(discount);$('discount-row').hidden=method!=="advance"||discount<=0;
  $('delivery').textContent=dText;$('total').textContent=money(total);$('total-label').textContent=delivery===null?(method==='advance'?'ছাড়ের পর পণ্যের দাম (ডেলিভারি ছাড়া)':'পণ্যের মোট দাম (ডেলিভারি ছাড়া)'):'সর্বমোট (ডেলিভারি চার্জসহ)';
@@ -257,12 +257,14 @@ async function setupAddressDropdowns(){
   if(!response.ok)throw new Error('Location data unavailable');
   geoData=await response.json();fillSelect(division,'বিভাগ নির্বাচন করুন',geoData);fillSelect(district,'আগে বিভাগ নির্বাচন করুন',[]);fillSelect(area,'আগে জেলা নির্বাচন করুন',[]);
   division.addEventListener('change',()=>{const selected=geoData.find(x=>x.bn_name===division.value);fillSelect(district,'জেলা নির্বাচন করুন',selected?.districts||[]);fillSelect(area,'আগে জেলা নির্বাচন করুন',[]);updateSummary();});
-  district.addEventListener('change',()=>{const selected=geoData.find(x=>x.bn_name===division.value)?.districts?.find(x=>x.bn_name===district.value);fillSelect(area,'থানা / উপজেলা নির্বাচন করুন',selected?.upazilas||[]);});
+  district.addEventListener('change',()=>{const selected=geoData.find(x=>x.bn_name===division.value)?.districts?.find(x=>x.bn_name===district.value);fillSelect(area,'থানা / উপজেলা নির্বাচন করুন',selected?.upazilas||[]);updateSummary();});
  }catch(error){
   console.warn('Address dropdown unavailable:',error);
   district.outerHTML='<input name="customerDistrict" id="district" required maxlength="100" placeholder="জেলার নাম লিখুন">';
   area.outerHTML='<input name="customerArea" id="area" required maxlength="150" placeholder="থানা / উপজেলার নাম লিখুন">';
  }
+ $('district')?.addEventListener('input',updateSummary);
+ $('district')?.addEventListener('change',updateSummary);
 }
 async function init(){
  const response=await fetch('/api/dhamaaka-offer',{cache:'no-store'}),data=await response.json();

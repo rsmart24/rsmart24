@@ -416,10 +416,11 @@ function openDetailOrderForm() {
 function updateOrderSummary() {
   if(!chosenProduct)return;
   const quantity=Math.max(1,Math.min(20,Number(document.querySelector("#order-quantity")?.value||1)));
-  const division=document.querySelector("#customerDivision")?.value||"";
+  const district=document.querySelector("#customerDistrict")?.value||"";
   const method=document.querySelector('input[name="paymentMethod"]:checked')?.value||"advance";
-  const isDhaka=division==="ঢাকা"||division.toLowerCase()==="dhaka";
-  const delivery=division?Number(isDhaka?deliveryCharges.insideDhaka||0:deliveryCharges.outsideDhaka||0):null;
+  const normalizedDistrict=district.trim().toLowerCase().replace(/[\s-]+/g,"");
+  const isDhakaDistrict=["ঢাকা","dhaka","ঢাকাজেলা","dhakadistrict"].includes(normalizedDistrict);
+  const delivery=district?(isDhakaDistrict?70:130):null;
   const lines=cartCheckoutMode&&chosenCartItems?.length?chosenCartItems.map(item=>{const p=products.find(x=>String(x.id)===String(item.id));if(!p)return null;const unitPrice=Number(p.sellingPrice||0);const percent=Number(p.discountPercent||0);const discountedUnitPrice=method==="advance"&&percent>0?Math.max(0,Math.round(unitPrice*(100-percent)/100)):unitPrice;return {subtotal:unitPrice*item.quantity,quantity:item.quantity,percent,discountedUnitPrice,discountAmount:(unitPrice-discountedUnitPrice)*item.quantity};}).filter(Boolean):(()=>{const unitPrice=Number(chosenProduct.sellingPrice||0);const percent=Number(chosenProduct.discountPercent||0);const discountedUnitPrice=method==="advance"&&percent>0?Math.max(0,Math.round(unitPrice*(100-percent)/100)):unitPrice;return [{subtotal:unitPrice*quantity,quantity,percent,discountedUnitPrice,discountAmount:(unitPrice-discountedUnitPrice)*quantity}];})();
   const subtotal=lines.reduce((n,x)=>n+x.subtotal,0);
   const discount=method==="advance"?lines.reduce((n,x)=>n+x.discountAmount,0):0;
@@ -601,6 +602,15 @@ async function loadProductReviews(productId) {
     renderProductReviews();
   } catch(error) { reviewList.innerHTML='<p class="reviews-empty">রিভিউ লোড করা যায়নি। পরে আবার চেষ্টা করুন।</p>'; }
 }
+const reviewPhoneInput = reviewForm?.querySelector('[name="reviewPhone"]');
+reviewPhoneInput?.addEventListener("input", () => {
+  reviewPhoneInput.value = reviewPhoneInput.value
+    .replace(/[০-৯]/g, digit => "০১২৩৪৫৬৭৮৯".indexOf(digit))
+    .replace(/[^0-9+\s-]/g, "");
+  const phone = reviewPhoneInput.value.replace(/[\s-]/g, "");
+  const valid = /^(?:01[3-9][0-9]{8}|\+8801[3-9][0-9]{8}|8801[3-9][0-9]{8})$/.test(phone);
+  reviewPhoneInput.setCustomValidity(phone && !valid ? "সঠিক বাংলাদেশি মোবাইল নম্বর লিখুন (যেমন 017XXXXXXXX)।" : "");
+});
 const reviewRatingValue = document.querySelector("#review-rating-value");
 const reviewStarChoices = [...document.querySelectorAll(".review-star-choice")];
 function setReviewStarRating(value) {
@@ -713,7 +723,7 @@ function chooseProduct(id, pushHistory = true) {
   }
 
   document.querySelector("#delivery-price").textContent =
-    `ঢাকার ভিতরে ${money(deliveryCharges.insideDhaka)} / ঢাকার বাইরে ${money(deliveryCharges.outsideDhaka)}`;
+    "ঢাকা জেলা ৳৭০ / অন্যান্য জেলা ৳১৩০";
 
   document.querySelector("#order-form")?.reset();
   document.querySelector("#payment-advance").checked = true;
@@ -951,6 +961,9 @@ async function setupAddressDropdowns() {
     districtSelect.outerHTML = '<input name="customerDistrict" id="customerDistrict" required maxlength="100" placeholder="জেলার নাম লিখুন">';
     areaSelect.outerHTML = '<input name="customerArea" id="customerArea" required maxlength="150" placeholder="থানা / উপজেলার নাম লিখুন">';
   }
+  const activeDistrict = document.querySelector("#customerDistrict");
+  activeDistrict?.addEventListener("input", updateOrderSummary);
+  activeDistrict?.addEventListener("change", updateOrderSummary);
 }
 
 setupAddressDropdowns();
