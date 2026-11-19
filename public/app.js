@@ -966,3 +966,244 @@ document.querySelector("#search-button")?.addEventListener("click", () => search
 
 // Load the separately managed single-product Dhamaaka offer.
 document.addEventListener("DOMContentLoaded", loadDhamaakaHomeSection);
+
+
+/* ===== COMPLETE STOREFRONT UI TRANSLATIONS =====
+   Product names, descriptions, variants, addresses and customer-entered data
+   are intentionally preserved. Only interface copy is translated.
+*/
+(() => {
+  const uiPairs = {
+    "দাম নির্ধারণ করা হয়নি":"Price not set",
+    "দাম পাওয়া যায়নি":"Price unavailable",
+    "ছবি পাওয়া যায়নি":"Image unavailable",
+    "পণ্য":"Product",
+    "ধামাকা অফার":"Mega Offer",
+    "২টি কিনলে":"Buy 2 and get",
+    "একসাথে ২টি কিনলে":"Buy 2 together",
+    "একসাথে কিনুন, বেশি সাশ্রয় করুন":"Buy together and save more",
+    "সম্পূর্ণ অফার দেখতে ক্লিক করুন →":"Click to view the full offer →",
+    "জনপ্রিয় পণ্যগুলো":"Popular products",
+    "পণ্য লোড হচ্ছে…":"Loading products…",
+    "এই ক্যাটাগরিতে কোনো পণ্য পাওয়া যায়নি।":"No products found in this category.",
+    "স্টক আউট":"Out of stock",
+    "স্টক নেই":"Out of stock",
+    "দাম আসছে":"Price loading",
+    "অর্ডার নাও":"Order Now",
+    "কার্টে যোগ":"Add to Cart",
+    "✓ যোগ হয়েছে":"✓ Added",
+    "✓ কার্টে যোগ হয়েছে":"✓ Added to cart",
+    "রং":"Color",
+    "সাইজ":"Size",
+    "রং নির্বাচন করুন":"Select color",
+    "সাইজ নির্বাচন করুন":"Select size",
+    "রং বেছে নিন":"Choose a color",
+    "সাইজ বেছে নিন":"Choose a size",
+    "পরিমাণ কমান":"Decrease quantity",
+    "পরিমাণ বাড়ান":"Increase quantity",
+    "সরান":"Remove",
+    "আপনার কার্ট":"Your Cart",
+    "পণ্য, পরিমাণ ও মোট দাম যাচাই করুন।":"Review products, quantities and total price.",
+    "আরও পণ্য দেখুন":"Continue Shopping",
+    "আপনার কার্টে এখনো কিছু নেই":"Your cart is empty",
+    "পছন্দের পণ্য কার্টে যোগ করলে এখানে দেখা যাবে।":"Products you add to your cart will appear here.",
+    "পণ্য দেখুন":"Browse Products",
+    "পণ্যের মোট":"Subtotal",
+    "আনুমানিক ডেলিভারি চার্জ":"Estimated delivery charge",
+    "ঠিকানা অনুযায়ী":"Based on address",
+    "সর্বমোট (ডেলিভারি ছাড়া)":"Total (excluding delivery)",
+    "সব পণ্য একসাথে অর্ডার করুন":"Order all items together",
+    "ঠিকানা নির্বাচন করুন":"Select address",
+    "একাধিক পণ্যের অর্ডার":"Multiple-product order",
+    "সর্বশেষ নির্বাচিত পণ্য":"Last selected product",
+    "পণ্যের নাম":"Product name",
+    "In stock":"In stock",
+    "এই পণ্যের বিস্তারিত তথ্য পাওয়া যায়নি।":"Product details are unavailable.",
+    "এই পণ্যে কালার বা সাইজ নির্বাচন করার প্রয়োজন নেই।":"No color or size selection is required for this product.",
+    "আরও পণ্য যোগ করুন":"Add more products",
+    "ছবি ও ভিডিও দেখুন":"View photos and videos",
+    "ডেলিভারি চার্জ":"Delivery charge",
+    "API থেকে নির্ধারিত":"Calculated automatically",
+    "আপনার অর্ডারের তথ্য":"Your Order Information",
+    "পণ্যের অপশন":"Product Options",
+    "অর্ডার করার আগে রং ও সাইজ বেছে নিন":"Choose color and size before ordering",
+    "ডেলিভারির তথ্য":"Delivery Information",
+    "আপনার সঠিক যোগাযোগ ও ঠিকানা দিন":"Enter your correct contact details and address",
+    "আপনার নাম":"Your Name",
+    "পূর্ণ নাম":"Full name",
+    "মোবাইল নম্বর":"Mobile Number",
+    "সঠিক বাংলাদেশি মোবাইল নম্বর লিখুন, যেমন 017XXXXXXXX":"Enter a valid Bangladesh mobile number, e.g. 017XXXXXXXX",
+    "১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।":"Enter an 11-digit Bangladesh mobile number.",
+    "বিভাগ":"Division",
+    "বিভাগ নির্বাচন করুন":"Select Division",
+    "জেলা":"District",
+    "জেলা নির্বাচন করুন":"Select District",
+    "আগে বিভাগ নির্বাচন করুন":"Select a division first",
+    "থানা / উপজেলা":"Thana / Upazila",
+    "থানা / উপজেলা নির্বাচন করুন":"Select Thana / Upazila",
+    "আগে জেলা নির্বাচন করুন":"Select a district first",
+    "সম্পূর্ণ ঠিকানা":"Full Address",
+    "বাসা, রোড, গ্রাম ইত্যাদি":"House, road, village, etc.",
+    "পরিমাণ":"Quantity",
+    "পেমেন্ট পদ্ধতি নির্বাচন করুন":"Choose Payment Method",
+    "১. ক্যাশ অন ডেলিভারি":"1. Cash on Delivery",
+    "নিরাপদ ও সহজ":"Safe and easy",
+    "পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন।":"Pay when you receive the product.",
+    "পণ্যের মোট দাম":"Product Subtotal",
+    "ডেলিভারি":"Delivery",
+    "সর্বমোট":"Grand Total",
+    "২. অগ্রিম ডেলিভারি চার্জ":"2. Advance Delivery Charge",
+    "বিশেষ ছাড়":"Special Discount",
+    "শুধু ডেলিভারি চার্জ অগ্রিম দিন, পণ্যের দামে ছাড় পান।":"Pay only the delivery charge in advance and get a product discount.",
+    "আপনার ছাড়":"Your Discount",
+    "ছাড়ের পর পণ্যের দাম (ডেলিভারি ছাড়া)":"Product price after discount (excluding delivery)",
+    "বিকাশ Send Money":"bKash Send Money",
+    "বিকাশ অ্যাপ থেকে নিচের নম্বরে Send Money করুন। পাঠাতে হবে শুধু ডেলিভারি চার্জ:":"Send Money to the number below using the bKash app. Only the delivery charge is payable:",
+    "নম্বর কপি":"Copy Number",
+    "উপরের নম্বরে Send Money নির্বাচন করুন।":"Select Send Money for the number above.",
+    "নিচে দেখানো অগ্রিম ডেলিভারি চার্জ পাঠান।":"Send the advance delivery charge shown below.",
+    "সফল হলে Transaction ID লিখুন।":"Enter the Transaction ID after successful payment.",
+    "বিকাশ Transaction ID":"bKash Transaction ID",
+    "৮–১২ অক্ষরের Transaction ID লিখুন। ফরম্যাট ঠিক থাকলে ✓ দেখাবে। আসল পেমেন্ট অ্যাডমিন যাচাই করবেন।":"Enter the 8–12 character Transaction ID. A ✓ appears if the format is valid. The admin will verify the actual payment.",
+    "অগ্রিম পেমেন্ট ছাড়":"Advance payment discount",
+    "অতিরিক্ত নির্দেশনা (ঐচ্ছিক)":"Additional Note (Optional)",
+    "কিছু জানাতে চাইলে লিখুন":"Write here if you have any additional instructions",
+    "অর্ডার কনফার্ম করুন":"Confirm Order",
+    "অর্ডার পাঠানোর আগে আপনার তথ্য যাচাই করুন।":"Please review your information before submitting the order.",
+    "অর্ডার পাঠানো হচ্ছে…":"Submitting order…",
+    "এই পণ্যের বিক্রয়মূল্য নির্ধারণ করা হয়নি।":"The selling price of this product has not been set.",
+    "পণ্যের রং নির্বাচন করুন।":"Please select the product color.",
+    "পণ্যের সাইজ নির্বাচন করুন।":"Please select the product size.",
+    "অর্ডার জমা হয়নি।":"Order could not be submitted.",
+    "ধন্যবাদ! আপনার অর্ডার গ্রহণ করা হয়েছে।":"Thank you! Your order has been received.",
+    "আপনার অর্ডার নম্বর:":"Your Order Number:",
+    "আমাদের প্রতিনিধি ফোন করে আপনার অর্ডার নিশ্চিত করবেন। অনুগ্রহ করে ফোনটি সচল রাখুন।":"Our representative will call to confirm your order. Please keep your phone available.",
+    "WhatsApp-এ যোগাযোগ করুন":"Contact us on WhatsApp",
+    "ঠিক আছে":"OK",
+    "পণ্য বন্ধ করুন":"Close product",
+    "কার্ট খুলুন":"Open cart",
+    "কার্ট দেখুন":"View Cart",
+    "সকল পণ্য":"All Products",
+    "স্মার্ট গ্যাজেট":"Smart Gadgets",
+    "ফ্যাশন":"Fashion",
+    "গেমিং আইটেম":"Gaming Items",
+    "দ্রুত লিংক":"Quick Links",
+    "গ্রাহক সেবা":"Customer Service",
+    "যোগাযোগ করুন":"Contact Us",
+    "ডেলিভারি পলিসি":"Delivery Policy",
+    "রিটার্ন ও রিফান্ড":"Returns & Refunds",
+    "প্রাইভেসি পলিসি":"Privacy Policy",
+    "কেন RS Mart?":"Why RS Mart?",
+    "সারা বাংলাদেশে ডেলিভারি":"Delivery Across Bangladesh",
+    "অর্ডারের আগে পণ্যের তথ্য":"Product Information Before Ordering",
+    "WhatsApp-এ যোগাযোগের সুবিধা":"WhatsApp Support Available",
+    "সরাসরি কল":"Call Us",
+    "অর্ডার ও যেকোনো তথ্যের জন্য":"For Orders & Information",
+    "আপনার দৈনন্দিন পছন্দের পণ্য কেনাকাটার নির্ভরযোগ্য অনলাইন ঠিকানা।":"Your trusted online destination for everyday shopping.",
+    "©":"©",
+    "সর্বস্বত্ব সংরক্ষিত।":"All rights reserved.",
+    "অগ্রিম ডেলিভারি চার্জ দিলে পণ্যের দামে ছাড় প্রযোজ্য।":"A product discount applies when the delivery charge is paid in advance.",
+    "ক্যাশ অন ডেলিভারিতে দাম":"Cash on Delivery price",
+    "অগ্রিমে":"Advance payment discount",
+    "ছাড়ের পর পণ্যের দাম (ডেলিভারি ছাড়া)":"Product price after discount (excluding delivery)",
+    "পণ্যের মোট দাম (ডেলিভারি ছাড়া)":"Product subtotal (excluding delivery)",
+    "সর্বমোট (ডেলিভারি চার্জসহ)":"Grand total (including delivery)",
+    "ছাড়ের পর সর্বমোট (ডেলিভারি চার্জসহ)":"Discounted grand total (including delivery)",
+    "পণ্যভেদে ছাড়":"Discount varies by product",
+    "ছাড় নেই":"No discount",
+    "বিকাশ নম্বর কপি হয়েছে।":"bKash number copied.",
+    "সঠিক বাংলাদেশি মোবাইল নম্বর লিখুন (যেমন 017XXXXXXXX)।":"Enter a valid Bangladesh mobile number (e.g. 017XXXXXXXX).",
+    "✓ মোবাইল নম্বর সঠিক।":"✓ Mobile number is valid.",
+    "✓ Transaction ID-এর ফরম্যাট সঠিক। আসল পেমেন্ট অ্যাডমিন যাচাই করবেন।":"✓ Transaction ID format is valid. The admin will verify the actual payment.",
+    "৮–১২ অক্ষরের আলফানিউমেরিক Transaction ID লিখুন।":"Enter an 8–12 character alphanumeric Transaction ID.",
+    "আগের পণ্যগুলো অর্ডারের তালিকায় রাখা হয়েছে। আরও পণ্য বেছে নিন।":"Previous products have been kept in your order list. Choose more products.",
+    "এই পণ্যের বিক্রয়মূল্য এখনো নির্ধারণ করা হয়নি।":"The selling price of this product has not been set yet.",
+    "দুঃখিত, পণ্যটি স্টকে নেই।":"Sorry, this product is out of stock.",
+    "অন্যান্য":"Other",
+    "পণ্য লোড করা যায়নি।":"Products could not be loaded.",
+    "লোড করা যায়নি":"Could not load",
+    "পণ্য দেখানো যাচ্ছে না। পরে আবার চেষ্টা করুন।":"Products cannot be displayed. Please try again later.",
+    "জেলার নাম লিখুন":"Enter district name",
+    "থানা / উপজেলার নাম লিখুন":"Enter thana / upazila",
+    "হোম ডেকোরেশন":"Home Decoration",
+    "মোবাইল অ্যাক্সেসরিজ":"Mobile Accessories",
+    "ক্যাশ অন ডেলিভারি":"Cash on Delivery",
+    "পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন":"Pay when you receive the product",
+    "দ্রুত ডেলিভারি":"Fast Delivery",
+    "দ্রুত ও নির্ভরযোগ্য ডেলিভারি":"Fast and reliable delivery",
+    "সারা দেশে ডেলিভারি":"Nationwide Delivery",
+    "সারা বাংলাদেশে পণ্য পৌঁছে দিচ্ছি":"Delivering across Bangladesh",
+    "পণ্য খুঁজুন...":"Search products...",
+    "🛒 কার্টে যোগ":"🛒 Add to Cart",
+    "কার্টে যোগ হয়েছে":"Added to cart",
+    "অগ্রিম ডেলিভারি চার্জ দিলে পণ্যের দামে":"A product discount applies when you pay the delivery charge in advance.",
+    "ঢাকার ভিতরে":"Inside Dhaka",
+    "ঢাকার বাইরে":"Outside Dhaka",
+    "কোনো পণ্য পাওয়া যায়নি।":"No products found.",
+    "পণ্যের রং":"Product color",
+    "পণ্যের সাইজ":"Product size"
+  };
+  const enToBn = Object.fromEntries(Object.entries(uiPairs).map(([bn,en]) => [en,bn]));
+  const attributeNames = ["placeholder","title","aria-label","alt"];
+  const skipTags = new Set(["SCRIPT","STYLE","NOSCRIPT","TEXTAREA"]);
+  function translateTextNode(node, language) {
+    const original = node.nodeValue;
+    const trimmed = original.trim();
+    if (!trimmed) return;
+    if (node.__rsMartTranslatedLanguage === language) return;
+    const translated = (language === "en" ? uiPairs : enToBn)[trimmed];
+    if (translated) {
+      node.nodeValue = original.replace(trimmed, translated);
+      node.__rsMartTranslatedLanguage = language;
+    }
+  }
+  function translateElement(element, language) {
+    if (!element || element.nodeType !== 1 || skipTags.has(element.tagName)) return;
+    for (const attr of attributeNames) {
+      const value = element.getAttribute(attr);
+      if (!value) continue;
+      const translated = (language === "en" ? uiPairs : enToBn)[value.trim()];
+      if (translated) element.setAttribute(attr, translated);
+    }
+    if (element.matches("[data-i18n],[data-i18n-placeholder]")) return;
+    for (const child of element.childNodes) {
+      if (child.nodeType === 3) translateTextNode(child, language);
+      else if (child.nodeType === 1) translateElement(child, language);
+    }
+  }
+  function translateStoreUI(language) {
+    translateElement(document.body, language);
+    const title = document.querySelector("title");
+    if (title) title.textContent = language === "en"
+      ? "RS Mart Bangladesh | Smart Gadgets, Fashion & Online Shopping"
+      : "RS Mart বাংলাদেশ | স্মার্ট গ্যাজেট, ফ্যাশন ও অনলাইন শপিং";
+    document.querySelectorAll("[data-i18n]").forEach(element => {
+      const key = element.dataset.i18n;
+      if (translations[language]?.[key]) element.textContent = translations[language][key];
+    });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(element => {
+      const key = element.dataset.i18nPlaceholder;
+      if (translations[language]?.[key]) element.placeholder = translations[language][key];
+    });
+  }
+  const originalSetLanguage = setLanguage;
+  setLanguage = function(language) {
+    originalSetLanguage(language);
+    translateStoreUI(language);
+  };
+  const observer = new MutationObserver(records => {
+    if (currentLanguage !== "en" && currentLanguage !== "bn") return;
+    for (const record of records) {
+      if (record.type === "childList") {
+        record.addedNodes.forEach(node => {
+          if (node.nodeType === 3) translateTextNode(node, currentLanguage);
+          else translateElement(node, currentLanguage);
+        });
+      } else if (record.type === "characterData") {
+        translateTextNode(record.target, currentLanguage);
+      }
+    }
+  });
+  observer.observe(document.body, {subtree:true, childList:true, characterData:true});
+  translateStoreUI(currentLanguage);
+})();
