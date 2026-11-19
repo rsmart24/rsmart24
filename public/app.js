@@ -703,6 +703,7 @@ function chooseProduct(id, pushHistory = true) {
   cartButton.textContent = "🛒 Add to Cart";
   cartButton.classList.remove("is-added");
   orderSection.hidden = false;
+  document.querySelector(".product-detail-layout")?.append(document.querySelector("#product-reviews"));
   loadProductReviews(chosenProduct.id);
   if(pushHistory) history.pushState({view:"product",productId:chosenProduct.id},"","#product-"+encodeURIComponent(chosenProduct.id));
   document.body.classList.add("order-modal-open");
