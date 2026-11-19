@@ -17,4 +17,4 @@ database_id = "71300069-bcda-434b-b5ec-6b07269da594"
 [assets]
 directory = "./public"
 binding = "ASSETS"
-run_worker_first = ["/api/*"]
+run_worker_first = ["/api/*", "/product/*", "/sitemap.xml"]
