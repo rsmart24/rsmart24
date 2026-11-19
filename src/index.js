@@ -85,10 +85,10 @@ async function getCatalog(env) {
 
 
 function normalizeReviewPhone(value) {
-  let phone = String(value || "").replace(/[\\s-]/g, "");
+  let phone = String(value || "").replace(/[\s-]/g, "");
   if (phone.startsWith("+88")) phone = phone.slice(3);
   else if (phone.startsWith("88") && phone.length === 13) phone = phone.slice(2);
-  return /^01[3-9]\\d{8}$/.test(phone) ? phone : "";
+  return /^01[3-9]\d{8}$/.test(phone) ? phone : "";
 }
 async function reviewPhoneHash(phone) {
   const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("rs-mart-review:" + phone));
@@ -104,7 +104,7 @@ async function submitProductReview(request, env) {
   let body;
   try { body = await request.json(); } catch { return json({error:"রিভিউয়ের তথ্য সঠিক নয়।"},400); }
   const productId = String(body?.productId || "").trim().slice(0,100);
-  const name = String(body?.name || "").trim().replace(/\\s+/g," ").slice(0,80);
+  const name = String(body?.name || "").trim().replace(/\s+/g," ").slice(0,80);
   const phone = normalizeReviewPhone(body?.phone);
   const rating = Number(body?.rating);
   const comment = String(body?.comment || "").trim().slice(0,500);
