@@ -36,7 +36,8 @@ export default [
     rules: {
       ...js.configs.recommended.rules,
       "no-undef": "off",
-      "no-unused-vars": "off"
+      "no-unused-vars": "off",
+      "no-control-regex": "off"
     }
   }
 ];
