@@ -575,6 +575,13 @@ function renderProductReviews() {
   const average = count ? (activeProductReviews.reduce((sum,r)=>sum+Number(r.rating),0)/count).toFixed(1) : "—";
   document.querySelector("#reviews-summary").textContent = count ? count+"টি অনুমোদিত রিভিউ" : "এখনো কোনো অনুমোদিত রিভিউ নেই";
   document.querySelector("#reviews-average").textContent = average;
+  const detailRating = document.querySelector("#detail-rating");
+  if (detailRating) {
+    detailRating.hidden = !count;
+    detailRating.textContent = count ? "★ " + average + " (" + count + ")" : "";
+    if (count) detailRating.setAttribute("aria-label", average + " out of 5 from " + count + " reviews");
+    else detailRating.removeAttribute("aria-label");
+  }
   const more = document.querySelector("#reviews-show-all");
   more.hidden = count <= 3;
   more.textContent = showAllProductReviews ? "কম দেখুন" : "সব রিভিউ দেখুন ("+count+")";
@@ -591,6 +598,7 @@ async function loadProductReviews(productId) {
   } catch(error) { reviewList.innerHTML='<p class="reviews-empty">রিভিউ লোড করা যায়নি। পরে আবার চেষ্টা করুন।</p>'; }
 }
 document.querySelector("#reviews-show-all")?.addEventListener("click",()=>{showAllProductReviews=!showAllProductReviews;renderProductReviews();});
+document.querySelector("#review-jump-button")?.addEventListener("click",()=>{document.querySelector("#product-reviews")?.scrollIntoView({behavior:"smooth",block:"start"});});
 reviewForm?.addEventListener("submit",async event=>{
   event.preventDefault();
   if(!chosenProduct || !reviewForm.reportValidity()) return;
