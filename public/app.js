@@ -675,7 +675,7 @@ function renderProductReviews() {
     distribution.hidden = !count;
   }
   document.querySelector("#reviews-summary").textContent = count
-    ? realProductReviewCount+"টি অনুমোদিত রিভিউ · "+
+    ? realProductReviewCount+"টি অনুমোদিত রিভিউ"
     : "এখনো কোনো অনুমোদিত রিভিউ নেই";
   document.querySelector("#reviews-average").textContent = average;
   const detailRating = document.querySelector("#detail-rating");
