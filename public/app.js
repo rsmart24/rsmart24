@@ -561,11 +561,61 @@ function displayedOrderValue(elementId) {
 const reviewList = document.querySelector("#reviews-list");
 const reviewForm = document.querySelector("#review-form");
 let activeProductReviews = [];
+let realProductReviewCount = 0;
+let demoProductReviewCount = 0;
 let showAllProductReviews = false;
+const demoReviewNames = ["মোঃ রাকিব হাসান","সুমাইয়া আক্তার","তানভীর আহমেদ","নুসরাত জাহান","মোঃ ইমরান হোসেন","ফারহানা ইসলাম","সাইফুল ইসলাম","জান্নাতুল ফেরদৌস","মোঃ সাকিব","আফসানা মিম","আরিফ হোসেন","মাহমুদা খাতুন","মোঃ হাসান","তাসনিম রহমান","রিফাত আহমেদ","শারমিন আক্তার","মোঃ নাঈম","সাদিয়া ইসলাম","আব্দুল্লাহ আল মামুন","মেহজাবিন চৌধুরী","মোঃ সোহেল রানা","তানজিলা আক্তার","আশিকুর রহমান","রাইসা ইসলাম"];
+const demoReviewComments = [
+  "পণ্যের ছবির সঙ্গে মিল আছে। ডেমো হিসেবে দেখতেও বেশ সুন্দর লাগছে।",
+  "ডিজাইন ও বিস্তারিত তথ্য সুন্দরভাবে সাজানো হয়েছে।",
+  "পণ্যের তথ্যগুলো পরিষ্কার, পুরো পেজটি ব্যবহার করাও সহজ।",
+  "ছবি ও বর্ণনা একসঙ্গে থাকায় পণ্যটি বুঝতে সুবিধা হয়।",
+  "মোবাইল থেকেও পেজটি সুন্দরভাবে দেখা যাচ্ছে।",
+  "দাম ও পণ্যের বিবরণ এক জায়গায় থাকাটা ভালো লেগেছে।",
+  "পণ্যের অপশনগুলো পরিষ্কারভাবে দেখানো হয়েছে।",
+  "সামগ্রিক উপস্থাপনাটি পরিপাটি এবং দেখতে ভালো।",
+  "ছবিগুলো স্পষ্ট, পণ্যের তথ্য খুঁজে পেতে সমস্যা হয়নি।",
+  "পেজের লেআউট সহজ এবং প্রয়োজনীয় তথ্যগুলো চোখে পড়ে।",
+  "রঙ ও ডিজাইনের সমন্বয় বেশ সুন্দর হয়েছে।",
+  "পণ্যের বিবরণ আর ছবির অবস্থান ভালোভাবে সাজানো।",
+  "ডেমো স্টোরে রিভিউ সেকশনটি কেমন দেখায় তা বোঝা যাচ্ছে।",
+  "ফোনে ব্যবহার করলেও লেখা পড়তে সুবিধা হচ্ছে।",
+  "পণ্যের তথ্য, দাম ও অন্যান্য অপশন একসঙ্গে পাওয়া যাচ্ছে।",
+  "পরিষ্কার ডিজাইন, অপ্রয়োজনীয় কিছু চোখে পড়েনি।",
+  "বিস্তারিত অংশটি সুন্দরভাবে সাজানো হয়েছে।",
+  "পণ্যের পেজটি দেখতে বেশ গোছানো মনে হচ্ছে।",
+  "স্টার রেটিং ও মন্তব্যের অংশটি সহজে বোঝা যায়।",
+  "সাইটের সামগ্রিক ডিজাইনের সঙ্গে রিভিউ অংশটি মানিয়েছে।"
+];
+function buildDemoReviews(product) {
+  const seedText = String(product?.id || product?.name || "rsmart");
+  let seed = 0;
+  for (const char of seedText) seed = (seed * 31 + char.charCodeAt(0)) >>> 0;
+  const counts = [10, 15, 20, 24];
+  const count = counts[seed % counts.length];
+  const reviews = [];
+  for (let i = 0; i < count; i++) {
+    const nameIndex = (seed + i * 7) % demoReviewNames.length;
+    const commentIndex = (seed + i * 11) % demoReviewComments.length;
+    const rating = (i % 9 === 0) ? 3 : (i % 4 === 0 ? 4 : 5);
+    const daysAgo = 2 + ((seed + i * 13) % 85);
+    const date = new Date(Date.now() - daysAgo * 86400000).toISOString().slice(0,19).replace("T"," ");
+    reviews.push({
+      id: "demo-" + seedText + "-" + i,
+      customer_name: demoReviewNames[nameIndex],
+      comment: demoReviewComments[commentIndex],
+      rating,
+      created_at: date,
+      is_demo: true
+    });
+  }
+  return reviews;
+}
 function renderProductReviews() {
   if (!reviewList) return;
   const count = activeProductReviews.length;
   const sortedReviews = [...activeProductReviews].sort((a,b) => {
+    if (Boolean(a.is_demo) !== Boolean(b.is_demo)) return a.is_demo ? 1 : -1;
     const dateA = Date.parse(String(a.created_at || "").replace(" ","T") + "Z") || 0;
     const dateB = Date.parse(String(b.created_at || "").replace(" ","T") + "Z") || 0;
     return dateB - dateA;
@@ -579,7 +629,7 @@ function renderProductReviews() {
       const stars = "★".repeat(rating) + "☆".repeat(5-rating);
       const parsedDate = r.created_at ? new Date(String(r.created_at).replace(" ","T")+"Z") : null;
       const date = parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString("bn-BD") : "";
-      return '<article class="review-card"><div class="review-card-top"><strong>'+escapeHtml(r.customer_name)+'</strong><span class="review-stars" aria-label="'+rating+' out of 5">'+stars+'</span></div>'+(rating===5?'<span class="review-top-rated">সর্বোচ্চ রেটিং</span>':"")+'<p>'+escapeHtml(r.comment)+'</p><small>'+escapeHtml(date)+'</small></article>';
+      return '<article class="review-card '+(r.is_demo?'review-card-demo':'')+'"><div class="review-card-top"><strong>'+escapeHtml(r.customer_name)+'</strong><span class="review-card-meta">'+(r.is_demo?'<em class="review-demo-tag">DEMO</em>':"")+'<span class="review-stars" aria-label="'+rating+' out of 5">'+stars+'</span></span></div>'+(rating===5?'<span class="review-top-rated">সর্বোচ্চ রেটিং</span>':"")+'<p>'+escapeHtml(r.comment)+'</p><small>'+escapeHtml(date)+'</small></article>';
     }).join("");
   }
   const average = count ? (activeProductReviews.reduce((sum,r)=>sum+Number(r.rating),0)/count).toFixed(1) : "—";
@@ -592,7 +642,9 @@ function renderProductReviews() {
     }).join("") : "";
     distribution.hidden = !count;
   }
-  document.querySelector("#reviews-summary").textContent = count ? count+"টি অনুমোদিত রিভিউ" : "এখনো কোনো অনুমোদিত রিভিউ নেই";
+  document.querySelector("#reviews-summary").textContent = count
+    ? realProductReviewCount+"টি অনুমোদিত রিভিউ · "+demoProductReviewCount+"টি DEMO রিভিউ"
+    : "এখনো কোনো অনুমোদিত রিভিউ নেই";
   document.querySelector("#reviews-average").textContent = average;
   const detailRating = document.querySelector("#detail-rating");
   if (detailRating) {
@@ -614,7 +666,11 @@ async function loadProductReviews(productId) {
     const response = await fetch("/api/reviews?productId="+encodeURIComponent(productId),{cache:"no-store"});
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "রিভিউ লোড হয়নি।");
-    activeProductReviews = Array.isArray(result.data) ? result.data : [];
+    const realReviews = Array.isArray(result.data) ? result.data : [];
+    realProductReviewCount = realReviews.length;
+    const demoReviews = buildDemoReviews(chosenProduct);
+    demoProductReviewCount = demoReviews.length;
+    activeProductReviews = [...realReviews, ...demoReviews];
     renderProductReviews();
   } catch(error) { reviewList.innerHTML='<p class="reviews-empty">রিভিউ লোড করা যায়নি। পরে আবার চেষ্টা করুন।</p>'; }
 }

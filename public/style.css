@@ -3843,3 +3843,11 @@ body.order-modal-open {
  .reviews-average{padding:6px 9px;font-size:21px}
  .reviews-rating-breakdown{max-width:none;padding:10px}
 }
+
+
+/* Clearly marked sample reviews for the RS Mart storefront demo */
+.reviews-demo-notice{display:flex;align-items:center;gap:8px;margin:0 0 12px;color:#697586;font-size:11px}
+.reviews-demo-notice>span,.review-demo-tag{display:inline-flex;align-items:center;justify-content:center;border:1px solid #f0b44b;border-radius:5px;background:#fff7e6;color:#9a5b00;font-size:10px;font-style:normal;font-weight:800;letter-spacing:.6px;padding:3px 7px}
+.review-card-meta{display:inline-flex;align-items:center;gap:8px}
+.review-card-demo{border-style:dashed;background:#fffdf8}
+@media(max-width:650px){.reviews-demo-notice{flex-wrap:wrap;gap:6px}.review-card-meta{gap:5px}}
