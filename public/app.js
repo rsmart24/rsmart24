@@ -661,7 +661,7 @@ function renderProductReviews() {
       const stars = "★".repeat(rating) + "☆".repeat(5-rating);
       const parsedDate = r.created_at ? new Date(String(r.created_at).replace(" ","T")+"Z") : null;
       const date = parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString("bn-BD") : "";
-      return '<article class="review-card '+(r.is_demo?'review-card-demo':'')+'"><div class="review-card-top"><strong>'+escapeHtml(r.customer_name)+'</strong><span class="review-card-meta">'+(r.is_demo?'<em class="review-demo-tag">DEMO</em>':"")+'<span class="review-stars" aria-label="'+rating+' out of 5">'+stars+'</span></span></div>'+(rating===5?'<span class="review-top-rated">সর্বোচ্চ রেটিং</span>':"")+'<p>'+escapeHtml(r.comment)+'</p><small>'+escapeHtml(date)+'</small></article>';
+      return '<article class="review-card '+(r.is_demo?'review-card-demo':'')+'"><div class="review-card-top"><strong>'+escapeHtml(r.customer_name)+'</strong><span class="review-card-meta">'+'<span class="review-stars" aria-label="'+rating+' out of 5">'+stars+'</span></span></div>'+(rating===5?'<span class="review-top-rated">সর্বোচ্চ রেটিং</span>':"")+'<p>'+escapeHtml(r.comment)+'</p><small>'+escapeHtml(date)+'</small></article>';
     }).join("");
   }
   const average = count ? (activeProductReviews.reduce((sum,r)=>sum+Number(r.rating),0)/count).toFixed(1) : "—";
